@@ -1,0 +1,121 @@
+letters,major arabic name,major english name,department letter,department arabic name,department english name
+ATW,تخصص المحاسبة القانونية,forensic accounting,t,ادارة عليا واداب,management
+ATE,تخصص أدارة المخاطر,risk management,t,ادارة عليا واداب,management
+ATN,تخصص المراجعة وتقييم الأداء,auditing and performance evaluation,t,ادارة عليا واداب,management
+ATP,تخصص هندسة شبكات,network engineering,t,ادارة عليا واداب,management
+ATS,تخصص الدراسات الامنية ( ادارة الحوادث والتحري ),(incident management and investigation) security studies,t,ادارة عليا واداب,management
+BTN,تخصص أدارة المشاريع والنقل والتخزين,"project management, transportation, and warehousing",t,ادارة عليا واداب,management
+BTP,تخصص ادارة مبيعات,sales management,t,ادارة عليا واداب,management
+BTS,تخصص المكتبات والعلوم المعلوماتية,library and information science,t,ادارة عليا واداب,management
+BTW,ادارة الاعمال والتخطيط,business administration and planning,t,ادارة عليا واداب,management
+BTE,تخصص الادارة التنفيذية,executive management,t,ادارة عليا واداب,management
+CTS,تخصص الادارة العامة,public administration,t,ادارة عليا واداب,management
+CTN,تخصص الادارة الفندقية,hospitality management,t,ادارة عليا واداب,management
+CTP,تخصص الارشاد السياحي,tourism guidance,t,ادارة عليا واداب,management
+CTW,تخصص الاعداد والانتاج الفني,art direction and production,t,ادارة عليا واداب,management
+CTE,تخصص أنظمة القانون,legal systems,t,ادارة عليا واداب,management
+DTN,تخصص الصحافة والاستقصاء,journalism and investigative reporting,t,ادارة عليا واداب,management
+DTS,تخصص الادارة والخدمات المساندة,management and support services,t,ادارة عليا واداب,management
+DTP,تخصص فنون أدائية وانتاج,performing arts and production,t,ادارة عليا واداب,management
+DTE,تخصص الآداب والكتابة الابداعية,literature and creative writing,t,ادارة عليا واداب,management
+DTW,تخصص الأدب والشعر,literature and poetry,t,ادارة عليا واداب,management
+ARS,تخصص هندسة الديكور والتصميم,interior design and decoration engineering,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+ARE,تخصص الهندسة المعمارية,architectural engineering,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+ARP,تخصص الرياضيات والجبر,mathematics and algebra,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+ARN,تخصص العلوم الفلكية,astronomical sciences,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+DRP,تخصص الهندسة الصناعية,industrial engineering,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+ARW,تخصص البرمجة والحاسبات,programming and computer science,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+BRW,تخصص الصحافة والتصوير,journalism and photography,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+BRP,تخصص الفنون والرسم,fine arts and painting,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+BRS,تخصص التربية الرياضية,physical education,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+BRN,تخصص الدراسات الامنية (العلوم العسكرية ),(military science) security studies,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+BRE,تخصص ادارة العلوم اللوجستية,logistics and supply chain management,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+CRE,تخصص التسويق,marketing,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+CRP,تخصص ادارة تصميم الازياء,fashion design management,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+CRW,تخصص الأدب,literature,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+CRS,تخصص ترجمة لغات وآداب,translation and language studies,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+CRN,تخصص التنمية البشرية,human development,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+DRN,تخصص الفنون التشكيلية,visual arts,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+DRW,تخصص تقنيات الرسم والتزين,drawing and decoration techniques,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+DRS,تخصص الديكور والفنون التشكيلية,interior decoration and visual arts,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+DRE,تخصص الاعلام والصحافة,media and journalism,r,ابداع وفنون وتاريخ,"creativity, arts, and history"
+AOW,تخصص البيولوجيا والمختبرات الطبية,biology and medical laboratory sciences,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+AON,تخصص الدراسات الامنية ( تدريب ),security studies (training),o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+AOS,تخصص الدراسات الدينية والاجتماعية,religious and social studies,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+AOP,تخصص علوم الفلك والفضاء,astronomy and space science,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+AOE,تخصص الاحصاء والبحوث,statistics and research,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+BOS,تخصص التمريض والاسعافات الاولية,nursing and first aid,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+BOE,تخصص الخدمات اللوجستية,logistics services,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+BOP,تخصص الادارة المهنية,professional management,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+BON,تخصص الادارة الرياضية,sports management,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+BOW,تخصص الفنون والمسرح,performing arts and theater,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+CON,تخصص التربية الخاصة,special education,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+COP,تخصص علم الاجتماع,sociology,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+COE,تخصص الخدمة الاجتماعية,social work,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+COW,تخصص علوم الفلسفة والمنطق,philosophy and logic,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+COS,تخصص العلاج النفسي,psychotherapy,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+DOE,تخصص الادارة التربوية,educational administration,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+DOS,تخصص التعليم المبكر,early childhood education,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+DOW,تخصص صناعة المحتوى الرقمي,digital content creation,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+DOP,تخصص صعوبة التعلم,learning disabilities,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+DON,تخصص التصوير والانتاج السينمائي,cinematography and film production,o,علوم اجتماع ومهارات اتصال,social sciences and communication skills
+AIN,تخصص الدراسات الامنية ( الاستخبارات ),security studies (intelligence),i,القسم الطب والتقنية,the technical and engineering department
+AIS,تخصص تحليل البيانات,data analysis,i,القسم الطب والتقنية,the technical and engineering department
+AIE,تخصص هندسة الحاسب وتقنية المعلومات,computer engineering and information technology,i,القسم الطب والتقنية,the technical and engineering department
+AIP,تخصص التخطيط الاستراتيجي والتنمية,strategic planning and development,i,القسم الطب والتقنية,the technical and engineering department
+AIW,تخصص الفيزياء الطبية,medical physics,i,القسم الطب والتقنية,the technical and engineering department
+BIN,تخصص الهندسة الميكانيكية,mechanical engineering,i,القسم الطب والتقنية,the technical and engineering department
+BIS,تخصص جيولوجيا عامة,general geology,i,القسم الطب والتقنية,the technical and engineering department
+BIW,تخصص السكرتارية التنفيذية,executive secretarial studies,i,القسم الطب والتقنية,the technical and engineering department
+BIP,تخصص علوم الكيمياء,chemistry,i,القسم الطب والتقنية,the technical and engineering department
+BIE,تخصص ادارة الجودة,quality management,i,القسم الطب والتقنية,the technical and engineering department
+CIE,تخصص الطب البشري,human medicine,i,القسم الطب والتقنية,the technical and engineering department
+CIS,تخصص علم النفس,psychology,i,القسم الطب والتقنية,the technical and engineering department
+CIW,تخصص الفنون الموسيقية,musical arts,i,القسم الطب والتقنية,the technical and engineering department
+CIP,تخصص التخدير الطبي,anesthesiology,i,القسم الطب والتقنية,the technical and engineering department
+CIN,تخصص ريادة الاعمال,entrepreneurship,i,القسم الطب والتقنية,the technical and engineering department
+DIE,تخصص علوم البيئة,environmental science,i,القسم الطب والتقنية,the technical and engineering department
+DIN,تخصص الأحافير والجيولوجيا,paleontology and geology,i,القسم الطب والتقنية,the technical and engineering department
+DIW,تخصص الارشاد الأسري والتنمية,family counseling and development,i,القسم الطب والتقنية,the technical and engineering department
+DIP,تخصص التصميم الجرافيكي,graphic design,i,القسم الطب والتقنية,the technical and engineering department
+DIS,تخصص التاريخ والأثار ( أنثروبولوجيا ),history and archaeology (anthropology),i,القسم الطب والتقنية,the technical and engineering department
+ALS,تخصص هندسة التحكم,control systems engineerin,l,مهني وهندسة,"vocational, engineer"
+ALW,تخصص هندسة الطيران,aerospace engineering,l,مهني وهندسة,"vocational, engineer"
+ALE,تخصص هندسة التعدين والانتاج,mining and production engineering,l,مهني وهندسة,"vocational, engineer"
+ALN,تخصص جيولوجيا المناجم والتعدين,mining and geological engineering,l,مهني وهندسة,"vocational, engineer"
+ALP,تخصص هندسة الطاقة المتجددة,renewable energy engineering,l,مهني وهندسة,"vocational, engineer"
+BLN,تخصص التصنيع والحدادة,manufacturing and forging engineering,l,مهني وهندسة,"vocational, engineer"
+BLP,تخصص البناء والتشييد,construction and building engineering,l,مهني وهندسة,"vocational, engineer"
+BLE,تخصص الحياة الفطرية والمحميات,wildlife and conservation management,l,مهني وهندسة,"vocational, engineer"
+BLW,تخصص ملاحة الطيران,air navigation,l,مهني وهندسة,"vocational, engineer"
+BLS,تخصص الصناعة النووية,nuclear engineering,l,مهني وهندسة,"vocational, engineer"
+CLN,تخصص علم سلوك الحيوان,animal behavior science,l,مهني وهندسة,"vocational, engineer"
+CLE,تخصص الطب البيطري,veterinary medicine,l,مهني وهندسة,"vocational, engineer"
+CLW,تخصص صناعة المحتوى والابتكار,content creation and innovation,l,مهني وهندسة,"vocational, engineer"
+CLS,تخصص التسويق الرقمي,digital marketing,l,مهني وهندسة,"vocational, engineer"
+CLP,تخصص التسويق وصناعة الهوية البصرية,marketing and visual identity creation,l,مهني وهندسة,"vocational, engineer"
+DLN,تخصص المهن البحرية والملاحة,marine professions and navigation,l,مهني وهندسة,"vocational, engineer"
+DLE,تخصص الهندسة الكهربائية,electrical engineering,l,مهني وهندسة,"vocational, engineer"
+DLS,تخصص الهندسة الزراعية,agricultural engineering,l,مهني وهندسة,"vocational, engineer"
+DLW,تخصص ابتكار الالعاب الذهنية والالكترونية,innovation in mental and electronic games,l,مهني وهندسة,"vocational, engineer"
+DLP,تخصص الفنون التمثيلية,performing arts,l,مهني وهندسة,"vocational, engineer"
+AVE,تخصص محاسبة التكاليف,cost accounting,v,مالية,finance
+AVW,تخصص الاقتصاد,economics,v,مالية,finance
+AVN,تخصص التمويل والاستثمار المالي,finance and investment,v,مالية,finance
+AVS,تخصص الكمياء التطبيقية والاشعة السينية,applied chemistry and x-ray technology,v,مالية,finance
+AVP,تخصص طب العلاج الطبيعي,physiotherapy,v,مالية,finance
+BVE,تخصص المصرفية البنكية,banking and finance,v,مالية,finance
+BVS,تخصص أدارة الخدمات الصحية,healthcare management,v,مالية,finance
+BVP,تخصص علوم البيانات,data science,v,مالية,finance
+BVN,التدريب الرياضي,sports coaching,v,مالية,finance
+BVW,الطب التجميلي والصيدلة,cosmetic medicine and pharmacy,v,مالية,finance
+CVP,تخصص تقنية المعلومات,information technology,v,مالية,finance
+CVN,تخصص هندسة أمن وسلامة,safety and security engineering,v,مالية,finance
+CVW,تخصص الموسيقى والآداب,music and literature,v,مالية,finance
+CVS,تخصص الادارة المالية,financial management,v,مالية,finance
+CVE,تخصص ادارة الحشود والفعاليات,crowd and event management,v,مالية,finance
+DVN,تخصص سلاسل الامداد البحرية والجوية,marine and aviation supply chain management,v,مالية,finance
+DVP,تخصص هندسة الاتصالات,telecommunication engineering,v,مالية,finance
+DVS,تخصص فنون الطهي,culinary arts,v,مالية,finance
+DVW,تخصص الاخراج المسرحي,theatrical directing.,v,مالية,finance
+DVE,تخصص العلوم السياسية,political science,v,مالية,finance

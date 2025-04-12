@@ -1,0 +1,14 @@
+transformers
+torch
+pandas
+fastapi
+uvicorn
+redis
+python-dotenv
+scikit-learn
+sentencepiece
+nlpaug
+Sequential
+
+
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

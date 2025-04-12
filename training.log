@@ -1,0 +1,850 @@
+2025-04-05 02:36:44,044 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:36:44,053 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 36, in main
+    original_df = data_loader.load_and_validate()  # Now only checks format
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\utils\data_loader.py", line 73, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\utils\data_loader.py", line 51, in _validate_integrity
+    raise ValueError("All classes must have at least 2 samples")
+ValueError: All classes must have at least 2 samples
+2025-04-05 02:38:37,793 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:38:37,805 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:38:37,814 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:38:38,030 - src.utils.data_loader - INFO - Generated 540 unique synthetic samples
+2025-04-05 02:38:38,043 - __main__ - INFO - Class distribution:
+[('ALS', 7), ('ARW', 6), ('CLW', 6), ('CLP', 6), ('CLS', 6)]...
+2025-04-05 02:38:38,043 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 53, in main
+    validate_dataset(combined_df, min_samples_per_class=5)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 24, in validate_dataset
+    raise ValueError(
+ValueError: 90 classes below 5 samples: ['COS', 'AVS', 'AON', 'COP', 'ATN']...
+2025-04-05 02:42:58,464 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:42:58,474 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:42:58,482 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:42:59,100 - src.utils.data_loader - INFO - Generated 540 unique synthetic samples
+2025-04-05 02:42:59,118 - __main__ - INFO - Class distribution:
+[('ALS', 7), ('ALW', 6), ('ALE', 6), ('ALN', 6), ('ALP', 6)]...
+2025-04-05 02:42:59,118 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 53, in main
+    validate_dataset(combined_df)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 24, in validate_dataset
+    raise ValueError(
+ValueError: 90 classes below 5 samples: ['BLW', 'DLW', 'DLP', 'AIW', 'BIS']...
+2025-04-05 02:44:34,721 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:44:34,732 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:44:34,740 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:44:35,543 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-04-05 02:44:35,558 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:44:35,559 - __main__ - INFO - Total samples: 3,059
+2025-04-05 02:44:35,559 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:44:43,925 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 93, in train
+    train_loader = self._create_loader(train_df, tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 125, in _create_loader
+    batch_size=self.batch_size,
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute 'batch_size'
+2025-04-05 02:47:15,893 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:47:15,904 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:47:15,912 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:47:16,677 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 02:47:16,692 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:47:16,692 - __main__ - INFO - Total samples: 3,061
+2025-04-05 02:47:16,693 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:47:20,561 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 109, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:49:56,905 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:49:56,914 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:49:56,924 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:49:57,673 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-04-05 02:49:57,687 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:49:57,687 - __main__ - INFO - Total samples: 3,059
+2025-04-05 02:49:57,687 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:50:01,227 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 108, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:51:48,572 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:51:48,581 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:51:48,588 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:51:49,331 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 02:51:49,344 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:51:49,345 - __main__ - INFO - Total samples: 3,061
+2025-04-05 02:51:49,345 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:51:52,826 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 117, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:52:33,443 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:52:33,453 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:52:33,461 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:52:34,204 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 02:52:34,217 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:52:34,218 - __main__ - INFO - Total samples: 3,061
+2025-04-05 02:52:34,218 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:52:37,595 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 116, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:55:14,757 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:55:14,767 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:55:14,776 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:55:15,542 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-04-05 02:55:15,555 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:55:15,556 - __main__ - INFO - Total samples: 3,059
+2025-04-05 02:55:15,556 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:55:19,011 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 116, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:56:05,662 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:56:05,672 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:56:05,679 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:56:06,422 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 02:56:06,435 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:56:06,436 - __main__ - INFO - Total samples: 3,061
+2025-04-05 02:56:06,436 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:56:09,867 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 116, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 02:58:00,601 - __main__ - INFO - Starting training pipeline
+2025-04-05 02:58:00,610 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:58:00,618 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 02:58:01,379 - src.utils.data_loader - INFO - Generated 3059 unique synthetic samples
+2025-04-05 02:58:01,393 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 02:58:01,393 - __main__ - INFO - Total samples: 3,060
+2025-04-05 02:58:01,393 - __main__ - INFO - Number of classes: 120
+2025-04-05 02:58:04,785 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 118, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 03:00:14,304 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:00:14,313 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:00:14,321 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:00:15,093 - src.utils.data_loader - INFO - Generated 3057 unique synthetic samples
+2025-04-05 03:00:15,107 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:00:15,107 - __main__ - INFO - Total samples: 3,058
+2025-04-05 03:00:15,107 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:00:15,115 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,140 samples
+Validation: 459 samples
+Test: 459 samples
+2025-04-05 03:00:18,682 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 119, in train
+    self._validate_dataset(train_loader, "Training")
+AttributeError: 'PersonalityClassifierTrainer' object has no attribute '_validate_dataset'
+2025-04-05 03:02:29,955 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:02:29,963 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:02:29,972 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:02:30,723 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 03:02:30,738 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:02:30,738 - __main__ - INFO - Total samples: 3,061
+2025-04-05 03:02:30,739 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:02:30,747 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 03:02:44,108 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 03:02:44,108 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:02:53,681 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 03:02:53,681 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:03:34,094 - src.training.trainer - INFO - Epoch 1/10
+Train Loss: 4.8147 | Acc: 0.98%
+Val Loss: 4.8093 | Acc: 0.87%
+2025-04-05 03:03:34,095 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 99, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\training\trainer.py", line 136, in train
+    torch.save(model.state_dict(), paths.MODEL_PATH)
+AttributeError: 'PathConfig' object has no attribute 'MODEL_PATH'
+2025-04-05 03:05:05,133 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:05:05,141 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:05:05,151 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:05:05,879 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 03:05:05,892 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:05:05,893 - __main__ - INFO - Total samples: 3,061
+2025-04-05 03:05:05,893 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:05:05,901 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 03:05:18,805 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 03:05:18,805 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:05:28,090 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 03:05:28,091 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:08:03,523 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:08:03,532 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:08:03,540 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:08:04,280 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 03:08:04,293 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:08:04,294 - __main__ - INFO - Total samples: 3,061
+2025-04-05 03:08:04,294 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:08:04,301 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 03:08:19,645 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 03:08:19,645 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:08:31,859 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 03:08:31,859 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:09:11,102 - src.training.trainer - INFO - Epoch 1/10
+Train Loss: 4.8056 | Acc: 0.65%
+Val Loss: 4.7999 | Acc: 0.87%
+2025-04-05 03:09:51,441 - src.training.trainer - INFO - Epoch 2/10
+Train Loss: 4.7994 | Acc: 0.93%
+Val Loss: 4.7918 | Acc: 0.87%
+2025-04-05 03:10:32,441 - src.training.trainer - INFO - Epoch 3/10
+Train Loss: 4.7288 | Acc: 3.03%
+Val Loss: 4.5797 | Acc: 12.85%
+2025-04-05 03:11:13,381 - src.training.trainer - INFO - Epoch 4/10
+Train Loss: 4.5302 | Acc: 13.87%
+Val Loss: 4.3213 | Acc: 29.63%
+2025-04-05 03:11:54,394 - src.training.trainer - INFO - Epoch 5/10
+Train Loss: 4.3477 | Acc: 25.63%
+Val Loss: 4.1251 | Acc: 37.47%
+2025-04-05 03:12:36,859 - src.training.trainer - INFO - Epoch 6/10
+Train Loss: 4.2098 | Acc: 32.96%
+Val Loss: 3.9897 | Acc: 40.74%
+2025-04-05 03:13:19,618 - src.training.trainer - INFO - Epoch 7/10
+Train Loss: 4.0983 | Acc: 37.30%
+Val Loss: 3.8864 | Acc: 45.10%
+2025-04-05 03:14:02,431 - src.training.trainer - INFO - Epoch 8/10
+Train Loss: 4.0329 | Acc: 39.64%
+Val Loss: 3.8131 | Acc: 46.41%
+2025-04-05 03:14:45,174 - src.training.trainer - INFO - Epoch 9/10
+Train Loss: 3.9844 | Acc: 41.78%
+Val Loss: 3.7745 | Acc: 47.28%
+2025-04-05 03:15:28,166 - src.training.trainer - INFO - Epoch 10/10
+Train Loss: 3.9570 | Acc: 43.28%
+Val Loss: 3.7610 | Acc: 48.15%
+2025-04-05 03:15:31,154 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-04-05 03:15:41,984 - __main__ - INFO - Test Accuracy: 47.39% | Loss: 3.7940
+2025-04-05 03:16:22,052 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:16:37,199 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:16:59,005 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:17:24,719 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:17:55,171 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:18:12,384 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:19:38,569 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:20:23,728 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:20:23,728 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\train.py", line 36, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Users\aalma\Desktop\personality_chatbot\src\utils\data_loader.py", line 65, in load_and_validate
+    raise FileNotFoundError(f"Cleaned data not found at {file_path}")
+FileNotFoundError: Cleaned data not found at C:\Users\aalma\Desktop\data\processed\cleaned_data.csv
+2025-04-05 03:21:00,636 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:34:00,874 - src.utils.data_loader - ERROR - Tokenizer initialization failed: Can't load tokenizer for 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'C:/Users/aalma/Desktop/personality_chatbot/models/tokenizer' is the correct path to a directory containing all relevant files for a XLMRobertaTokenizer tokenizer.
+2025-04-05 03:37:22,397 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-04-05 03:37:23,216 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:37:23,225 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:37:23,234 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:37:23,971 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 03:37:23,986 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:37:23,986 - __main__ - INFO - Total samples: 3,061
+2025-04-05 03:37:23,986 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:37:23,994 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 03:37:37,143 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 03:37:37,144 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:37:46,550 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 03:37:46,550 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:38:24,888 - src.training.trainer - INFO - Epoch 1/20
+Train Loss: 4.8148 | Acc: 0.75%
+Val Loss: 4.8092 | Acc: 1.09%
+2025-04-05 03:39:05,559 - src.training.trainer - INFO - Epoch 2/20
+Train Loss: 4.8131 | Acc: 1.17%
+Val Loss: 4.8048 | Acc: 0.87%
+2025-04-05 03:39:46,488 - src.training.trainer - INFO - Epoch 3/20
+Train Loss: 4.8064 | Acc: 0.79%
+Val Loss: 4.7883 | Acc: 1.09%
+2025-04-05 03:40:27,220 - src.training.trainer - INFO - Epoch 4/20
+Train Loss: 4.7211 | Acc: 3.17%
+Val Loss: 4.5286 | Acc: 17.43%
+2025-04-05 03:41:08,188 - src.training.trainer - INFO - Epoch 5/20
+Train Loss: 4.4751 | Acc: 18.35%
+Val Loss: 4.1882 | Acc: 37.25%
+2025-04-05 03:41:48,840 - src.training.trainer - INFO - Epoch 6/20
+Train Loss: 4.2339 | Acc: 32.12%
+Val Loss: 3.9311 | Acc: 46.19%
+2025-04-05 03:42:43,100 - src.training.trainer - INFO - Epoch 7/20
+Train Loss: 4.0454 | Acc: 38.47%
+Val Loss: 3.7169 | Acc: 50.76%
+2025-04-05 03:43:23,787 - src.training.trainer - INFO - Epoch 8/20
+Train Loss: 3.8796 | Acc: 44.26%
+Val Loss: 3.5527 | Acc: 52.72%
+2025-04-05 03:44:04,583 - src.training.trainer - INFO - Epoch 9/20
+Train Loss: 3.7429 | Acc: 46.55%
+Val Loss: 3.3928 | Acc: 55.99%
+2025-04-05 03:44:45,381 - src.training.trainer - INFO - Epoch 10/20
+Train Loss: 3.6182 | Acc: 49.72%
+Val Loss: 3.2819 | Acc: 57.52%
+2025-04-05 03:45:26,780 - src.training.trainer - INFO - Epoch 11/20
+Train Loss: 3.5170 | Acc: 53.13%
+Val Loss: 3.1490 | Acc: 58.17%
+2025-04-05 03:46:07,849 - src.training.trainer - INFO - Epoch 12/20
+Train Loss: 3.4187 | Acc: 55.88%
+Val Loss: 3.0644 | Acc: 60.35%
+2025-04-05 03:46:49,020 - src.training.trainer - INFO - Epoch 13/20
+Train Loss: 3.3291 | Acc: 57.38%
+Val Loss: 2.9869 | Acc: 61.44%
+2025-04-05 03:47:30,159 - src.training.trainer - INFO - Epoch 14/20
+Train Loss: 3.2782 | Acc: 58.12%
+Val Loss: 2.9206 | Acc: 61.66%
+2025-04-05 03:48:12,067 - src.training.trainer - INFO - Epoch 15/20
+Train Loss: 3.2286 | Acc: 59.52%
+Val Loss: 2.8670 | Acc: 63.62%
+2025-04-05 03:48:53,360 - src.training.trainer - INFO - Epoch 16/20
+Train Loss: 3.1756 | Acc: 60.41%
+Val Loss: 2.8388 | Acc: 63.18%
+2025-04-05 03:49:34,642 - src.training.trainer - INFO - Epoch 17/20
+Train Loss: 3.1404 | Acc: 60.97%
+Val Loss: 2.7966 | Acc: 64.05%
+2025-04-05 03:50:16,266 - src.training.trainer - INFO - Epoch 18/20
+Train Loss: 3.1032 | Acc: 61.39%
+Val Loss: 2.7716 | Acc: 64.27%
+2025-04-05 03:50:57,452 - src.training.trainer - INFO - Epoch 19/20
+Train Loss: 3.0900 | Acc: 62.23%
+Val Loss: 2.7571 | Acc: 64.27%
+2025-04-05 03:51:38,815 - src.training.trainer - INFO - Epoch 20/20
+Train Loss: 3.0938 | Acc: 61.90%
+Val Loss: 2.7511 | Acc: 64.27%
+2025-04-05 03:51:41,715 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-04-05 03:51:52,247 - __main__ - INFO - Test Accuracy: 65.87% | Loss: 2.7385
+2025-04-05 03:53:30,677 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-04-05 03:53:31,462 - __main__ - INFO - Starting training pipeline
+2025-04-05 03:53:31,476 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:53:31,485 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 03:53:32,247 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 03:53:32,260 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 03:53:32,261 - __main__ - INFO - Total samples: 3,061
+2025-04-05 03:53:32,261 - __main__ - INFO - Number of classes: 120
+2025-04-05 03:53:32,271 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 03:53:45,362 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 03:53:45,363 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:53:54,764 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 03:53:54,764 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 03:54:32,751 - src.training.trainer - INFO - Epoch 1/30
+Train Loss: 4.8091 | Acc: 0.75%
+Val Loss: 4.8026 | Acc: 0.87%
+2025-04-05 03:55:13,562 - src.training.trainer - INFO - Epoch 2/30
+Train Loss: 4.8027 | Acc: 0.65%
+Val Loss: 4.7964 | Acc: 0.87%
+2025-04-05 03:55:54,603 - src.training.trainer - INFO - Epoch 3/30
+Train Loss: 4.7854 | Acc: 1.31%
+Val Loss: 4.7045 | Acc: 3.05%
+2025-04-05 03:56:47,895 - src.training.trainer - INFO - Epoch 4/30
+Train Loss: 4.6262 | Acc: 6.77%
+Val Loss: 4.4130 | Acc: 22.00%
+2025-04-05 03:57:28,755 - src.training.trainer - INFO - Epoch 5/30
+Train Loss: 4.3601 | Acc: 21.29%
+Val Loss: 4.0542 | Acc: 40.74%
+2025-04-05 03:58:09,787 - src.training.trainer - INFO - Epoch 6/30
+Train Loss: 4.1241 | Acc: 34.59%
+Val Loss: 3.7977 | Acc: 51.85%
+2025-04-05 03:58:51,142 - src.training.trainer - INFO - Epoch 7/30
+Train Loss: 3.9102 | Acc: 42.11%
+Val Loss: 3.5897 | Acc: 52.07%
+2025-04-05 03:59:32,489 - src.training.trainer - INFO - Epoch 8/30
+Train Loss: 3.7574 | Acc: 45.00%
+Val Loss: 3.4185 | Acc: 55.99%
+2025-04-05 04:00:24,468 - src.training.trainer - INFO - Epoch 9/30
+Train Loss: 3.5917 | Acc: 48.69%
+Val Loss: 3.2606 | Acc: 57.95%
+2025-04-05 04:01:05,553 - src.training.trainer - INFO - Epoch 10/30
+Train Loss: 3.4603 | Acc: 53.36%
+Val Loss: 3.1080 | Acc: 59.91%
+2025-04-05 04:01:48,233 - src.training.trainer - INFO - Epoch 11/30
+Train Loss: 3.3350 | Acc: 54.15%
+Val Loss: 2.9823 | Acc: 61.66%
+2025-04-05 04:02:31,558 - src.training.trainer - INFO - Epoch 12/30
+Train Loss: 3.2204 | Acc: 57.80%
+Val Loss: 2.8805 | Acc: 62.53%
+2025-04-05 04:03:23,302 - src.training.trainer - INFO - Epoch 13/30
+Train Loss: 3.1336 | Acc: 59.62%
+Val Loss: 2.7706 | Acc: 63.83%
+2025-04-05 04:04:06,926 - src.training.trainer - INFO - Epoch 14/30
+Train Loss: 3.0257 | Acc: 61.30%
+Val Loss: 2.6919 | Acc: 66.01%
+2025-04-05 04:04:52,020 - src.training.trainer - INFO - Epoch 15/30
+Train Loss: 2.9409 | Acc: 63.45%
+Val Loss: 2.6003 | Acc: 66.88%
+2025-04-05 04:05:35,518 - src.training.trainer - INFO - Epoch 16/30
+Train Loss: 2.8795 | Acc: 64.71%
+Val Loss: 2.5273 | Acc: 67.97%
+2025-04-05 04:06:17,767 - src.training.trainer - INFO - Epoch 17/30
+Train Loss: 2.7833 | Acc: 66.95%
+Val Loss: 2.4445 | Acc: 69.28%
+2025-04-05 04:06:58,426 - src.training.trainer - INFO - Epoch 18/30
+Train Loss: 2.7305 | Acc: 68.30%
+Val Loss: 2.3824 | Acc: 69.93%
+2025-04-05 04:07:39,293 - src.training.trainer - INFO - Epoch 19/30
+Train Loss: 2.6611 | Acc: 68.95%
+Val Loss: 2.3243 | Acc: 70.81%
+2025-04-05 04:08:20,048 - src.training.trainer - INFO - Epoch 20/30
+Train Loss: 2.6079 | Acc: 69.75%
+Val Loss: 2.2779 | Acc: 71.02%
+2025-04-05 04:09:00,796 - src.training.trainer - INFO - Epoch 21/30
+Train Loss: 2.5744 | Acc: 71.06%
+Val Loss: 2.2449 | Acc: 71.90%
+2025-04-05 04:09:41,594 - src.training.trainer - INFO - Epoch 22/30
+Train Loss: 2.5273 | Acc: 71.94%
+Val Loss: 2.1936 | Acc: 72.77%
+2025-04-05 04:10:22,560 - src.training.trainer - INFO - Epoch 23/30
+Train Loss: 2.4784 | Acc: 73.06%
+Val Loss: 2.1556 | Acc: 73.42%
+2025-04-05 04:11:20,339 - src.training.trainer - INFO - Epoch 24/30
+Train Loss: 2.4441 | Acc: 73.67%
+Val Loss: 2.1258 | Acc: 73.64%
+2025-04-05 04:12:01,026 - src.training.trainer - INFO - Epoch 25/30
+Train Loss: 2.4094 | Acc: 73.62%
+Val Loss: 2.1006 | Acc: 73.86%
+2025-04-05 04:12:41,920 - src.training.trainer - INFO - Epoch 26/30
+Train Loss: 2.3972 | Acc: 74.79%
+Val Loss: 2.0819 | Acc: 74.29%
+2025-04-05 04:13:23,506 - src.training.trainer - INFO - Epoch 27/30
+Train Loss: 2.3644 | Acc: 74.00%
+Val Loss: 2.0652 | Acc: 75.16%
+2025-04-05 04:14:04,860 - src.training.trainer - INFO - Epoch 28/30
+Train Loss: 2.3518 | Acc: 73.48%
+Val Loss: 2.0563 | Acc: 74.95%
+2025-04-05 04:14:46,113 - src.training.trainer - INFO - Epoch 29/30
+Train Loss: 2.3523 | Acc: 74.70%
+Val Loss: 2.0476 | Acc: 75.16%
+2025-04-05 04:15:27,507 - src.training.trainer - INFO - Epoch 30/30
+Train Loss: 2.3306 | Acc: 75.40%
+Val Loss: 2.0454 | Acc: 75.16%
+2025-04-05 04:15:30,345 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-04-05 04:15:40,654 - __main__ - INFO - Test Accuracy: 75.00% | Loss: 2.0706
+2025-04-05 04:17:16,877 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-04-05 04:17:17,658 - __main__ - INFO - Starting training pipeline
+2025-04-05 04:17:17,667 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:17:17,675 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:17:18,408 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 04:17:18,422 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 04:17:18,422 - __main__ - INFO - Total samples: 3,061
+2025-04-05 04:17:18,422 - __main__ - INFO - Number of classes: 120
+2025-04-05 04:17:18,430 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 04:17:31,253 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 04:17:31,253 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:17:40,769 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 04:17:40,769 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:18:19,183 - src.training.trainer - INFO - Epoch 1/40
+Train Loss: 4.8041 | Acc: 1.21%
+Val Loss: 4.8031 | Acc: 0.87%
+2025-04-05 04:19:00,078 - src.training.trainer - INFO - Epoch 2/40
+Train Loss: 4.8071 | Acc: 0.65%
+Val Loss: 4.8010 | Acc: 0.87%
+2025-04-05 04:19:47,554 - src.training.trainer - INFO - Epoch 3/40
+Train Loss: 4.8013 | Acc: 0.65%
+Val Loss: 4.7789 | Acc: 1.09%
+2025-04-05 04:20:53,267 - src.training.trainer - INFO - Epoch 4/40
+Train Loss: 4.7434 | Acc: 2.24%
+Val Loss: 4.5838 | Acc: 11.55%
+2025-04-05 04:21:39,409 - src.training.trainer - INFO - Epoch 5/40
+Train Loss: 4.5216 | Acc: 16.06%
+Val Loss: 4.2927 | Acc: 32.03%
+2025-04-05 04:22:29,788 - src.training.trainer - INFO - Epoch 6/40
+Train Loss: 4.2598 | Acc: 31.51%
+Val Loss: 3.9248 | Acc: 47.06%
+2025-04-05 04:23:15,794 - src.training.trainer - INFO - Epoch 7/40
+Train Loss: 4.0250 | Acc: 40.71%
+Val Loss: 3.6772 | Acc: 50.33%
+2025-04-05 04:24:02,233 - src.training.trainer - INFO - Epoch 8/40
+Train Loss: 3.8248 | Acc: 45.80%
+Val Loss: 3.4736 | Acc: 53.16%
+2025-04-05 04:24:48,359 - src.training.trainer - INFO - Epoch 9/40
+Train Loss: 3.6508 | Acc: 48.46%
+Val Loss: 3.2809 | Acc: 57.08%
+2025-04-05 04:25:35,383 - src.training.trainer - INFO - Epoch 10/40
+Train Loss: 3.4829 | Acc: 52.94%
+Val Loss: 3.1486 | Acc: 58.39%
+2025-04-05 04:26:22,692 - src.training.trainer - INFO - Epoch 11/40
+Train Loss: 3.3403 | Acc: 56.26%
+Val Loss: 2.9632 | Acc: 60.57%
+2025-04-05 04:27:08,883 - src.training.trainer - INFO - Epoch 12/40
+Train Loss: 3.2233 | Acc: 58.73%
+Val Loss: 2.8312 | Acc: 62.31%
+2025-04-05 04:27:56,447 - src.training.trainer - INFO - Epoch 13/40
+Train Loss: 3.0793 | Acc: 61.06%
+Val Loss: 2.7051 | Acc: 63.62%
+2025-04-05 04:28:43,630 - src.training.trainer - INFO - Epoch 14/40
+Train Loss: 2.9796 | Acc: 64.01%
+Val Loss: 2.6130 | Acc: 64.05%
+2025-04-05 04:29:31,221 - src.training.trainer - INFO - Epoch 15/40
+Train Loss: 2.8729 | Acc: 64.89%
+Val Loss: 2.4904 | Acc: 65.58%
+2025-04-05 04:30:17,912 - src.training.trainer - INFO - Epoch 16/40
+Train Loss: 2.7924 | Acc: 65.97%
+Val Loss: 2.4114 | Acc: 68.63%
+2025-04-05 04:31:05,281 - src.training.trainer - INFO - Epoch 17/40
+Train Loss: 2.6968 | Acc: 68.81%
+Val Loss: 2.3233 | Acc: 68.19%
+2025-04-05 04:31:53,488 - src.training.trainer - INFO - Epoch 18/40
+Train Loss: 2.6023 | Acc: 70.12%
+Val Loss: 2.2287 | Acc: 68.63%
+2025-04-05 04:32:40,938 - src.training.trainer - INFO - Epoch 19/40
+Train Loss: 2.5179 | Acc: 71.06%
+Val Loss: 2.1493 | Acc: 69.28%
+2025-04-05 04:33:27,703 - src.training.trainer - INFO - Epoch 20/40
+Train Loss: 2.4208 | Acc: 74.00%
+Val Loss: 2.0846 | Acc: 71.02%
+2025-04-05 04:34:25,280 - src.training.trainer - INFO - Epoch 21/40
+Train Loss: 2.3596 | Acc: 73.48%
+Val Loss: 2.0155 | Acc: 72.33%
+2025-04-05 04:35:39,664 - src.training.trainer - INFO - Epoch 22/40
+Train Loss: 2.2992 | Acc: 75.44%
+Val Loss: 1.9506 | Acc: 73.86%
+2025-04-05 04:36:31,219 - src.training.trainer - INFO - Epoch 23/40
+Train Loss: 2.2357 | Acc: 75.30%
+Val Loss: 1.8951 | Acc: 73.86%
+2025-04-05 04:37:16,402 - src.training.trainer - INFO - Epoch 24/40
+Train Loss: 2.1619 | Acc: 77.03%
+Val Loss: 1.8509 | Acc: 74.51%
+2025-04-05 04:38:10,507 - src.training.trainer - INFO - Epoch 25/40
+Train Loss: 2.1295 | Acc: 76.98%
+Val Loss: 1.8062 | Acc: 75.16%
+2025-04-05 04:38:56,177 - src.training.trainer - INFO - Epoch 26/40
+Train Loss: 2.0826 | Acc: 77.87%
+Val Loss: 1.7650 | Acc: 75.82%
+2025-04-05 04:39:41,003 - src.training.trainer - INFO - Epoch 27/40
+Train Loss: 2.0295 | Acc: 78.52%
+Val Loss: 1.7268 | Acc: 76.69%
+2025-04-05 04:40:25,115 - src.training.trainer - INFO - Epoch 28/40
+Train Loss: 1.9865 | Acc: 79.65%
+Val Loss: 1.6890 | Acc: 76.91%
+2025-04-05 04:41:10,088 - src.training.trainer - INFO - Epoch 29/40
+Train Loss: 1.9349 | Acc: 80.44%
+Val Loss: 1.6494 | Acc: 77.78%
+2025-04-05 04:41:54,134 - src.training.trainer - INFO - Epoch 30/40
+Train Loss: 1.9265 | Acc: 80.49%
+Val Loss: 1.6202 | Acc: 77.34%
+2025-04-05 04:42:39,069 - src.training.trainer - INFO - Epoch 31/40
+Train Loss: 1.8635 | Acc: 81.33%
+Val Loss: 1.5966 | Acc: 78.00%
+2025-04-05 04:43:23,203 - src.training.trainer - INFO - Epoch 32/40
+Train Loss: 1.8409 | Acc: 81.19%
+Val Loss: 1.5757 | Acc: 78.21%
+2025-04-05 04:44:07,629 - src.training.trainer - INFO - Epoch 33/40
+Train Loss: 1.8141 | Acc: 81.65%
+Val Loss: 1.5494 | Acc: 78.65%
+2025-04-05 04:44:51,732 - src.training.trainer - INFO - Epoch 34/40
+Train Loss: 1.7786 | Acc: 81.93%
+Val Loss: 1.5367 | Acc: 78.87%
+2025-04-05 04:45:46,628 - src.training.trainer - INFO - Epoch 35/40
+Train Loss: 1.7761 | Acc: 82.45%
+Val Loss: 1.5236 | Acc: 79.30%
+2025-04-05 04:46:29,744 - src.training.trainer - INFO - Epoch 36/40
+Train Loss: 1.7441 | Acc: 83.15%
+Val Loss: 1.5094 | Acc: 79.30%
+2025-04-05 04:47:12,796 - src.training.trainer - INFO - Epoch 37/40
+Train Loss: 1.7362 | Acc: 82.68%
+Val Loss: 1.5004 | Acc: 79.30%
+2025-04-05 04:47:56,019 - src.training.trainer - INFO - Epoch 38/40
+Train Loss: 1.7225 | Acc: 83.24%
+Val Loss: 1.4939 | Acc: 79.96%
+2025-04-05 04:48:59,662 - src.training.trainer - INFO - Epoch 39/40
+Train Loss: 1.7038 | Acc: 83.24%
+Val Loss: 1.4899 | Acc: 79.30%
+2025-04-05 04:49:59,223 - src.training.trainer - INFO - Epoch 40/40
+Train Loss: 1.7191 | Acc: 82.68%
+Val Loss: 1.4882 | Acc: 79.30%
+2025-04-05 04:50:13,352 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-04-05 04:50:23,879 - __main__ - INFO - Test Accuracy: 77.61% | Loss: 1.5418
+2025-04-05 04:51:51,657 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-04-05 04:51:52,604 - __main__ - INFO - Starting training pipeline
+2025-04-05 04:51:52,625 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:51:52,633 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:51:53,382 - src.utils.data_loader - INFO - Generated 3057 unique synthetic samples
+2025-04-05 04:51:53,397 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 04:51:53,397 - __main__ - INFO - Total samples: 3,058
+2025-04-05 04:51:53,398 - __main__ - INFO - Number of classes: 120
+2025-04-05 04:51:53,406 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,140 samples
+Validation: 459 samples
+Test: 459 samples
+2025-04-05 04:52:12,281 - src.training.trainer - INFO - Training loader contains 2140 samples
+2025-04-05 04:52:12,282 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:52:21,816 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 04:52:21,817 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:53:06,053 - src.training.trainer - INFO - Epoch 1/50
+Train Loss: 4.8119 | Acc: 0.84%
+Val Loss: 4.8072 | Acc: 0.87%
+2025-04-05 04:53:51,136 - src.training.trainer - INFO - Epoch 2/50
+Train Loss: 4.8126 | Acc: 0.70%
+Val Loss: 4.8046 | Acc: 0.87%
+2025-04-05 04:54:37,683 - src.training.trainer - INFO - Epoch 3/50
+Train Loss: 4.7984 | Acc: 1.03%
+Val Loss: 4.7796 | Acc: 0.44%
+2025-04-05 04:54:59,493 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-04-05 04:55:00,492 - __main__ - INFO - Starting training pipeline
+2025-04-05 04:55:00,500 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:55:00,508 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-04-05 04:55:01,245 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-04-05 04:55:01,261 - __main__ - INFO - Class distribution:
+[('ALS', 31), ('ALW', 30), ('ALE', 30), ('ALN', 30), ('ALP', 30)]...
+2025-04-05 04:55:01,261 - __main__ - INFO - Total samples: 3,061
+2025-04-05 04:55:01,262 - __main__ - INFO - Number of classes: 120
+2025-04-05 04:55:01,269 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-04-05 04:55:14,383 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-04-05 04:55:14,383 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:55:24,051 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-04-05 04:55:24,051 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-04-05 04:56:06,284 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8126 | Acc: 0.98%
+Val Loss: 4.8109 | Acc: 0.87%
+2025-04-05 04:56:56,512 - src.training.trainer - INFO - Epoch 2/60
+Train Loss: 4.8128 | Acc: 0.93%
+Val Loss: 4.8090 | Acc: 0.87%
+2025-04-05 04:57:42,973 - src.training.trainer - INFO - Epoch 3/60
+Train Loss: 4.8070 | Acc: 1.07%
+Val Loss: 4.8063 | Acc: 0.87%
+2025-04-05 04:58:32,461 - src.training.trainer - INFO - Epoch 4/60
+Train Loss: 4.7967 | Acc: 0.98%
+Val Loss: 4.7684 | Acc: 1.96%
+2025-04-05 04:59:34,244 - src.training.trainer - INFO - Epoch 5/60
+Train Loss: 4.7204 | Acc: 3.31%
+Val Loss: 4.5709 | Acc: 17.21%
+2025-04-05 05:00:19,352 - src.training.trainer - INFO - Epoch 6/60
+Train Loss: 4.5128 | Acc: 15.41%
+Val Loss: 4.2688 | Acc: 33.55%
+2025-04-05 05:01:04,620 - src.training.trainer - INFO - Epoch 7/60
+Train Loss: 4.2493 | Acc: 29.41%
+Val Loss: 3.9491 | Acc: 41.61%
+2025-04-05 05:01:49,908 - src.training.trainer - INFO - Epoch 8/60
+Train Loss: 4.0107 | Acc: 39.64%
+Val Loss: 3.6846 | Acc: 50.11%
+2025-04-05 05:02:35,820 - src.training.trainer - INFO - Epoch 9/60
+Train Loss: 3.7838 | Acc: 45.28%
+Val Loss: 3.4724 | Acc: 53.38%
+2025-04-05 05:03:30,950 - src.training.trainer - INFO - Epoch 10/60
+Train Loss: 3.6065 | Acc: 48.97%
+Val Loss: 3.2601 | Acc: 56.43%
+2025-04-05 05:04:20,107 - src.training.trainer - INFO - Epoch 11/60
+Train Loss: 3.4234 | Acc: 52.71%
+Val Loss: 3.0845 | Acc: 59.26%
+2025-04-05 05:05:06,236 - src.training.trainer - INFO - Epoch 12/60
+Train Loss: 3.2682 | Acc: 56.26%
+Val Loss: 2.9310 | Acc: 61.87%
+2025-04-05 05:06:03,392 - src.training.trainer - INFO - Epoch 13/60
+Train Loss: 3.1472 | Acc: 57.38%
+Val Loss: 2.7831 | Acc: 63.62%
+2025-04-05 05:06:48,803 - src.training.trainer - INFO - Epoch 14/60
+Train Loss: 2.9981 | Acc: 60.13%
+Val Loss: 2.6617 | Acc: 65.80%
+2025-04-05 05:07:41,917 - src.training.trainer - INFO - Epoch 15/60
+Train Loss: 2.8720 | Acc: 63.68%
+Val Loss: 2.5406 | Acc: 67.97%
+2025-04-05 05:08:27,499 - src.training.trainer - INFO - Epoch 16/60
+Train Loss: 2.7478 | Acc: 66.25%
+Val Loss: 2.4191 | Acc: 69.93%
+2025-04-05 05:09:26,745 - src.training.trainer - INFO - Epoch 17/60
+Train Loss: 2.6488 | Acc: 69.70%
+Val Loss: 2.3049 | Acc: 70.37%
+2025-04-05 05:10:13,311 - src.training.trainer - INFO - Epoch 18/60
+Train Loss: 2.5208 | Acc: 71.48%
+Val Loss: 2.2155 | Acc: 70.81%
+2025-04-05 05:11:06,674 - src.training.trainer - INFO - Epoch 19/60
+Train Loss: 2.4435 | Acc: 72.92%
+Val Loss: 2.1158 | Acc: 72.55%
+2025-04-05 05:11:52,334 - src.training.trainer - INFO - Epoch 20/60
+Train Loss: 2.3455 | Acc: 75.30%
+Val Loss: 2.0309 | Acc: 71.90%
+2025-04-05 05:12:47,762 - src.training.trainer - INFO - Epoch 21/60
+Train Loss: 2.2359 | Acc: 76.70%
+Val Loss: 1.9454 | Acc: 74.07%
+2025-04-05 05:13:46,509 - src.training.trainer - INFO - Epoch 22/60
+Train Loss: 2.1521 | Acc: 78.15%
+Val Loss: 1.8711 | Acc: 74.07%
+2025-04-05 05:14:33,532 - src.training.trainer - INFO - Epoch 23/60
+Train Loss: 2.0462 | Acc: 79.32%
+Val Loss: 1.8067 | Acc: 75.38%
+2025-04-05 05:15:23,389 - src.training.trainer - INFO - Epoch 24/60
+Train Loss: 1.9727 | Acc: 80.02%
+Val Loss: 1.7348 | Acc: 76.91%
+2025-04-05 05:16:10,379 - src.training.trainer - INFO - Epoch 25/60
+Train Loss: 1.8837 | Acc: 81.37%
+Val Loss: 1.6702 | Acc: 78.00%
+2025-04-05 05:17:18,630 - src.training.trainer - INFO - Epoch 26/60
+Train Loss: 1.8057 | Acc: 83.29%
+Val Loss: 1.6153 | Acc: 79.52%
+2025-04-05 05:18:16,674 - src.training.trainer - INFO - Epoch 27/60
+Train Loss: 1.7346 | Acc: 83.61%
+Val Loss: 1.5526 | Acc: 79.96%
+2025-04-05 05:19:03,557 - src.training.trainer - INFO - Epoch 28/60
+Train Loss: 1.6750 | Acc: 84.08%
+Val Loss: 1.5052 | Acc: 79.74%
+2025-04-05 05:19:51,453 - src.training.trainer - INFO - Epoch 29/60
+Train Loss: 1.6052 | Acc: 85.62%
+Val Loss: 1.4497 | Acc: 80.83%
+2025-04-05 05:20:50,997 - src.training.trainer - INFO - Epoch 30/60
+Train Loss: 1.5376 | Acc: 84.83%
+Val Loss: 1.3944 | Acc: 81.48%
+2025-04-05 05:21:37,983 - src.training.trainer - INFO - Epoch 31/60
+Train Loss: 1.4947 | Acc: 86.37%
+Val Loss: 1.3500 | Acc: 83.22%
+2025-04-05 05:22:33,442 - src.training.trainer - INFO - Epoch 32/60
+Train Loss: 1.4323 | Acc: 86.93%
+Val Loss: 1.3112 | Acc: 83.01%
+2025-04-05 05:23:24,431 - src.training.trainer - INFO - Epoch 33/60
+Train Loss: 1.3866 | Acc: 87.49%
+Val Loss: 1.2643 | Acc: 84.31%
+2025-04-05 05:24:20,961 - src.training.trainer - INFO - Epoch 34/60
+Train Loss: 1.3470 | Acc: 87.91%
+Val Loss: 1.2290 | Acc: 84.31%
+2025-04-05 05:25:06,785 - src.training.trainer - INFO - Epoch 35/60
+Train Loss: 1.2976 | Acc: 88.70%
+Val Loss: 1.1914 | Acc: 84.75%
+2025-04-05 05:25:52,752 - src.training.trainer - INFO - Epoch 36/60
+Train Loss: 1.2573 | Acc: 89.03%
+Val Loss: 1.1612 | Acc: 84.97%
+2025-04-05 05:26:38,857 - src.training.trainer - INFO - Epoch 37/60
+Train Loss: 1.2169 | Acc: 89.73%
+Val Loss: 1.1272 | Acc: 85.62%
+2025-04-05 05:27:25,157 - src.training.trainer - INFO - Epoch 38/60
+Train Loss: 1.1747 | Acc: 89.68%
+Val Loss: 1.0964 | Acc: 85.62%
+2025-04-05 05:28:20,984 - src.training.trainer - INFO - Epoch 39/60
+Train Loss: 1.1557 | Acc: 89.96%
+Val Loss: 1.0742 | Acc: 86.06%
+2025-04-05 05:29:07,813 - src.training.trainer - INFO - Epoch 40/60
+Train Loss: 1.1118 | Acc: 90.80%
+Val Loss: 1.0377 | Acc: 85.40%
+2025-04-05 05:29:54,113 - src.training.trainer - INFO - Epoch 41/60
+Train Loss: 1.0839 | Acc: 90.52%
+Val Loss: 1.0243 | Acc: 86.06%
+2025-04-05 05:30:48,759 - src.training.trainer - INFO - Epoch 42/60
+Train Loss: 1.0488 | Acc: 91.18%
+Val Loss: 0.9948 | Acc: 86.93%
+2025-04-05 05:31:35,001 - src.training.trainer - INFO - Epoch 43/60
+Train Loss: 1.0312 | Acc: 90.90%
+Val Loss: 0.9766 | Acc: 86.71%
+2025-04-05 05:32:20,702 - src.training.trainer - INFO - Epoch 44/60
+Train Loss: 1.0022 | Acc: 91.64%
+Val Loss: 0.9531 | Acc: 87.36%
+2025-04-05 05:33:05,996 - src.training.trainer - INFO - Epoch 45/60
+Train Loss: 0.9919 | Acc: 91.55%
+Val Loss: 0.9336 | Acc: 87.80%
+2025-04-05 05:34:01,705 - src.training.trainer - INFO - Epoch 46/60
+Train Loss: 0.9617 | Acc: 92.06%
+Val Loss: 0.9180 | Acc: 87.58%
+2025-04-05 05:34:47,677 - src.training.trainer - INFO - Epoch 47/60
+Train Loss: 0.9456 | Acc: 92.30%
+Val Loss: 0.8988 | Acc: 88.24%
+2025-04-05 05:35:30,495 - src.training.trainer - INFO - Epoch 48/60
+Train Loss: 0.9243 | Acc: 92.48%
+Val Loss: 0.8863 | Acc: 88.45%
+2025-04-05 05:36:12,270 - src.training.trainer - INFO - Epoch 49/60
+Train Loss: 0.9072 | Acc: 92.62%
+Val Loss: 0.8707 | Acc: 88.24%
+2025-04-05 05:36:56,441 - src.training.trainer - INFO - Epoch 50/60
+Train Loss: 0.8884 | Acc: 93.23%
+Val Loss: 0.8595 | Acc: 89.11%
+2025-04-05 05:37:40,686 - src.training.trainer - INFO - Epoch 51/60
+Train Loss: 0.8792 | Acc: 93.51%
+Val Loss: 0.8466 | Acc: 88.67%
+2025-04-05 05:38:26,541 - src.training.trainer - INFO - Epoch 52/60
+Train Loss: 0.8695 | Acc: 93.37%
+Val Loss: 0.8396 | Acc: 88.89%
+2025-04-05 05:39:19,765 - src.training.trainer - INFO - Epoch 53/60
+Train Loss: 0.8541 | Acc: 93.84%
+Val Loss: 0.8311 | Acc: 88.67%
+2025-04-05 05:40:08,946 - src.training.trainer - INFO - Epoch 54/60
+Train Loss: 0.8502 | Acc: 93.23%
+Val Loss: 0.8244 | Acc: 88.67%
+2025-04-05 05:40:59,448 - src.training.trainer - INFO - Epoch 55/60
+Train Loss: 0.8473 | Acc: 92.81%
+Val Loss: 0.8186 | Acc: 88.89%
+2025-04-05 05:41:46,092 - src.training.trainer - INFO - Epoch 56/60
+Train Loss: 0.8318 | Acc: 93.14%
+Val Loss: 0.8138 | Acc: 88.89%
+2025-04-05 05:42:33,182 - src.training.trainer - INFO - Epoch 57/60
+Train Loss: 0.8283 | Acc: 93.70%
+Val Loss: 0.8096 | Acc: 88.89%
+2025-04-05 05:43:23,071 - src.training.trainer - INFO - Epoch 58/60
+Train Loss: 0.8232 | Acc: 93.46%
+Val Loss: 0.8063 | Acc: 88.89%
+2025-04-05 05:44:11,406 - src.training.trainer - INFO - Epoch 59/60
+Train Loss: 0.8253 | Acc: 93.42%
+Val Loss: 0.8041 | Acc: 89.11%
+2025-04-05 05:45:04,333 - src.training.trainer - INFO - Epoch 60/60
+Train Loss: 0.8161 | Acc: 93.98%
+Val Loss: 0.8034 | Acc: 89.11%
+2025-04-05 05:45:07,223 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-04-05 05:45:18,170 - __main__ - INFO - Test Accuracy: 88.26% | Loss: 0.8119
