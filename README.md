@@ -1,4 +1,4 @@
-personality_chatbot/
+dall-in-model/
 ├── config/
 │   └── paths.py
 ├── data/

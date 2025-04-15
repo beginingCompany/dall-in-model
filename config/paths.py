@@ -5,10 +5,10 @@ BASE_DIR = Path(__file__).parent.parent.parent.resolve()
 class PathConfig:
     def __init__(self):
         # Define paths
-        self.DATA_RAW = BASE_DIR / "personality_chatbot/data/raw"
-        self.DATA_PROCESSED = BASE_DIR / "personality_chatbot/data/processed"
-        self.DATA_SYNTHETIC = BASE_DIR / "personality_chatbot/data/synthetic"
-        self.MODELS = BASE_DIR / "personality_chatbot/models"
+        self.DATA_RAW = BASE_DIR / "dall-in-model/data/raw"
+        self.DATA_PROCESSED = BASE_DIR / "dall-in-model/data/processed"
+        self.DATA_SYNTHETIC = BASE_DIR / "dall-in-model/data/synthetic"
+        self.MODELS = BASE_DIR / "dall-in-model/models"
         self.TOKENIZER = self.MODELS / "tokenizer"
         self.CLASSIFIER = self.MODELS / "classifier"
         self.MODEL_PATH = Path('models/trained_model.pth')

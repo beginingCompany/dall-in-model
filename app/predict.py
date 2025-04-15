@@ -72,7 +72,9 @@ class PersonalityPredictor:
 
         # Recreate the model architecture
         model = PersonalityClassifierTrainer(self.num_labels).initialize_model()
-        model.load_state_dict(torch.load(self.paths.MODEL_PATH, map_location=self.device))
+#         model.load_state_dict(torch.load(self.paths.MODEL_PATH, map_location=self.device))
+        state_dict = torch.load(self.paths.MODEL_PATH, map_location=self.device)
+        model.load_state_dict(state_dict, strict=False)
         model.eval()
         return model.to(self.device)
 
