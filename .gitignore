@@ -3,3 +3,4 @@ __pycache__/
 trained_model.pth
 .idea
 .DS_Store
+.env
