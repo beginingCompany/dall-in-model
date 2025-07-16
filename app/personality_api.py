@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from openai import OpenAI
 from dotenv import load_dotenv
+import tiktoken
 
 # Set up logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -33,16 +34,20 @@ You will receive:
 - previous known traits (possibly empty)
 - new user input
 
-You must analyze all input so far, and either:
+Your task:
+- Analyze all information received so far.
 
-1. If info is missing to build a good personality description,
-   return JSON with:
-   - missing_traits: list of missing info keys
-   - clarification_questions: list of questions to ask user to fill those traits
+If information is missing to create a good personality description, respond with:
+{
+  "missing_traits": [list of missing trait keys],
+  "clarification_questions": [list of clarifying questions to ask the user to fill those traits]
+}
 
-2. If all info is sufficient, return JSON with:
-   - description_arabic: string
-   - description_english: string
+If all required information is present, respond with:
+{
+  "description_arabic": "string",
+  "description_english": "string"
+}
 
 Traits to consider include:
 - personality traits
@@ -52,7 +57,7 @@ Traits to consider include:
 - values
 
 Respond only with JSON.
-Never use code block formatting or triple backticks in your response.
+Do not use code blocks or triple backticks in your response.
 """
 
 def extract_json(text):
@@ -65,6 +70,27 @@ def extract_json(text):
         return match.group(1)
     return text.strip()
 
+def num_tokens_from_messages(messages, model="gpt-3.5-turbo"):
+    """
+    Returns the number of tokens used by a list of messages for the OpenAI chat API.
+    """
+    encoding = tiktoken.encoding_for_model(model)
+    if model.startswith("gpt-3.5") or model.startswith("gpt-4"):
+        tokens_per_message = 4
+        tokens_per_name = -1
+    else:
+        raise NotImplementedError(f"Token counting not implemented for model: {model}")
+
+    num_tokens = 0
+    for message in messages:
+        num_tokens += tokens_per_message
+        for key, value in message.items():
+            num_tokens += len(encoding.encode(str(value)))
+            if key == "name":
+                num_tokens += tokens_per_name
+    num_tokens += 3  # every reply is primed with <im_start>assistant
+    return num_tokens
+
 def call_gpt(previous_traits, new_input, model="gpt-3.5-turbo", max_tokens=1200):
     prompt = f"""
 Previous traits: {json.dumps(previous_traits, ensure_ascii=False)}
@@ -75,18 +101,32 @@ Analyze the info and respond as instructed in the system prompt.
 """
     import time
     start_time = time.time()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": prompt}
+    ]
+    # Count input tokens
+    input_tokens = num_tokens_from_messages(messages, model=model)
+
     response = client.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3,
+        messages=messages,
+        temperature=0.0,
         max_tokens=max_tokens,
     )
     duration = time.time() - start_time
     logger.info(f"OpenAI call duration: {duration:.2f} seconds")
-    return response.choices[0].message.content
+
+    # Output tokens from OpenAI API (safe for all current chat models)
+    output_tokens = getattr(response.usage, "completion_tokens", None)
+    total_tokens = getattr(response.usage, "total_tokens", None)
+
+    return {
+        "content": response.choices[0].message.content,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
 
 def cache_key(user_id, previous_traits, user_input):
     """
@@ -115,7 +155,7 @@ async def personality(request: Request):
 
     try:
         gpt_response = call_gpt(previous_traits, user_input)
-        json_text = extract_json(gpt_response)
+        json_text = extract_json(gpt_response["content"])
         gpt_json = json.loads(json_text)
     except json.JSONDecodeError:
         logger.error(f"Invalid JSON from GPT: {gpt_response}")
@@ -126,7 +166,7 @@ async def personality(request: Request):
 
     # Prepare the result for storage and return
     result = {"id": user_id}
-    if "description_arabic" in gpt_json and "description_english" in gpt_json:
+    if "description_arabic" in gpt_json or "description_english" in gpt_json:
         result.update({
             "status": "complete",
             "description_arabic": gpt_json["description_arabic"],
@@ -141,6 +181,13 @@ async def personality(request: Request):
     else:
         logger.error(f"Unexpected GPT output: {gpt_response}")
         return JSONResponse({"error": "Unexpected GPT output", "raw_response": gpt_response}, status_code=500)
+
+    # Add token usage statistics
+    result.update({
+        "input_tokens": gpt_response["input_tokens"],
+        "output_tokens": gpt_response["output_tokens"],
+        "total_tokens": gpt_response["total_tokens"],
+    })
 
     user_results_cache[key] = result  # Save result for future identical requests
     logger.info(f"Cache saved for user_id={user_id}")

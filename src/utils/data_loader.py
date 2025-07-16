@@ -14,7 +14,11 @@ class DataLoader:
         self.required_columns = [
             'letter', 'major_1_arabic', 'major_1_english',
             'job_1_arabic', 'job_1_english', 'hobby_arabic',
-            'hobby_english', 'description_arabic', 'description_english'
+            'hobby_english', 'description_arabic', 'description_english',
+            'Leadership_Motivation_en', 'Emotional_Social_Intelligence_en',	
+            'Key_Strengths_Applications_en', 'Leadership_Motivation_ar',	
+            'Emotional_Social_Intelligence_ar',	'Key_Strengths_Applications_ar'
+
         ]
         self.tokenizer = self._load_tokenizer()
         self.variation_templates = self._init_variation_templates()
@@ -69,7 +73,7 @@ class DataLoader:
             raise
 
     def load_and_validate(self) -> pd.DataFrame:
-        file_path = paths.DATA_PROCESSED / "cleaned_data.csv"
+        file_path = paths.DATA_PROCESSED / "BIGINING_dataset.csv"
         if not file_path.exists():
             raise FileNotFoundError(f"Cleaned data not found at {file_path}")
             
