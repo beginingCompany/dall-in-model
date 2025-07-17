@@ -80,7 +80,7 @@ def main():
             train_idx, temp_idx = indices[0]
             val_idx, test_idx = train_test_split(
                 temp_idx,
-                test_size=0.5,
+                test_size=0.2,
                 random_state=42
             )
             

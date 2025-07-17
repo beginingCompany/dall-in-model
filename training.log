@@ -899,3 +899,102 @@ Traceback (most recent call last):
   File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
     raise ValueError("Dataset contains missing values")
 ValueError: Dataset contains missing values
+2025-07-17 11:05:23,249 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:05:25,382 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:05:25,395 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:32:28,974 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:32:30,744 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:32:30,744 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:34:02,794 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:34:05,118 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:34:05,127 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:37:21,686 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:37:23,416 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:37:23,416 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:37:23,434 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:37:23,791 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-17 11:37:23,809 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-17 11:37:23,809 - __main__ - INFO - Total samples: 3,059
+2025-07-17 11:37:23,809 - __main__ - INFO - Number of classes: 120
+2025-07-17 11:37:23,822 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-17 11:37:31,660 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-17 11:37:31,660 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:37:38,956 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-17 11:37:38,956 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:44:49,344 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8069 | Acc: 0.51%
+Val Loss: 4.8071 | Acc: 0.65%
+2025-07-17 11:46:12,327 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:46:14,109 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:46:14,118 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:46:14,126 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:46:14,511 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-17 11:46:14,521 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-17 11:46:14,521 - __main__ - INFO - Total samples: 3,059
+2025-07-17 11:46:14,521 - __main__ - INFO - Number of classes: 120
+2025-07-17 11:46:14,528 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-17 11:46:22,732 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-17 11:46:22,733 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:46:30,284 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-17 11:46:30,284 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:53:30,797 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8072 | Acc: 0.84%
+Val Loss: 4.8074 | Acc: 0.65%
+2025-07-17 12:01:22,154 - src.training.trainer - INFO - Epoch 2/60
+Train Loss: 4.8058 | Acc: 0.75%
+Val Loss: 4.8053 | Acc: 0.65%
+2025-07-17 12:12:50,814 - src.training.trainer - INFO - Epoch 3/60
+Train Loss: 4.8035 | Acc: 0.84%
+Val Loss: 4.7989 | Acc: 0.87%
+2025-07-17 12:26:51,545 - src.training.trainer - INFO - Epoch 4/60
+Train Loss: 4.7807 | Acc: 1.35%
+Val Loss: 4.7478 | Acc: 2.18%
+2025-07-17 12:34:50,837 - src.training.trainer - INFO - Epoch 5/60
+Train Loss: 4.6662 | Acc: 6.68%
+Val Loss: 4.5088 | Acc: 15.25%
+2025-07-17 12:43:09,617 - src.training.trainer - INFO - Epoch 6/60
+Train Loss: 4.4470 | Acc: 17.98%
+Val Loss: 4.1790 | Acc: 37.25%
+2025-07-17 12:50:40,820 - src.training.trainer - INFO - Epoch 7/60
+Train Loss: 4.1741 | Acc: 32.32%
+Val Loss: 3.8720 | Acc: 44.44%
+2025-07-17 12:59:00,163 - src.training.trainer - INFO - Epoch 8/60
+Train Loss: 3.9340 | Acc: 41.10%
+Val Loss: 3.6195 | Acc: 50.98%
+2025-07-17 13:07:20,138 - src.training.trainer - INFO - Epoch 9/60
+Train Loss: 3.7236 | Acc: 45.96%
+Val Loss: 3.4779 | Acc: 52.29%

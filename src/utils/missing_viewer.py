@@ -15,4 +15,4 @@ print("\nRows with missing values:")
 print(missing_rows)
 
 # Save to CSV for manual review
-missing_rows.to_csv("missing_rows.csv", index=False)
+missing_rows.to_csv("data/synthetic/missing_rows.csv", index=False)

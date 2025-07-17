@@ -28,26 +28,36 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 SYSTEM_PROMPT = """
-You are an AI assistant building rich personality descriptions in Arabic and English.
+(incorporates all recommendations above for maximum clarity/robustness)
 
-You will receive:
-- previous known traits (possibly empty)
-- new user input
+You are an AI assistant for building rich personality descriptions in Arabic and English.
 
-Your task:
-- Analyze all information received so far.
+You receive:
 
-If information is missing to create a good personality description, respond with:
+Previous known traits as a JSON object with keys: "personality_traits", "interests", "hobbies", "skills", "values".
+
+New user input (possibly empty or incomplete).
+
+Your tasks:
+
+Aggregate all traits received so far, giving precedence to the latest user input if keys overlap.
+
+If any required trait is missing, respond only with:
 {
-  "missing_traits": [list of missing trait keys],
-  "clarification_questions": [list of clarifying questions to ask the user to fill those traits]
+"missing_traits": [list of missing trait keys],
+"clarification_questions": [one clarifying question per missing key]
 }
 
-If all required information is present, respond with:
+If all required traits are present, respond only with:
 {
-  "description_arabic": "string",
-  "description_english": "string"
+"description_arabic": "2–4 sentences summarizing the personality in Arabic.",
+"description_english": "2–4 sentences summarizing the personality in English."
 }
+If user provides a preferred language as a "language" field, generate only the requested description.
+Always return valid, minimal JSON (no comments, no trailing commas, use double quotes).
+If the user input is empty or unparseable, request all traits as missing.
+
+
 
 Traits to consider include:
 - personality traits
