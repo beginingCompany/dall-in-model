@@ -998,3 +998,39 @@ Val Loss: 3.6195 | Acc: 50.98%
 2025-07-17 13:07:20,138 - src.training.trainer - INFO - Epoch 9/60
 Train Loss: 3.7236 | Acc: 45.96%
 Val Loss: 3.4779 | Acc: 52.29%
+2025-07-17 13:18:29,187 - src.training.trainer - INFO - Epoch 10/60
+Train Loss: 3.5465 | Acc: 49.79%
+Val Loss: 3.2607 | Acc: 56.64%
+2025-07-17 13:27:54,988 - src.training.trainer - INFO - Epoch 11/60
+Train Loss: 3.3793 | Acc: 53.34%
+Val Loss: 3.0506 | Acc: 62.31%
+2025-07-17 13:35:30,376 - src.training.trainer - INFO - Epoch 12/60
+Train Loss: 3.2121 | Acc: 59.83%
+Val Loss: 2.9229 | Acc: 63.62%
+2025-07-17 13:43:03,300 - src.training.trainer - INFO - Epoch 13/60
+Train Loss: 3.0773 | Acc: 61.42%
+Val Loss: 2.7608 | Acc: 64.27%
+2025-07-17 13:51:19,548 - src.training.trainer - INFO - Epoch 14/60
+Train Loss: 2.9580 | Acc: 62.96%
+Val Loss: 2.6704 | Acc: 67.54%
+2025-07-17 13:59:34,321 - src.training.trainer - INFO - Epoch 15/60
+Train Loss: 2.8134 | Acc: 66.70%
+Val Loss: 2.5295 | Acc: 68.41%
+2025-07-17 14:07:48,687 - src.training.trainer - INFO - Epoch 16/60
+Train Loss: 2.7065 | Acc: 68.24%
+Val Loss: 2.4319 | Acc: 68.63%
+2025-07-17 14:16:01,029 - src.training.trainer - INFO - Epoch 17/60
+Train Loss: 2.6010 | Acc: 70.20%
+Val Loss: 2.3107 | Acc: 69.50%
+2025-07-17 14:23:47,112 - src.training.trainer - INFO - Epoch 18/60
+Train Loss: 2.4885 | Acc: 70.95%
+Val Loss: 2.2333 | Acc: 69.93%
+2025-07-17 14:31:47,753 - src.training.trainer - INFO - Epoch 19/60
+Train Loss: 2.3918 | Acc: 74.17%
+Val Loss: 2.1252 | Acc: 71.90%
+2025-07-17 14:39:33,704 - src.training.trainer - INFO - Epoch 20/60
+Train Loss: 2.3099 | Acc: 74.87%
+Val Loss: 2.0482 | Acc: 73.42%
+2025-07-17 14:47:56,401 - src.training.trainer - INFO - Epoch 21/60
+Train Loss: 2.1953 | Acc: 77.25%
+Val Loss: 1.9600 | Acc: 74.51%
