@@ -848,3 +848,525 @@ Val Loss: 0.8034 | Acc: 89.11%
 2025-04-05 05:45:07,223 - __main__ - INFO - 
 --- Final Test Evaluation ---
 2025-04-05 05:45:18,170 - __main__ - INFO - Test Accuracy: 88.26% | Loss: 0.8119
+2025-07-16 14:42:04,430 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-16 14:42:12,424 - __main__ - INFO - Starting training pipeline
+2025-07-16 14:42:12,427 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-16 14:42:12,438 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-16 14:42:12,803 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-16 14:42:12,819 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-16 14:42:12,820 - __main__ - INFO - Total samples: 3,059
+2025-07-16 14:42:12,820 - __main__ - INFO - Number of classes: 120
+2025-07-16 14:42:12,825 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-16 14:42:20,737 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-16 14:42:20,737 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-16 14:42:28,161 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-16 14:42:28,161 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-16 15:45:57,123 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-16 15:45:59,513 - __main__ - INFO - Starting training pipeline
+2025-07-16 15:45:59,529 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 81, in load_and_validate
+    self._validate_columns(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 43, in _validate_columns
+    raise ValueError(f"Missing required columns: {missing}")
+ValueError: Missing required columns: ['Key_Strengths_Applications_enLeadership_Motivation_ar']
+2025-07-16 15:46:34,738 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-16 15:46:37,480 - __main__ - INFO - Starting training pipeline
+2025-07-16 15:46:37,488 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-16 16:02:16,263 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-16 16:02:18,524 - __main__ - INFO - Starting training pipeline
+2025-07-16 16:02:18,533 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:05:23,249 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:05:25,382 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:05:25,395 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:32:28,974 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:32:30,744 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:32:30,744 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:34:02,794 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:34:05,118 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:34:05,127 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 82, in load_and_validate
+    self._validate_integrity(df)
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 48, in _validate_integrity
+    raise ValueError("Dataset contains missing values")
+ValueError: Dataset contains missing values
+2025-07-17 11:37:21,686 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:37:23,416 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:37:23,416 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:37:23,434 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:37:23,791 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-17 11:37:23,809 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-17 11:37:23,809 - __main__ - INFO - Total samples: 3,059
+2025-07-17 11:37:23,809 - __main__ - INFO - Number of classes: 120
+2025-07-17 11:37:23,822 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-17 11:37:31,660 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-17 11:37:31,660 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:37:38,956 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-17 11:37:38,956 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:44:49,344 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8069 | Acc: 0.51%
+Val Loss: 4.8071 | Acc: 0.65%
+2025-07-17 11:46:12,327 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 11:46:14,109 - __main__ - INFO - Starting training pipeline
+2025-07-17 11:46:14,118 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:46:14,126 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 11:46:14,511 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-17 11:46:14,521 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-17 11:46:14,521 - __main__ - INFO - Total samples: 3,059
+2025-07-17 11:46:14,521 - __main__ - INFO - Number of classes: 120
+2025-07-17 11:46:14,528 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-17 11:46:22,732 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-17 11:46:22,733 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:46:30,284 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-17 11:46:30,284 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 11:53:30,797 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8072 | Acc: 0.84%
+Val Loss: 4.8074 | Acc: 0.65%
+2025-07-17 12:01:22,154 - src.training.trainer - INFO - Epoch 2/60
+Train Loss: 4.8058 | Acc: 0.75%
+Val Loss: 4.8053 | Acc: 0.65%
+2025-07-17 12:12:50,814 - src.training.trainer - INFO - Epoch 3/60
+Train Loss: 4.8035 | Acc: 0.84%
+Val Loss: 4.7989 | Acc: 0.87%
+2025-07-17 12:26:51,545 - src.training.trainer - INFO - Epoch 4/60
+Train Loss: 4.7807 | Acc: 1.35%
+Val Loss: 4.7478 | Acc: 2.18%
+2025-07-17 12:34:50,837 - src.training.trainer - INFO - Epoch 5/60
+Train Loss: 4.6662 | Acc: 6.68%
+Val Loss: 4.5088 | Acc: 15.25%
+2025-07-17 12:43:09,617 - src.training.trainer - INFO - Epoch 6/60
+Train Loss: 4.4470 | Acc: 17.98%
+Val Loss: 4.1790 | Acc: 37.25%
+2025-07-17 12:50:40,820 - src.training.trainer - INFO - Epoch 7/60
+Train Loss: 4.1741 | Acc: 32.32%
+Val Loss: 3.8720 | Acc: 44.44%
+2025-07-17 12:59:00,163 - src.training.trainer - INFO - Epoch 8/60
+Train Loss: 3.9340 | Acc: 41.10%
+Val Loss: 3.6195 | Acc: 50.98%
+2025-07-17 13:07:20,138 - src.training.trainer - INFO - Epoch 9/60
+Train Loss: 3.7236 | Acc: 45.96%
+Val Loss: 3.4779 | Acc: 52.29%
+2025-07-17 13:18:29,187 - src.training.trainer - INFO - Epoch 10/60
+Train Loss: 3.5465 | Acc: 49.79%
+Val Loss: 3.2607 | Acc: 56.64%
+2025-07-17 13:27:54,988 - src.training.trainer - INFO - Epoch 11/60
+Train Loss: 3.3793 | Acc: 53.34%
+Val Loss: 3.0506 | Acc: 62.31%
+2025-07-17 13:35:30,376 - src.training.trainer - INFO - Epoch 12/60
+Train Loss: 3.2121 | Acc: 59.83%
+Val Loss: 2.9229 | Acc: 63.62%
+2025-07-17 13:43:03,300 - src.training.trainer - INFO - Epoch 13/60
+Train Loss: 3.0773 | Acc: 61.42%
+Val Loss: 2.7608 | Acc: 64.27%
+2025-07-17 13:51:19,548 - src.training.trainer - INFO - Epoch 14/60
+Train Loss: 2.9580 | Acc: 62.96%
+Val Loss: 2.6704 | Acc: 67.54%
+2025-07-17 13:59:34,321 - src.training.trainer - INFO - Epoch 15/60
+Train Loss: 2.8134 | Acc: 66.70%
+Val Loss: 2.5295 | Acc: 68.41%
+2025-07-17 14:07:48,687 - src.training.trainer - INFO - Epoch 16/60
+Train Loss: 2.7065 | Acc: 68.24%
+Val Loss: 2.4319 | Acc: 68.63%
+2025-07-17 14:16:01,029 - src.training.trainer - INFO - Epoch 17/60
+Train Loss: 2.6010 | Acc: 70.20%
+Val Loss: 2.3107 | Acc: 69.50%
+2025-07-17 14:23:47,112 - src.training.trainer - INFO - Epoch 18/60
+Train Loss: 2.4885 | Acc: 70.95%
+Val Loss: 2.2333 | Acc: 69.93%
+2025-07-17 14:31:47,753 - src.training.trainer - INFO - Epoch 19/60
+Train Loss: 2.3918 | Acc: 74.17%
+Val Loss: 2.1252 | Acc: 71.90%
+2025-07-17 14:39:33,704 - src.training.trainer - INFO - Epoch 20/60
+Train Loss: 2.3099 | Acc: 74.87%
+Val Loss: 2.0482 | Acc: 73.42%
+2025-07-17 14:47:56,401 - src.training.trainer - INFO - Epoch 21/60
+Train Loss: 2.1953 | Acc: 77.25%
+Val Loss: 1.9600 | Acc: 74.51%
+2025-07-17 17:19:30,333 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-17 17:19:33,448 - __main__ - INFO - Starting training pipeline
+2025-07-17 17:19:33,488 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 17:19:33,498 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-17 17:19:34,201 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-07-17 17:19:34,236 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-17 17:19:34,237 - __main__ - INFO - Total samples: 3,061
+2025-07-17 17:19:34,237 - __main__ - INFO - Number of classes: 120
+2025-07-17 17:19:34,250 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-07-17 17:19:48,071 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-17 17:19:48,071 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 17:20:00,870 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-17 17:20:00,870 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-17 17:29:08,056 - src.training.trainer - INFO - Epoch 1/60
+Train Loss: 4.8065 | Acc: 0.89%
+Val Loss: 4.8020 | Acc: 0.87%
+2025-07-17 17:37:59,552 - src.training.trainer - INFO - Epoch 2/60
+Train Loss: 4.8050 | Acc: 0.51%
+Val Loss: 4.8006 | Acc: 0.87%
+2025-07-17 17:47:11,674 - src.training.trainer - INFO - Epoch 3/60
+Train Loss: 4.8011 | Acc: 0.61%
+Val Loss: 4.7935 | Acc: 1.09%
+2025-07-17 17:56:23,956 - src.training.trainer - INFO - Epoch 4/60
+Train Loss: 4.7835 | Acc: 0.93%
+Val Loss: 4.7169 | Acc: 1.74%
+2025-07-17 18:05:32,457 - src.training.trainer - INFO - Epoch 5/60
+Train Loss: 4.6604 | Acc: 6.63%
+Val Loss: 4.4692 | Acc: 22.66%
+2025-07-17 18:14:40,534 - src.training.trainer - INFO - Epoch 6/60
+Train Loss: 4.4340 | Acc: 21.01%
+Val Loss: 4.1746 | Acc: 37.25%
+2025-07-17 18:23:54,817 - src.training.trainer - INFO - Epoch 7/60
+Train Loss: 4.1907 | Acc: 32.59%
+Val Loss: 3.8853 | Acc: 47.71%
+2025-07-17 18:32:48,951 - src.training.trainer - INFO - Epoch 8/60
+Train Loss: 3.9613 | Acc: 40.57%
+Val Loss: 3.6734 | Acc: 49.02%
+2025-07-17 18:42:00,851 - src.training.trainer - INFO - Epoch 9/60
+Train Loss: 3.7617 | Acc: 43.60%
+Val Loss: 3.4291 | Acc: 50.98%
+2025-07-17 18:50:59,316 - src.training.trainer - INFO - Epoch 10/60
+Train Loss: 3.5694 | Acc: 48.46%
+Val Loss: 3.2603 | Acc: 53.16%
+2025-07-17 18:59:56,831 - src.training.trainer - INFO - Epoch 11/60
+Train Loss: 3.3887 | Acc: 53.36%
+Val Loss: 3.0715 | Acc: 55.99%
+2025-07-17 19:08:52,557 - src.training.trainer - INFO - Epoch 12/60
+Train Loss: 3.2470 | Acc: 54.95%
+Val Loss: 2.9258 | Acc: 58.61%
+2025-07-17 19:17:46,810 - src.training.trainer - INFO - Epoch 13/60
+Train Loss: 3.1167 | Acc: 59.20%
+Val Loss: 2.7976 | Acc: 61.44%
+2025-07-17 19:26:49,233 - src.training.trainer - INFO - Epoch 14/60
+Train Loss: 2.9720 | Acc: 61.11%
+Val Loss: 2.6521 | Acc: 63.18%
+2025-07-17 19:35:43,313 - src.training.trainer - INFO - Epoch 15/60
+Train Loss: 2.8591 | Acc: 64.01%
+Val Loss: 2.5374 | Acc: 65.58%
+2025-07-17 19:45:00,559 - src.training.trainer - INFO - Epoch 16/60
+Train Loss: 2.7310 | Acc: 66.15%
+Val Loss: 2.4256 | Acc: 68.41%
+2025-07-17 19:54:00,349 - src.training.trainer - INFO - Epoch 17/60
+Train Loss: 2.6301 | Acc: 68.16%
+Val Loss: 2.3226 | Acc: 70.59%
+2025-07-17 20:02:57,969 - src.training.trainer - INFO - Epoch 18/60
+Train Loss: 2.5209 | Acc: 70.31%
+Val Loss: 2.2210 | Acc: 70.81%
+2025-07-17 20:12:10,945 - src.training.trainer - INFO - Epoch 19/60
+Train Loss: 2.3966 | Acc: 72.92%
+Val Loss: 2.1283 | Acc: 71.46%
+2025-07-17 20:21:14,908 - src.training.trainer - INFO - Epoch 20/60
+Train Loss: 2.3135 | Acc: 74.28%
+Val Loss: 2.0435 | Acc: 73.64%
+2025-07-17 20:30:12,051 - src.training.trainer - INFO - Epoch 21/60
+Train Loss: 2.2298 | Acc: 76.10%
+Val Loss: 1.9687 | Acc: 74.29%
+2025-07-17 20:39:09,108 - src.training.trainer - INFO - Epoch 22/60
+Train Loss: 2.1299 | Acc: 78.15%
+Val Loss: 1.8828 | Acc: 75.60%
+2025-07-17 20:48:31,697 - src.training.trainer - INFO - Epoch 23/60
+Train Loss: 2.0551 | Acc: 78.06%
+Val Loss: 1.8138 | Acc: 76.03%
+2025-07-17 20:57:28,754 - src.training.trainer - INFO - Epoch 24/60
+Train Loss: 1.9740 | Acc: 79.18%
+Val Loss: 1.7458 | Acc: 76.03%
+2025-07-17 21:06:26,701 - src.training.trainer - INFO - Epoch 25/60
+Train Loss: 1.8891 | Acc: 80.16%
+Val Loss: 1.6854 | Acc: 76.03%
+2025-07-17 21:15:23,161 - src.training.trainer - INFO - Epoch 26/60
+Train Loss: 1.8068 | Acc: 81.56%
+Val Loss: 1.6241 | Acc: 76.47%
+2025-07-17 21:24:27,109 - src.training.trainer - INFO - Epoch 27/60
+Train Loss: 1.7346 | Acc: 82.21%
+Val Loss: 1.5654 | Acc: 77.12%
+2025-07-17 21:33:24,903 - src.training.trainer - INFO - Epoch 28/60
+Train Loss: 1.6775 | Acc: 83.43%
+Val Loss: 1.5049 | Acc: 78.87%
+2025-07-17 21:42:25,505 - src.training.trainer - INFO - Epoch 29/60
+Train Loss: 1.6119 | Acc: 83.33%
+Val Loss: 1.4572 | Acc: 78.43%
+2025-07-17 21:51:26,246 - src.training.trainer - INFO - Epoch 30/60
+Train Loss: 1.5489 | Acc: 85.48%
+Val Loss: 1.4142 | Acc: 79.96%
+2025-07-17 22:00:44,433 - src.training.trainer - INFO - Epoch 31/60
+Train Loss: 1.4914 | Acc: 85.34%
+Val Loss: 1.3697 | Acc: 80.17%
+2025-07-17 22:09:41,795 - src.training.trainer - INFO - Epoch 32/60
+Train Loss: 1.4503 | Acc: 86.13%
+Val Loss: 1.3269 | Acc: 80.61%
+2025-07-17 22:18:38,536 - src.training.trainer - INFO - Epoch 33/60
+Train Loss: 1.3983 | Acc: 85.48%
+Val Loss: 1.2840 | Acc: 81.05%
+2025-07-17 22:27:43,831 - src.training.trainer - INFO - Epoch 34/60
+Train Loss: 1.3581 | Acc: 87.30%
+Val Loss: 1.2422 | Acc: 81.70%
+2025-07-17 22:36:42,813 - src.training.trainer - INFO - Epoch 35/60
+Train Loss: 1.2944 | Acc: 88.14%
+Val Loss: 1.2057 | Acc: 81.92%
+2025-07-17 22:45:46,870 - src.training.trainer - INFO - Epoch 36/60
+Train Loss: 1.2613 | Acc: 87.96%
+Val Loss: 1.1732 | Acc: 81.92%
+2025-07-17 22:54:45,074 - src.training.trainer - INFO - Epoch 37/60
+Train Loss: 1.2250 | Acc: 88.56%
+Val Loss: 1.1421 | Acc: 81.92%
+2025-07-17 23:03:42,632 - src.training.trainer - INFO - Epoch 38/60
+Train Loss: 1.1873 | Acc: 89.03%
+Val Loss: 1.1098 | Acc: 82.79%
+2025-07-17 23:12:39,618 - src.training.trainer - INFO - Epoch 39/60
+Train Loss: 1.1584 | Acc: 89.45%
+Val Loss: 1.0828 | Acc: 83.01%
+2025-07-17 23:21:45,710 - src.training.trainer - INFO - Epoch 40/60
+Train Loss: 1.1293 | Acc: 90.01%
+Val Loss: 1.0479 | Acc: 83.66%
+2025-07-17 23:30:45,440 - src.training.trainer - INFO - Epoch 41/60
+Train Loss: 1.0973 | Acc: 90.29%
+Val Loss: 1.0247 | Acc: 83.44%
+2025-07-17 23:39:43,049 - src.training.trainer - INFO - Epoch 42/60
+Train Loss: 1.0745 | Acc: 90.71%
+Val Loss: 1.0005 | Acc: 84.75%
+2025-07-17 23:48:45,228 - src.training.trainer - INFO - Epoch 43/60
+Train Loss: 1.0561 | Acc: 90.24%
+Val Loss: 0.9835 | Acc: 83.88%
+2025-07-17 23:57:42,131 - src.training.trainer - INFO - Epoch 44/60
+Train Loss: 1.0185 | Acc: 90.99%
+Val Loss: 0.9632 | Acc: 85.19%
+2025-07-18 00:06:42,075 - src.training.trainer - INFO - Epoch 45/60
+Train Loss: 1.0085 | Acc: 91.27%
+Val Loss: 0.9453 | Acc: 85.40%
+2025-07-18 00:15:41,498 - src.training.trainer - INFO - Epoch 46/60
+Train Loss: 0.9825 | Acc: 91.64%
+Val Loss: 0.9310 | Acc: 85.62%
+2025-07-18 00:24:44,998 - src.training.trainer - INFO - Epoch 47/60
+Train Loss: 0.9577 | Acc: 91.32%
+Val Loss: 0.9156 | Acc: 85.40%
+2025-07-18 00:33:41,128 - src.training.trainer - INFO - Epoch 48/60
+Train Loss: 0.9358 | Acc: 92.48%
+Val Loss: 0.9025 | Acc: 85.40%
+2025-07-18 00:42:45,535 - src.training.trainer - INFO - Epoch 49/60
+Train Loss: 0.9369 | Acc: 91.83%
+Val Loss: 0.8900 | Acc: 85.84%
+2025-07-18 00:51:45,183 - src.training.trainer - INFO - Epoch 50/60
+Train Loss: 0.9074 | Acc: 92.25%
+Val Loss: 0.8726 | Acc: 86.06%
+2025-07-18 01:00:39,159 - src.training.trainer - INFO - Epoch 51/60
+Train Loss: 0.8911 | Acc: 92.44%
+Val Loss: 0.8673 | Acc: 86.06%
+2025-07-18 01:09:30,827 - src.training.trainer - INFO - Epoch 52/60
+Train Loss: 0.8899 | Acc: 92.11%
+Val Loss: 0.8552 | Acc: 86.93%
+2025-07-18 01:18:24,717 - src.training.trainer - INFO - Epoch 53/60
+Train Loss: 0.8787 | Acc: 92.02%
+Val Loss: 0.8473 | Acc: 86.49%
+2025-07-18 01:27:24,437 - src.training.trainer - INFO - Epoch 54/60
+Train Loss: 0.8687 | Acc: 92.44%
+Val Loss: 0.8408 | Acc: 86.93%
+2025-07-18 01:36:11,563 - src.training.trainer - INFO - Epoch 55/60
+Train Loss: 0.8559 | Acc: 92.62%
+Val Loss: 0.8353 | Acc: 87.58%
+2025-07-18 01:45:02,594 - src.training.trainer - INFO - Epoch 56/60
+Train Loss: 0.8578 | Acc: 92.95%
+Val Loss: 0.8294 | Acc: 87.36%
+2025-07-18 01:53:55,936 - src.training.trainer - INFO - Epoch 57/60
+Train Loss: 0.8506 | Acc: 93.14%
+Val Loss: 0.8261 | Acc: 87.58%
+2025-07-18 02:03:05,505 - src.training.trainer - INFO - Epoch 58/60
+Train Loss: 0.8455 | Acc: 93.09%
+Val Loss: 0.8243 | Acc: 87.36%
+2025-07-18 02:11:50,278 - src.training.trainer - INFO - Epoch 59/60
+Train Loss: 0.8439 | Acc: 92.48%
+Val Loss: 0.8222 | Acc: 87.58%
+2025-07-18 02:20:58,431 - src.training.trainer - INFO - Epoch 60/60
+Train Loss: 0.8401 | Acc: 92.62%
+Val Loss: 0.8217 | Acc: 87.36%
+2025-07-18 02:21:00,868 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-07-18 02:21:35,693 - __main__ - INFO - Test Accuracy: 84.57% | Loss: 0.8816
+2025-07-18 12:45:28,957 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:45:31,459 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:45:31,474 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:45:31,485 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:45:32,188 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-18 12:45:32,217 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLN', 30), ('ZLP', 30), ('YLN', 30)]...
+2025-07-18 12:45:32,217 - __main__ - INFO - Total samples: 3,059
+2025-07-18 12:45:32,217 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:45:32,230 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-18 12:45:46,162 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-18 12:45:46,163 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:45:59,083 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:45:59,083 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:45:59,084 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\train.py", line 98, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\training\trainer.py", line 117, in train
+    model_dir = paths.MODEL_DIR
+AttributeError: 'PathConfig' object has no attribute 'MODEL_DIR'
+2025-07-18 12:47:51,496 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:47:53,879 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:47:53,890 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:47:53,900 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:47:54,597 - src.utils.data_loader - INFO - Generated 3058 unique synthetic samples
+2025-07-18 12:47:54,610 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-18 12:47:54,610 - __main__ - INFO - Total samples: 3,059
+2025-07-18 12:47:54,610 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:47:54,617 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,141 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-18 12:48:08,023 - src.training.trainer - INFO - Training loader contains 2141 samples
+2025-07-18 12:48:08,023 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:48:20,888 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:48:20,888 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:48:20,888 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\train.py", line 98, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\training\trainer.py", line 117, in train
+    model_dir = paths.MODEL_DIR
+AttributeError: 'PathConfig' object has no attribute 'MODEL_DIR'
+2025-07-18 12:49:09,057 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:49:11,456 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:49:11,467 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:49:11,478 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:49:12,175 - src.utils.data_loader - INFO - Generated 3059 unique synthetic samples
+2025-07-18 12:49:12,189 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-18 12:49:12,189 - __main__ - INFO - Total samples: 3,060
+2025-07-18 12:49:12,189 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:49:12,197 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-18 12:49:25,574 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-18 12:49:25,575 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:49:38,490 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:49:38,490 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:49:38,490 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\train.py", line 98, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Programming\Programs\Python projects\dall-in-model\src\training\trainer.py", line 117, in train
+    model_dir = paths.PathConfig
+AttributeError: 'PathConfig' object has no attribute 'PathConfig'
+2025-07-18 12:52:33,996 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:52:36,391 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:52:36,402 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:52:36,412 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:52:37,103 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-07-18 12:52:37,117 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-18 12:52:37,117 - __main__ - INFO - Total samples: 3,061
+2025-07-18 12:52:37,118 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:52:37,125 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-07-18 12:52:50,544 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-18 12:52:50,545 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:53:03,420 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:53:03,420 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:54:00,632 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:54:03,065 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:54:03,098 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:54:03,108 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:54:03,820 - src.utils.data_loader - INFO - Generated 3056 unique synthetic samples
+2025-07-18 12:54:03,851 - __main__ - INFO - Class distribution:
+[('ZLS', 30), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-18 12:54:03,851 - __main__ - INFO - Total samples: 3,057
+2025-07-18 12:54:03,851 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:54:03,864 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,139 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-18 12:54:17,468 - src.training.trainer - INFO - Training loader contains 2139 samples
+2025-07-18 12:54:17,468 - src.training.trainer - INFO - Sample batch shape: torch.Size([64, 128])
+2025-07-18 12:54:30,386 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:54:30,386 - src.training.trainer - INFO - Sample batch shape: torch.Size([64, 128])
+2025-07-18 12:55:26,311 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-18 12:55:29,303 - __main__ - INFO - Starting training pipeline
+2025-07-18 12:55:29,365 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:55:29,378 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-18 12:55:30,175 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-07-18 12:55:30,292 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-18 12:55:30,292 - __main__ - INFO - Total samples: 3,061
+2025-07-18 12:55:30,292 - __main__ - INFO - Number of classes: 120
+2025-07-18 12:55:30,395 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-07-18 12:55:45,160 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-18 12:55:45,160 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 12:55:59,179 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-18 12:55:59,179 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-18 13:07:45,514 - src.training.trainer - INFO - Epoch 1/1
+Train Loss: 4.8726 | Acc: 1.21%
+Val Loss: 4.8594 | Acc: 0.87%
+2025-07-18 13:07:48,046 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-07-18 13:08:38,807 - __main__ - INFO - Test Accuracy: 0.65% | Loss: 4.8591

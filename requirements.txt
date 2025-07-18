@@ -9,6 +9,6 @@ scikit-learn
 sentencepiece
 nlpaug
 Sequential
-
-
+tiktoken
+openai
 # pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

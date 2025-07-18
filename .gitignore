@@ -4,3 +4,7 @@ trained_model.pth
 .idea
 .DS_Store
 .env
+
+
+# Ignore all files in models
+models/*
