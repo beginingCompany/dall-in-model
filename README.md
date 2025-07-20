@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/beginingCompany/dall-in-model)
 [![License](https://img.shields.io/badge/license-proprietary-red)](#license)
-[![Model](https://img.shields.io/badge/model-BERT%20%7C%20XLM--R-blue)](#model-details)
+[![Model](https://img.shields.io/badge/model-BERT%20%7C%20XLMRobertaModel)](#model-details)
 [![Language](https://img.shields.io/badge/language-Arabic%20%7C%20English-yellowgreen)](#)
 
 ---
@@ -70,7 +70,7 @@ Leadership_Motivation_ar, Emotional_Social_Intelligence_ar, Key_Strengths_Applic
 
 🧠 Project Structure
 
-personality_chatbot/
+Dall-IN-MODEL/
 ├── config/
 │   └── paths.py                     # Centralized path configuration
 ├── app/
@@ -82,17 +82,14 @@ personality_chatbot/
 │   ├── raw/                         # Provided raw data
 │   │   ├── majors.csv
 │   │   └── result_symbols.csv
-│   ├── processed/                   # Cleaned datasets
-│   │   ├── cleaned_data.csv
-│   │   └── merged_data.csv
-│   └── synthetic/                   # AI-generated data
-│       └── synthetic_data.csv
+│   └── processed/                   
+│       ├── cleaned_data.csv
+│       └── BIGINING_dataset.csv
 ├── models/
-│   ├── trained_model.pth            # Legacy backup
 │   ├── classifier/
-│   │   ├── classifier.pt
-│   │   ├── config.json
-│   │   └── model.safetensors
+│   │   ├── classifier.pt            # custom classifier head (PyTorch)
+│   │   ├── config.json              # XLM-RoBERTa backbone config
+│   │   └── model.safetensors        # XLM-RoBERTa backbone weights (Hugging Face format)
 │   └── tokenizer/
 │       ├── sentencepiece.bpe.model
 │       ├── special_tokens_map.json

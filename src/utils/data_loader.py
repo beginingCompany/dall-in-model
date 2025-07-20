@@ -6,6 +6,7 @@ from transformers import XLMRobertaTokenizer
 from typing import List, Dict
 
 logger = logging.getLogger(__name__)
+
 paths = PathConfig()
 
 class DataLoader:
@@ -73,11 +74,11 @@ class DataLoader:
             raise
 
     def load_and_validate(self) -> pd.DataFrame:
-        file_path = paths.DATA_PROCESSED / "BIGINING_dataset.csv"
-        if not file_path.exists():
-            raise FileNotFoundError(f"Cleaned data not found at {file_path}")
+        DATA_PROCESSED = paths.DATA_PROCESSED / "BIGINING_dataset.csv"
+        if not DATA_PROCESSED.exists():
+            raise FileNotFoundError(f"BIGINING_dataset not found at {DATA_PROCESSED}")
             
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(DATA_PROCESSED)
         self._validate_columns(df)
         self._validate_integrity(df)
         logger.info(f"Loaded {len(df)} validated samples")

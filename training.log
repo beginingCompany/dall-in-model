@@ -1370,3 +1370,104 @@ Val Loss: 4.8594 | Acc: 0.87%
 2025-07-18 13:07:48,046 - __main__ - INFO - 
 --- Final Test Evaluation ---
 2025-07-18 13:08:38,807 - __main__ - INFO - Test Accuracy: 0.65% | Loss: 4.8591
+2025-07-20 11:27:09,888 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-20 11:27:11,745 - __main__ - INFO - Starting training pipeline
+2025-07-20 11:27:11,745 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 35, in main
+    original_df = data_loader.load_and_validate()
+  File "C:\Programming Codes\dall-in-model\src\utils\data_loader.py", line 78, in load_and_validate
+    raise FileNotFoundError(f"Cleaned data not found at {file_path}")
+FileNotFoundError: Cleaned data not found at C:\Programming Codes\dall-in-model\data\processed\BIGINING_dataset.csv
+2025-07-20 11:28:30,408 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-20 11:28:32,178 - __main__ - INFO - Starting training pipeline
+2025-07-20 11:28:32,192 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:28:32,200 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:28:32,646 - src.utils.data_loader - INFO - Generated 3059 unique synthetic samples
+2025-07-20 11:28:32,656 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-20 11:28:32,656 - __main__ - INFO - Total samples: 3,060
+2025-07-20 11:28:32,657 - __main__ - INFO - Number of classes: 120
+2025-07-20 11:28:32,663 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-20 11:28:41,243 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-20 11:28:41,244 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:28:49,389 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-20 11:28:49,389 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:28:49,390 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 98, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Programming Codes\dall-in-model\src\training\trainer.py", line 117, in train
+    model_dir = paths.MODEL_DIR
+AttributeError: 'PathConfig' object has no attribute 'MODEL_DIR'
+2025-07-20 11:29:40,187 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-20 11:29:42,035 - __main__ - INFO - Starting training pipeline
+2025-07-20 11:29:42,045 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:29:42,055 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:29:42,489 - src.utils.data_loader - INFO - Generated 3059 unique synthetic samples
+2025-07-20 11:29:42,498 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-20 11:29:42,499 - __main__ - INFO - Total samples: 3,060
+2025-07-20 11:29:42,499 - __main__ - INFO - Number of classes: 120
+2025-07-20 11:29:42,504 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-20 11:29:50,816 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-20 11:29:50,817 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:29:58,526 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-20 11:29:58,526 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:29:58,527 - __main__ - ERROR - Critical training error
+Traceback (most recent call last):
+  File "C:\Programming Codes\dall-in-model\src\train.py", line 98, in main
+    model = trainer.train(train_df, val_df, data_loader.tokenizer)
+  File "C:\Programming Codes\dall-in-model\src\training\trainer.py", line 120, in train
+    for epoch in range(self.epochs):
+TypeError: 'float' object cannot be interpreted as an integer
+2025-07-20 11:30:14,940 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-20 11:30:16,923 - __main__ - INFO - Starting training pipeline
+2025-07-20 11:30:16,931 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:30:16,942 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:30:17,333 - src.utils.data_loader - INFO - Generated 3060 unique synthetic samples
+2025-07-20 11:30:17,341 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-20 11:30:17,341 - __main__ - INFO - Total samples: 3,061
+2025-07-20 11:30:17,341 - __main__ - INFO - Number of classes: 120
+2025-07-20 11:30:17,346 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 460 samples
+2025-07-20 11:30:25,552 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-20 11:30:25,552 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:30:33,259 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-20 11:30:33,260 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:31:12,534 - src.utils.data_loader - INFO - Downloading and saving new tokenizer
+2025-07-20 11:31:14,470 - __main__ - INFO - Starting training pipeline
+2025-07-20 11:31:14,481 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:31:14,490 - src.utils.data_loader - INFO - Loaded 120 validated samples
+2025-07-20 11:31:14,907 - src.utils.data_loader - INFO - Generated 3059 unique synthetic samples
+2025-07-20 11:31:14,917 - __main__ - INFO - Class distribution:
+[('ZLS', 31), ('ZLW', 30), ('ZLE', 30), ('ZLN', 30), ('ZLP', 30)]...
+2025-07-20 11:31:14,918 - __main__ - INFO - Total samples: 3,060
+2025-07-20 11:31:14,918 - __main__ - INFO - Number of classes: 120
+2025-07-20 11:31:14,923 - __main__ - INFO - 
+=== Dataset Splits ===
+Train: 2,142 samples
+Validation: 459 samples
+Test: 459 samples
+2025-07-20 11:31:22,862 - src.training.trainer - INFO - Training loader contains 2142 samples
+2025-07-20 11:31:22,862 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:31:30,528 - src.training.trainer - INFO - Validation loader contains 459 samples
+2025-07-20 11:31:30,529 - src.training.trainer - INFO - Sample batch shape: torch.Size([16, 128])
+2025-07-20 11:38:39,988 - src.training.trainer - INFO - Epoch 1/1
+Train Loss: 4.8705 | Acc: 0.56%
+Val Loss: 4.8562 | Acc: 1.09%
+2025-07-20 11:38:40,927 - __main__ - INFO - 
+--- Final Test Evaluation ---
+2025-07-20 11:39:07,899 - __main__ - INFO - Test Accuracy: 1.09% | Loss: 4.8502

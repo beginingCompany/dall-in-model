@@ -4,22 +4,30 @@ import torch.nn as nn
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from transformers import XLMRobertaModel, XLMRobertaTokenizer, get_linear_schedule_with_warmup
+from sklearn.metrics import classification_report
 from tqdm import tqdm
 from config.paths import PathConfig
 from pathlib import Path
-
+import pandas as pd
+from typing import Dict, Any, List
+import os 
+os.environ["zero_division"] = "false"  
+# Setup logging
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 paths = PathConfig()
 
 class PersonalityDataset(Dataset):
-    def __init__(self, data, tokenizer):
+    def __init__(self, data: pd.DataFrame, tokenizer: XLMRobertaTokenizer):
         self.data = data.reset_index(drop=True)
         self.tokenizer = tokenizer
 
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         text = str(self.data.iloc[idx]['text'])
         label = self.data.iloc[idx]['label_code']
         encoding = self.tokenizer(
@@ -36,8 +44,9 @@ class PersonalityDataset(Dataset):
         }
 
 class CustomModel(nn.Module):
-    def __init__(self, num_labels):
+    def __init__(self, num_labels: int):
         super().__init__()
+        self.num_labels = num_labels
         self.roberta = XLMRobertaModel.from_pretrained("xlm-roberta-base")
         self.dropout = nn.Dropout(0.1)
         self.classifier = nn.Linear(768, num_labels)
@@ -47,20 +56,21 @@ class CustomModel(nn.Module):
             for param in layer.parameters():
                 param.requires_grad = False
 
-    def forward(self, input_ids, attention_mask, labels=None):
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor = None) -> Dict[str, Any]:
         outputs = self.roberta(input_ids=input_ids, attention_mask=attention_mask)
         pooled_output = self.dropout(outputs.last_hidden_state[:, 0, :])
         logits = self.classifier(pooled_output)
         loss = self.loss_fct(logits, labels) if labels is not None else None
         return {'logits': logits, 'loss': loss}
 
-    def save_model(self, path):
-        self.roberta.save_pretrained(path)
-        torch.save(self.classifier.state_dict(), f"{path}/classifier.pt")
+    def save_model(self, save_dir: Path):
+        self.roberta.save_pretrained(save_dir / "classifier")
+        torch.save(self.classifier.state_dict(), save_dir / "classifier" / "classifier.pt")
 
-    def load_model(self, path):
-        self.roberta = XLMRobertaModel.from_pretrained(path)
-        self.classifier.load_state_dict(torch.load(f"{path}/classifier.pt"))
+    def load_model(self, load_dir: Path):
+        self.roberta = XLMRobertaModel.from_pretrained(load_dir / "classifier")
+        self.classifier = nn.Linear(768, self.num_labels)
+        self.classifier.load_state_dict(torch.load(load_dir / "classifier" / "classifier.pt"))
 
 class PersonalityClassifierTrainer:
     def __init__(self, num_labels: int):
@@ -70,10 +80,11 @@ class PersonalityClassifierTrainer:
         self.grad_accum_steps = 2
         self.weight_decay = 0.01
         self.max_grad_norm = 1.0
+        self.patience = 3
         self.num_labels = num_labels
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def _create_loader(self, df, tokenizer, is_train=True):
+    def _create_loader(self, df: pd.DataFrame, tokenizer: XLMRobertaTokenizer, is_train: bool = True) -> DataLoader:
         return DataLoader(
             PersonalityDataset(df, tokenizer),
             batch_size=self.batch_size,
@@ -81,10 +92,10 @@ class PersonalityClassifierTrainer:
             num_workers=2
         )
 
-    def initialize_model(self):
+    def initialize_model(self) -> CustomModel:
         return CustomModel(self.num_labels).to(self.device)
 
-    def create_optimizer_scheduler(self, model, num_training_steps):
+    def create_optimizer_scheduler(self, model: nn.Module, num_training_steps: int):
         optimizer = AdamW(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
@@ -93,7 +104,7 @@ class PersonalityClassifierTrainer:
         )
         return optimizer, scheduler
 
-    def _validate_loader(self, loader, name: str):
+    def _validate_loader(self, loader: DataLoader, name: str):
         try:
             batch = next(iter(loader))
             logger.info(f"{name} loader contains {len(loader.dataset)} samples")
@@ -102,7 +113,7 @@ class PersonalityClassifierTrainer:
             logger.error(f"Data validation failed: {str(e)}")
             raise
 
-    def train(self, train_df, val_df, tokenizer):
+    def train(self, train_df: pd.DataFrame, val_df: pd.DataFrame, tokenizer: XLMRobertaTokenizer) -> CustomModel:
         model = self.initialize_model()
         train_loader = self._create_loader(train_df, tokenizer)
         val_loader = self._create_loader(val_df, tokenizer, is_train=False)
@@ -114,8 +125,9 @@ class PersonalityClassifierTrainer:
         self._validate_loader(val_loader, "Validation")
 
         best_val_loss = float('inf')
-        model_dir = paths.MODEL_DIR
-        Path(model_dir).mkdir(parents=True, exist_ok=True)
+        no_improve = 0
+    
+        Path(paths.MODELS).mkdir(parents=True, exist_ok=True)
 
         for epoch in range(self.epochs):
             train_metrics = self.train_epoch(model, train_loader, optimizer, scheduler, epoch)
@@ -129,12 +141,19 @@ class PersonalityClassifierTrainer:
 
             if val_metrics['loss'] < best_val_loss:
                 best_val_loss = val_metrics['loss']
-                model.save_model(model_dir)
-                tokenizer.save_pretrained(model_dir)
+                no_improve = 0
+                model.save_model(paths.MODELS)
+                tokenizer.save_pretrained(paths.TOKENIZER)
+            else:
+                no_improve += 1
+
+            if no_improve >= self.patience:
+                logger.info("Early stopping triggered.")
+                break
 
         return model
 
-    def train_epoch(self, model, loader, optimizer, scheduler, epoch: int):
+    def train_epoch(self, model: CustomModel, loader: DataLoader, optimizer: torch.optim.Optimizer, scheduler, epoch: int) -> Dict[str, float]:
         model.train()
         total_loss = 0
         correct = 0
@@ -155,8 +174,8 @@ class PersonalityClassifierTrainer:
                 optimizer.zero_grad()
 
             preds = torch.argmax(outputs['logits'], dim=1)
-            correct += (preds == inputs["labels"]).sum().item()
-            total_samples += inputs["labels"].size(0)
+            correct += (preds == inputs['labels']).sum().item()
+            total_samples += inputs['labels'].size(0)
             total_loss += outputs['loss'].item()
 
             progress_bar.set_postfix({
@@ -170,11 +189,12 @@ class PersonalityClassifierTrainer:
             "accuracy": 100 * correct / total_samples
         }
 
-    def validate(self, model, loader):
+    def validate(self, model: CustomModel, loader: DataLoader) -> Dict[str, float]:
         model.eval()
         total_loss = 0
         correct = 0
         total_samples = 0
+        all_preds, all_labels = [], []
 
         with torch.no_grad():
             for batch in tqdm(loader, desc="Validating"):
@@ -182,8 +202,15 @@ class PersonalityClassifierTrainer:
                 outputs = model(**inputs)
                 total_loss += outputs['loss'].item()
                 preds = torch.argmax(outputs['logits'], dim=1)
-                correct += (preds == inputs["labels"]).sum().item()
-                total_samples += inputs["labels"].size(0)
+                correct += (preds == inputs['labels']).sum().item()
+                total_samples += inputs['labels'].size(0)
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(inputs['labels'].cpu().tolist())
+
+        report = classification_report(all_labels, all_preds, digits=4, output_dict=True)
+        print(report)
+        logger.info(f"Validation Loss: {total_loss / len(loader):.4f}")
+        logger.info(f"Validation classification report:\n{classification_report(all_labels, all_preds, digits=4)}")
 
         return {
             "loss": total_loss / len(loader),
