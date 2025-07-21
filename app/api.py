@@ -22,10 +22,15 @@ class PredictionResponse(BaseModel):
 async def predict(request: PredictionRequest):
     try:
         result = predictor.predict([request.text]).iloc[0]
+        # Print for debugging
+        print(result['predictions'])
         return {
             "text": result['text'],
             "predictions": [
-                {"class_name": p["class"], "confidence": p["confidence"]}
+                {
+                    "class_name": p.get("class") or p.get("class_name") or p.get("label", ""),
+                    "confidence": p.get("confidence", 0.0)
+                }
                 for p in result['predictions']
             ]
         }

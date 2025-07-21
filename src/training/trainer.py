@@ -75,7 +75,7 @@ class CustomModel(nn.Module):
 class PersonalityClassifierTrainer:
     def __init__(self, num_labels: int):
         self.batch_size = 16
-        self.epochs = 1
+        self.epochs = 200
         self.learning_rate = 1e-5
         self.grad_accum_steps = 2
         self.weight_decay = 0.01

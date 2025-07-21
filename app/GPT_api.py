@@ -12,7 +12,7 @@ import tiktoken
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("personality_api")
+logger = logging.getLogger("analyze-personality")
 
 app = FastAPI()
 
@@ -20,7 +20,7 @@ app = FastAPI()
 SYSTEM_PROMPT = """
 You are an AI assistant for building rich personality descriptions in Arabic or English as backend request.
 
-You receive a JSON object with keys: personality_traits, interests, hobbies, skills, values.
+You receive a JSON object with keys: personality_traits, skills
 
 You must generate a JSON response with either:
 - If all required traits are present, respond only with one language:
@@ -31,7 +31,7 @@ You must generate a JSON response with either:
 
 If user provides a preferred language as a "languages" or "language" field, generate only the requested description.
 
-Traits to consider: personality_traits, interests, hobbies, skills, values
+Traits to consider: personality_traits, skills
 
 Respond only with valid, minimal JSON (no comments, no trailing commas, use double quotes).
 """
@@ -100,22 +100,35 @@ def parse_traits(user_input: str, new_input: str) -> dict:
     full_text = combine_inputs_safely(user_input, new_input).lower()
     fields = {
         "personality_traits": user_input.strip(),
-        "interests": "",
-        "hobbies": "",
         "skills": "",
-        "values": ""
     }
+    # --- Try direct extraction first
     patterns = {
-        "interests": r"(interests? (include|are|:)?)(.+?)(\.|their|they|he|she|skills|values|hobbies|important|$)",
-        "hobbies": r"(hobbies (include|are|:)?)(.+?)(\.|their|they|he|she|skills|values|interests|important|$)",
         "skills": r"(skills (include|are|:)?)(.+?)(\.|their|they|he|she|values|hobbies|interests|important|$)",
-        "values": r"(values (include|are|:)?|important values for this individual are)(.+?)(\.|their|they|he|she|skills|hobbies|interests|important|$)",
     }
     for key, pat in patterns.items():
         m = re.search(pat, full_text, re.IGNORECASE | re.DOTALL)
         if m:
             val = m.group(3).strip()
             fields[key] = val.rstrip(",")
+
+    # --- 60-point solution: infer skills if not explicitly provided
+    if not fields["skills"]:
+        # Expanded keyword spotting (extend as needed)
+        SKILL_KEYWORDS = [
+            "technical", "hands-on", "machines", "tools", "relationship-building",
+            "listening", "cooperation", "collaborat", "support", "patience", "calmness",
+            "teamwork", "reliable", "compassion", "community", "problem-solving",
+            "active listening", "effective", "mechanical", "practical", "skills", "abilities"
+        ]
+        found_skills = []
+        for word in SKILL_KEYWORDS:
+            # Partial matches for robustness
+            if word in full_text:
+                found_skills.append(word)
+        # Also grab from the new_input if it contains likely skill lists
+        if found_skills:
+            fields["skills"] = ", ".join(sorted(set(found_skills)))
     return fields
 
 def call_gpt(traits: dict, languages: List[str], model: str = "gpt-3.5-turbo", max_tokens: int = 1200) -> dict:
