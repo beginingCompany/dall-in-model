@@ -1,17 +1,15 @@
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.parent.parent.resolve()
-
+BASE_DIR = Path(__file__).resolve().parents[1]
 class PathConfig:
     def __init__(self):
         # Define paths
-        self.DATA_RAW = BASE_DIR / "dall-in-model/data/raw"
-        self.DATA_PROCESSED = BASE_DIR / "dall-in-model/data/processed"
-        self.DATA_SYNTHETIC = BASE_DIR / "dall-in-model/data/synthetic"
-        self.MODELS = BASE_DIR / "dall-in-model/models"
+        self.DATA_RAW = BASE_DIR / "data/raw"
+        self.DATA_PROCESSED = BASE_DIR / "data/processed"
+        self.DATA_SYNTHETIC = BASE_DIR / "data/synthetic"
+        self.MODELS = BASE_DIR / "models"
         self.TOKENIZER = self.MODELS / "tokenizer"
         self.CLASSIFIER = self.MODELS / "classifier"
-        self.MODEL_PATH = Path('models/trained_model.pth')
         
         self._create_directories()
         
