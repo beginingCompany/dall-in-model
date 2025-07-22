@@ -55,12 +55,15 @@ class CustomModel(nn.Module):
         return {'logits': logits, 'loss': loss}
 
     def save_model(self, path):
-        self.roberta.save_pretrained(path)
-        torch.save(self.classifier.state_dict(), f"{path}/classifier.pt")
+        backbone_path = Path(path) / "classifier"
+        backbone_path.mkdir(parents=True, exist_ok=True)
+        self.roberta.save_pretrained(backbone_path)
+        torch.save(self.classifier.state_dict(), backbone_path / "classifier.pt")
 
     def load_model(self, path):
-        self.roberta = XLMRobertaModel.from_pretrained(path)
-        self.classifier.load_state_dict(torch.load(f"{path}/classifier.pt"))
+        backbone_path = Path(path) / "classifier"
+        self.roberta = XLMRobertaModel.from_pretrained(backbone_path)
+        self.classifier.load_state_dict(torch.load(backbone_path / "classifier.pt"))
 
 class PersonalityClassifierTrainer:
     def __init__(self, num_labels: int):
@@ -130,7 +133,7 @@ class PersonalityClassifierTrainer:
             if val_metrics['loss'] < best_val_loss:
                 best_val_loss = val_metrics['loss']
                 model.save_model(model_dir)
-                tokenizer.save_pretrained(model_dir)
+                tokenizer.save_pretrained(Path(model_dir) / "tokenizer")
 
         return model
 
