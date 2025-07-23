@@ -1,7 +1,7 @@
 # 🧠 DALL IN — Personality AI Chatbot
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/beginingCompany/dall-in-model)
-[![License](https://img.shields.io/badge/license-proprietary-red)](#license)
+[![License](https://img.shields.io/badge/license-BEGINING-red)](#license)
 [![Model](https://img.shields.io/badge/model-BERT%20%7C%20XLMRobertaModel)](#model-details)
 [![Language](https://img.shields.io/badge/language-Arabic%20%7C%20English-yellowgreen)](#)
 
