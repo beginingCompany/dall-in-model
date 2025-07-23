@@ -63,14 +63,17 @@ class CustomModel(nn.Module):
         loss = self.loss_fct(logits, labels) if labels is not None else None
         return {'logits': logits, 'loss': loss}
 
-    def save_model(self, save_dir: Path):
-        self.roberta.save_pretrained(save_dir / "classifier")
-        torch.save(self.classifier.state_dict(), save_dir / "classifier" / "classifier.pt")
 
-    def load_model(self, load_dir: Path):
-        self.roberta = XLMRobertaModel.from_pretrained(load_dir / "classifier")
-        self.classifier = nn.Linear(768, self.num_labels)
-        self.classifier.load_state_dict(torch.load(load_dir / "classifier" / "classifier.pt"))
+    def save_model(self, path):
+        backbone_path = Path(path) / "classifier"
+        backbone_path.mkdir(parents=True, exist_ok=True)
+        self.roberta.save_pretrained(backbone_path)
+        torch.save(self.classifier.state_dict(), backbone_path / "classifier.pt")
+
+    def load_model(self, path):
+        backbone_path = Path(path) / "classifier"
+        self.roberta = XLMRobertaModel.from_pretrained(backbone_path)
+        self.classifier.load_state_dict(torch.load(backbone_path / "classifier.pt"))
 
 class PersonalityClassifierTrainer:
     def __init__(self, num_labels: int):
@@ -141,15 +144,8 @@ class PersonalityClassifierTrainer:
 
             if val_metrics['loss'] < best_val_loss:
                 best_val_loss = val_metrics['loss']
-                no_improve = 0
-                model.save_model(paths.MODELS)
-                tokenizer.save_pretrained(paths.TOKENIZER)
-            else:
-                no_improve += 1
-
-            if no_improve >= self.patience:
-                logger.info("Early stopping triggered.")
-                break
+                model.save_model(model_dir)
+                tokenizer.save_pretrained(Path(model_dir) / "tokenizer")
 
         return model
 

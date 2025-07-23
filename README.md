@@ -6,11 +6,7 @@
 [![Language](https://img.shields.io/badge/language-Arabic%20%7C%20English-yellowgreen)](#)
 
 ---
-
-**Author:** Eng. Ahmed Ibrahim Almalki  
 **Data Source:** Dr. Ibrahim Mohamed Ahmed Hussain  
-**Role:** AI Engineer, BSc in Computer Science
-
 ---
 
 ## 🔍 Overview
@@ -55,18 +51,6 @@ It generates one of **120 symbolic 3-letter codes**, tested on over **6,000 indi
 
 ---
 
-## 🧾 Data Fields
-
-Only the following structured columns are used for symbolic personality profile generation:
-
-```text
-letter
-major_1_arabic, major_1_english
-job_1_arabic, job_1_english
-hobby_arabic, hobby_english
-description_arabic, description_english
-Leadership_Motivation_en, Emotional_Social_Intelligence_en, Key_Strengths_Applications_en
-Leadership_Motivation_ar, Emotional_Social_Intelligence_ar, Key_Strengths_Applications_ar
 
 🧠 Project Structure
 
@@ -133,31 +117,8 @@ Output: Symbolic letter + structured profile + JSON
 🧠 Dr. Ibrahim Mohamed Ahmed Hussain
 Inventor of the BEGINING Scale (2004)
 
-Developed the symbolic profiling theory
-
-Annotated and provided all real-world data
-
-🛠 Eng. Ahmed Ibrahim Almalki
-Developed the entire AI pipeline
-
-Cleaned, analyzed, and augmented data
-
-Built and deployed the backend API in Python using FastAPI
-
-Added GPT-based extensions (optional)
-
-🔮 Future Enhancements
- Add user comparison by symbolic profiles
-
- Deploy chatbot via web UI
-
- Build frontend dashboard for profile visualization
-
- Enable online learning from user feedback
-
- Add multilingual GPT explanations per letter
 
 📜 License
 The BEGINING Scale is the intellectual property of Dr. Ibrahim Mohamed Ahmed Hussain
-The DALL IN AI system and implementation is created and maintained by Eng. Ahmed Almalki
+
 Use of the system or data requires written permission from the respective authors.
