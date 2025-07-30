@@ -1,16 +1,19 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import uvicorn
-from typing import List
-from app.predict import PersonalityPredictor
-from app.GPT_api import PersonalityAnalyzer
-from fastapi import FastAPI, Request, HTTPException
+
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ValidationError
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Dict
+from app.predict import PersonalityPredictor
+from app.personality_analyzer import PersonalityAnalyzer
 
 app = FastAPI()
-predictor = PersonalityPredictor(num_labels=120, top_k=3)
 
+predictor = PersonalityPredictor(num_labels=120, top_k=3)
+analyzer = PersonalityAnalyzer()
+
+# In-memory store for accumulating user input by ID
+user_memory: Dict[int, Dict[str, str]] = {}
+
+# Request models
 class PredictionRequest(BaseModel):
     text: str
 
@@ -26,8 +29,6 @@ class PredictionResponse(BaseModel):
 async def predict(request: PredictionRequest):
     try:
         result = predictor.predict([request.text]).iloc[0]
-        # Print for debugging
-        print(result['predictions'])
         return {
             "text": result['text'],
             "predictions": [
@@ -40,8 +41,6 @@ async def predict(request: PredictionRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-analyzer = PersonalityAnalyzer()  # Instantiate once at startup
 
 class UserRequest(BaseModel):
     id: int
@@ -67,14 +66,14 @@ class TraitResponse(BaseModel):
     status: str
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
-    missing_traits: Optional[List[str]] = None
-    clarification_questions: Optional[List[str]] = None
+    clarification_prompt: Optional[str] = None
+    clarification_prompts: Optional[List[str]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
 
 @app.post("/analyze-personality", response_model=TraitResponse)
-async def personality(request: Request):
+async def analyze_personality(request: Request):
     try:
         data = await request.json()
         req = UserRequest(**data)
@@ -83,33 +82,44 @@ async def personality(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
+    # Accumulate input in memory
+    memory = user_memory.get(req.id, {"user_input": "", "new_input": ""})
+    memory["user_input"] += " " + req.user_input.strip()
+    memory["new_input"] += " " + req.new_input.strip()
+    user_memory[req.id] = memory
+
     try:
-        gpt_json = analyzer.analyze(req.user_input, req.new_input, req.get_languages())
+        gpt_json = analyzer.analyze(
+            user_input=memory["user_input"],
+            new_input=memory["new_input"],
+            languages=req.get_languages()
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Compose result
     result = {
         "id": req.id,
         "input_tokens": gpt_json.get("input_tokens"),
         "output_tokens": gpt_json.get("output_tokens"),
         "total_tokens": gpt_json.get("total_tokens"),
     }
+
     if "description_arabic" in gpt_json or "description_english" in gpt_json:
         result.update({
             "status": "complete",
             "description_arabic": gpt_json.get("description_arabic", ""),
             "description_english": gpt_json.get("description_english", "")
         })
-    elif "missing_traits" in gpt_json and "clarification_questions" in gpt_json:
+    elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
         result.update({
             "status": "incomplete",
-            "missing_traits": gpt_json.get("missing_traits", []),
-            "clarification_questions": gpt_json.get("clarification_questions", [])
+            "clarification_prompt": gpt_json.get("clarification_prompt"),
+            "clarification_prompts": gpt_json.get("clarification_prompts")
         })
     else:
         raise HTTPException(
             status_code=500,
             detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
         )
+
     return result
