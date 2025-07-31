@@ -66,8 +66,8 @@ class TraitResponse(BaseModel):
     status: str
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
-    clarification_prompt: Optional[str] = None
-    clarification_prompts: Optional[List[str]] = None
+    missing_traits: Optional[List[str]] = None
+    clarification_questions: Optional[List[str]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
@@ -110,16 +110,31 @@ async def analyze_personality(request: Request):
             "description_arabic": gpt_json.get("description_arabic", ""),
             "description_english": gpt_json.get("description_english", "")
         })
-    elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
+    elif "missing_traits" in gpt_json or "clarification_questions" in gpt_json:
         result.update({
             "status": "incomplete",
-            "clarification_prompt": gpt_json.get("clarification_prompt"),
-            "clarification_prompts": gpt_json.get("clarification_prompts")
+            "description_arabic": gpt_json.get("description_arabic", ""),
+            "description_english": gpt_json.get("description_english", ""),
+            "missing_traits": gpt_json.get("missing_traits"),
+            "clarification_questions": gpt_json.get("clarification_questions")
+        })
+    elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
+        # Backward-compatible fallback
+        questions = []
+        if "clarification_prompts" in gpt_json and gpt_json["clarification_prompts"]:
+            questions = gpt_json["clarification_prompts"]
+        elif "clarification_prompt" in gpt_json and gpt_json["clarification_prompt"]:
+            questions = [gpt_json["clarification_prompt"]]
+        result.update({
+            "status": "incomplete",
+            "description_arabic": gpt_json.get("description_arabic", ""),
+            "description_english": gpt_json.get("description_english", ""),
+            "missing_traits": None,
+            "clarification_questions": questions
         })
     else:
         raise HTTPException(
             status_code=500,
             detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
         )
-
     return result
