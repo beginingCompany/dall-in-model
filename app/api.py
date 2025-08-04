@@ -1,19 +1,14 @@
-
+import time
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ValidationError
-from typing import Optional, Union, List, Dict
+from typing import Optional, Union, List
 from app.predict import PersonalityPredictor
 from app.personality_analyzer import PersonalityAnalyzer
+from app.db.user_memory_db import create_table, load_user_memory, save_user_memory
 
 app = FastAPI()
-
 predictor = PersonalityPredictor(num_labels=120, top_k=3)
-analyzer = PersonalityAnalyzer()
 
-# In-memory store for accumulating user input by ID
-user_memory: Dict[int, Dict[str, str]] = {}
-
-# Request models
 class PredictionRequest(BaseModel):
     text: str
 
@@ -29,6 +24,8 @@ class PredictionResponse(BaseModel):
 async def predict(request: PredictionRequest):
     try:
         result = predictor.predict([request.text]).iloc[0]
+        # Print for debugging
+        print(result['predictions'])
         return {
             "text": result['text'],
             "predictions": [
@@ -41,6 +38,12 @@ async def predict(request: PredictionRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+analyzer = PersonalityAnalyzer()
+
+@app.on_event("startup")
+def startup():
+    create_table()
 
 class UserRequest(BaseModel):
     id: int
@@ -74,28 +77,37 @@ class TraitResponse(BaseModel):
 
 @app.post("/analyze-personality", response_model=TraitResponse)
 async def analyze_personality(request: Request):
+    t0 = time.time()
+    print("[START] analyze_personality", t0)
     try:
         data = await request.json()
         req = UserRequest(**data)
     except ValidationError as ve:
+        print("[ERROR] Validation failed after", time.time() - t0, "sec")
         raise HTTPException(status_code=422, detail=ve.errors())
     except Exception as e:
+        print("[ERROR] JSON parse failed after", time.time() - t0, "sec")
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
-    # Accumulate input in memory
-    memory = user_memory.get(req.id, {"user_input": "", "new_input": ""})
+    print("[INFO] After input parse:", time.time() - t0, "sec")
+    memory = load_user_memory(req.id)
+    print("[INFO] After load_user_memory:", time.time() - t0, "sec")
     memory["user_input"] += " " + req.user_input.strip()
     memory["new_input"] += " " + req.new_input.strip()
-    user_memory[req.id] = memory
+    save_user_memory(req.id, memory["user_input"], memory["new_input"])
+    print("[INFO] After save_user_memory:", time.time() - t0, "sec")
 
     try:
         gpt_json = analyzer.analyze(
             user_input=memory["user_input"],
             new_input=memory["new_input"],
-            languages=req.get_languages()
+            languages=req.get_languages(),
+            id=req.id
         )
     except Exception as e:
+        print("[ERROR] analyzer.analyze failed after", time.time() - t0, "sec")
         raise HTTPException(status_code=500, detail=str(e))
+    print("[INFO] After analyzer.analyze:", time.time() - t0, "sec")
 
     result = {
         "id": req.id,
@@ -119,7 +131,6 @@ async def analyze_personality(request: Request):
             "clarification_questions": gpt_json.get("clarification_questions")
         })
     elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
-        # Backward-compatible fallback
         questions = []
         if "clarification_prompts" in gpt_json and gpt_json["clarification_prompts"]:
             questions = gpt_json["clarification_prompts"]
@@ -133,8 +144,10 @@ async def analyze_personality(request: Request):
             "clarification_questions": questions
         })
     else:
+        print("[ERROR] Unexpected GPT output after", time.time() - t0, "sec")
         raise HTTPException(
             status_code=500,
             detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
         )
+    print("[END] analyze_personality completed in", time.time() - t0, "sec")
     return result
