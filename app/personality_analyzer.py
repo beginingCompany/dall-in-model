@@ -1,4 +1,3 @@
-
 import os
 import re
 import json
@@ -7,7 +6,6 @@ from typing import List, Dict, Any
 from openai import OpenAI, OpenAIError
 import tiktoken
 from dotenv import load_dotenv
-import re
 
 load_dotenv()
 
@@ -96,7 +94,6 @@ You receive a JSON object with:
 **Example Clarification Prompt:**  
 {"clarification_prompt": "Thank you for sharing that you love programming! Can you tell us a bit more about how you usually interact with others, or how you react when facing challenges?"}
     """
-
 
     def __init__(self, model: str = "gpt-3.5-turbo"):
         self.model = model
@@ -187,12 +184,24 @@ You receive a JSON object with:
 
         try:
             gpt_json = json.loads(json_text)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             self.logger.error(f"GPT returned invalid JSON: {gpt_response}")
             raise RuntimeError(f"GPT returned invalid JSON: {gpt_response['content']}")
 
+        # Attach token usage
         gpt_json["input_tokens"] = gpt_response.get("input_tokens")
         gpt_json["output_tokens"] = gpt_response.get("output_tokens")
         gpt_json["total_tokens"] = gpt_response.get("total_tokens")
+
+        # Prevent "complete" status with empty description
+        if (
+            ("english" in languages and not gpt_json.get("description_english")) or
+            ("arabic" in languages and not gpt_json.get("description_arabic"))
+        ):
+            gpt_json["status"] = "incomplete"
+            if not gpt_json.get("clarification_questions"):
+                gpt_json["clarification_questions"] = [
+                    "Could you provide more detail about your personality traits so I can give you a complete description?"
+                ]
 
         return gpt_json

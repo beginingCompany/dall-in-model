@@ -7,7 +7,14 @@ from app.personality_analyzer import PersonalityAnalyzer
 from app.db.user_memory_db import create_table, load_user_memory, save_user_memory
 
 app = FastAPI()
+
+# Initialize predictor once (adjust num_labels and top_k as needed)
 predictor = PersonalityPredictor(num_labels=120, top_k=3)
+analyzer = PersonalityAnalyzer()
+
+# ----------------------
+# Pydantic models
+# ----------------------
 
 class PredictionRequest(BaseModel):
     text: str
@@ -19,31 +26,6 @@ class PredictionItem(BaseModel):
 class PredictionResponse(BaseModel):
     text: str
     predictions: List[PredictionItem]
-
-@app.post("/predict", response_model=PredictionResponse)
-async def predict(request: PredictionRequest):
-    try:
-        result = predictor.predict([request.text]).iloc[0]
-        # Print for debugging
-        print(result['predictions'])
-        return {
-            "text": result['text'],
-            "predictions": [
-                {
-                    "class_name": p.get("class") or p.get("class_name") or p.get("label", ""),
-                    "confidence": p.get("confidence", 0.0)
-                }
-                for p in result['predictions']
-            ]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-analyzer = PersonalityAnalyzer()
-
-@app.on_event("startup")
-def startup():
-    create_table()
 
 class UserRequest(BaseModel):
     id: int
@@ -75,28 +57,55 @@ class TraitResponse(BaseModel):
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
 
+# ----------------------
+# Startup event: create DB table
+# ----------------------
+@app.on_event("startup")
+def startup():
+    create_table()
+
+# ----------------------
+# Simple predictor endpoint (for raw personality prediction)
+# ----------------------
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(request: PredictionRequest):
+    try:
+        # Run prediction on the input text
+        df_result = predictor.predict([request.text])
+        result = df_result.iloc[0]
+        # Format predictions properly
+        preds = [
+            PredictionItem(
+                class_name=p.get("class_name") or p.get("class") or p.get("label", ""),
+                confidence=p.get("confidence", "0%")
+            )
+            for p in result['predictions']
+        ]
+        return PredictionResponse(text=result['text'], predictions=preds)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
+
+# ----------------------
+# Complex personality analysis with memory & clarifications
+# ----------------------
 @app.post("/analyze-personality", response_model=TraitResponse)
 async def analyze_personality(request: Request):
     t0 = time.time()
-    print("[START] analyze_personality", t0)
     try:
         data = await request.json()
         req = UserRequest(**data)
     except ValidationError as ve:
-        print("[ERROR] Validation failed after", time.time() - t0, "sec")
         raise HTTPException(status_code=422, detail=ve.errors())
-    except Exception as e:
-        print("[ERROR] JSON parse failed after", time.time() - t0, "sec")
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
-    print("[INFO] After input parse:", time.time() - t0, "sec")
     memory = load_user_memory(req.id)
-    print("[INFO] After load_user_memory:", time.time() - t0, "sec")
-    memory["user_input"] += " " + req.user_input.strip()
-    memory["new_input"] += " " + req.new_input.strip()
+    # Accumulate inputs
+    memory["user_input"] = (memory.get("user_input", "") + " " + req.user_input.strip()).strip()
+    memory["new_input"] = (memory.get("new_input", "") + " " + req.new_input.strip()).strip()
     save_user_memory(req.id, memory["user_input"], memory["new_input"])
-    print("[INFO] After save_user_memory:", time.time() - t0, "sec")
 
+    # Analyze personality using your analyzer
     try:
         gpt_json = analyzer.analyze(
             user_input=memory["user_input"],
@@ -105,9 +114,15 @@ async def analyze_personality(request: Request):
             id=req.id
         )
     except Exception as e:
-        print("[ERROR] analyzer.analyze failed after", time.time() - t0, "sec")
-        raise HTTPException(status_code=500, detail=str(e))
-    print("[INFO] After analyzer.analyze:", time.time() - t0, "sec")
+        raise HTTPException(status_code=500, detail=f"Analyzer error: {e}")
+
+    # OPTIONAL: Use PersonalityPredictor to enrich or validate analysis output
+    # Example: predict top-3 personality classes for combined input
+    try:
+        pred_df = predictor.predict([memory["user_input"] + " " + memory["new_input"]])
+        prediction = pred_df.iloc[0]['predictions']
+    except Exception as e:
+        prediction = None  # Ignore predictor failure for now
 
     result = {
         "id": req.id,
@@ -116,6 +131,7 @@ async def analyze_personality(request: Request):
         "total_tokens": gpt_json.get("total_tokens"),
     }
 
+    # Integrate descriptions and clarifications if present
     if "description_arabic" in gpt_json or "description_english" in gpt_json:
         result.update({
             "status": "complete",
@@ -144,10 +160,13 @@ async def analyze_personality(request: Request):
             "clarification_questions": questions
         })
     else:
-        print("[ERROR] Unexpected GPT output after", time.time() - t0, "sec")
         raise HTTPException(
             status_code=500,
             detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
         )
-    print("[END] analyze_personality completed in", time.time() - t0, "sec")
+
+    # Optionally attach predictor's raw personality predictions (not mandatory)
+    if prediction:
+        result["personality_predictions"] = prediction
+
     return result
