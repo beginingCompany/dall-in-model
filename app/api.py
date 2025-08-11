@@ -46,7 +46,7 @@ analyzer = PersonalityAnalyzer()  # Instantiate once at startup
 class UserRequest(BaseModel):
     id: int
     user_input: str
-    new_input: Optional[str] = ""
+    new_input: List[dict] = []  # Each dict: {"question": str, "answer": str}
     languages: Union[str, List[str], None] = None
 
     @classmethod
@@ -61,6 +61,17 @@ class UserRequest(BaseModel):
 
     def get_languages(self):
         return self.coerce_languages(self.languages)
+
+    def get_combined_new_input(self) -> str:
+        """
+        Combine all 'answer' fields from new_input list into a single string.
+        """
+        if not self.new_input:
+            return ""
+        # Accept both old and new formats for backward compatibility
+        if isinstance(self.new_input, list) and all(isinstance(item, dict) and ("answer" in item) for item in self.new_input):
+            return "\n".join(str(item.get("answer", "")).strip() for item in self.new_input if item.get("answer"))
+        return str(self.new_input)
 
 class TraitResponse(BaseModel):
     id: int
@@ -84,7 +95,9 @@ async def personality(request: Request):
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
     try:
-        gpt_json = analyzer.analyze(req.user_input, req.new_input, req.get_languages())
+        # Combine all answers from new_input for prompt compatibility
+        combined_new_input = req.get_combined_new_input()
+        gpt_json = analyzer.analyze(req.user_input, combined_new_input, req.get_languages())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
