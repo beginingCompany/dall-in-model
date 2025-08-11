@@ -99,13 +99,16 @@ async def analyze_personality(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
+    # update memory 
     memory = load_user_memory(req.id)
     memory["user_input"] = (memory.get("user_input", "") + " " + req.user_input.strip()).strip()
-    memory["new_input"] = (memory.get("new_input", "") + " " + req.new_input.strip()).strip()
+    memory["new_input"] = (memory.get("new_input", "") + " " + req.get_combined_new_input().strip()).strip()
     save_user_memory(req.id, memory["user_input"], memory["new_input"])
 
     try:
-        gpt_json = analyzer.analyze(req.user_input, req.new_input, req.get_languages())
+        # Build full context from user_input and new_input (Q&A pairs)
+        full_context = PersonalityAnalyzer.build_full_context(req.user_input, req.new_input)
+        gpt_json = analyzer.analyze(full_context, "", req.get_languages())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analyzer error: {e}")
 
