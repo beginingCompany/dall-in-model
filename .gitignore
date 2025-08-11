@@ -8,3 +8,4 @@ trained_model.pth
 
 # Ignore all files in models
 models/*
+user_memory.db

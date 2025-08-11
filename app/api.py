@@ -1,15 +1,17 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import uvicorn
-from typing import List
-from app.predict import PersonalityPredictor
-from app.GPT_api import PersonalityAnalyzer
-from fastapi import FastAPI, Request, HTTPException
+import time
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ValidationError
 from typing import Optional, Union, List
+from app.predict import PersonalityPredictor
+from app.personality_analyzer import PersonalityAnalyzer
 
 app = FastAPI()
+
 predictor = PersonalityPredictor(num_labels=120, top_k=3)
+analyzer = PersonalityAnalyzer()
+
+# Simple in-memory user memory storage
+_user_memory_store = {}
 
 class PredictionRequest(BaseModel):
     text: str
@@ -21,27 +23,6 @@ class PredictionItem(BaseModel):
 class PredictionResponse(BaseModel):
     text: str
     predictions: List[PredictionItem]
-
-@app.post("/predict", response_model=PredictionResponse)
-async def predict(request: PredictionRequest):
-    try:
-        result = predictor.predict([request.text]).iloc[0]
-        # Print for debugging
-        print(result['predictions'])
-        return {
-            "text": result['text'],
-            "predictions": [
-                {
-                    "class_name": p.get("class") or p.get("class_name") or p.get("label", ""),
-                    "confidence": p.get("confidence", 0.0)
-                }
-                for p in result['predictions']
-            ]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-analyzer = PersonalityAnalyzer()  # Instantiate once at startup
 
 class UserRequest(BaseModel):
     id: int
@@ -84,45 +65,88 @@ class TraitResponse(BaseModel):
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
 
+# In-memory functions to simulate DB
+def load_user_memory(user_id: int):
+    return _user_memory_store.get(user_id, {"user_input": "", "new_input": ""})
+
+def save_user_memory(user_id: int, user_input: str, new_input: str):
+    _user_memory_store[user_id] = {"user_input": user_input, "new_input": new_input}
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(request: PredictionRequest):
+    try:
+        df_result = predictor.predict([request.text])
+        result = df_result.iloc[0]
+        preds = [
+            PredictionItem(
+                class_name=p.get("class_name") or p.get("class") or p.get("label", ""),
+                confidence=p.get("confidence", "0%")
+            )
+            for p in result['predictions']
+        ]
+        return PredictionResponse(text=result['text'], predictions=preds)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
+
 @app.post("/analyze-personality", response_model=TraitResponse)
-async def personality(request: Request):
+async def analyze_personality(request: Request):
+    t0 = time.time()
     try:
         data = await request.json()
         req = UserRequest(**data)
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=ve.errors())
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
-    try:
-        # Combine all answers from new_input for prompt compatibility
-        combined_new_input = req.get_combined_new_input()
-        gpt_json = analyzer.analyze(req.user_input, combined_new_input, req.get_languages())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    memory = load_user_memory(req.id)
+    memory["user_input"] = (memory.get("user_input", "") + " " + req.user_input.strip()).strip()
+    memory["new_input"] = (memory.get("new_input", "") + " " + req.new_input.strip()).strip()
+    save_user_memory(req.id, memory["user_input"], memory["new_input"])
 
-    # Compose result
+    try:
+        gpt_json = analyzer.analyze(req.user_input, req.new_input, req.get_languages())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analyzer error: {e}")
+
     result = {
         "id": req.id,
         "input_tokens": gpt_json.get("input_tokens"),
         "output_tokens": gpt_json.get("output_tokens"),
         "total_tokens": gpt_json.get("total_tokens"),
     }
+
     if "description_arabic" in gpt_json or "description_english" in gpt_json:
         result.update({
             "status": "complete",
             "description_arabic": gpt_json.get("description_arabic", ""),
             "description_english": gpt_json.get("description_english", "")
         })
-    elif "missing_traits" in gpt_json and "clarification_questions" in gpt_json:
+    elif "missing_traits" in gpt_json or "clarification_questions" in gpt_json:
         result.update({
             "status": "incomplete",
-            "missing_traits": gpt_json.get("missing_traits", []),
-            "clarification_questions": gpt_json.get("clarification_questions", [])
+            "description_arabic": gpt_json.get("description_arabic", ""),
+            "description_english": gpt_json.get("description_english", ""),
+            "missing_traits": gpt_json.get("missing_traits"),
+            "clarification_questions": gpt_json.get("clarification_questions")
+        })
+    elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
+        questions = []
+        if "clarification_prompts" in gpt_json and gpt_json["clarification_prompts"]:
+            questions = gpt_json["clarification_prompts"]
+        elif "clarification_prompt" in gpt_json and gpt_json["clarification_prompt"]:
+            questions = [gpt_json["clarification_prompt"]]
+        result.update({
+            "status": "incomplete",
+            "description_arabic": gpt_json.get("description_arabic", ""),
+            "description_english": gpt_json.get("description_english", ""),
+            "missing_traits": None,
+            "clarification_questions": questions
         })
     else:
         raise HTTPException(
             status_code=500,
             detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
         )
+
     return result

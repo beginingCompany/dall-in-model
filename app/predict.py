@@ -7,8 +7,8 @@ import logging
 import os
 from typing import List, Union, Optional
 
-os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disables tokenizer warnings
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"        # Disables TensorFlow warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disable tokenizer parallelism warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"        # Disable TensorFlow warnings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,6 +20,7 @@ class PersonalityPredictor:
     """
     Personality code predictor. Supports top-K, probability output, and efficient batch inference.
     """
+
     def __init__(
         self,
         num_labels: int,
@@ -85,23 +86,23 @@ class PersonalityPredictor:
                 topk_indices = topk.indices.cpu().tolist()
                 topk_values = topk.values.cpu().tolist()
 
-                # --- MAIN CHANGE: No normalization, just use softmax probabilities directly ---
                 for i, text in enumerate(batch_texts):
-                    values = topk_values[i]   # Each value: model's softmax probability for the class
+                    values = topk_values[i]
                     idxs = topk_indices[i]
+                    sum_vals = sum(values)
                     predictions = []
                     for idx, raw_val in zip(idxs, values):
+                        normalized_conf = raw_val / sum_vals if sum_vals > 0 else 0
                         predictions.append({
                             "class_name": self.label_map.get(idx, f"UNK_{idx}"),
-                            "confidence": f"{round(raw_val * 100, 2)}%",   # Real probability out of 100%
-                            "raw_prob": float(round(raw_val * 100, 4)) if return_probs else None
+                            "confidence": f"{round(normalized_conf * 100, 2)}%",   # normalized confidence
+                            "raw_prob": float(round(normalized_conf * 100, 4)) if return_probs else None
                         })
-                    # Optionally, add the sum of the rest ("remaining confidence"):
-                    remaining_confidence = f"{round((1 - sum(values)) * 100, 2)}%"
+                    # remaining confidence is zero or very close after normalization
                     results.append({
                         "text": text,
                         "predictions": predictions,
-                        "remaining_confidence": remaining_confidence if not return_probs else None
+                        "remaining_confidence": None
                     })
 
         df = pd.DataFrame(results)
@@ -142,7 +143,6 @@ class PersonalityPredictor:
         if not processed_data_path.exists():
             raise FileNotFoundError(f"Label map file not found: {processed_data_path}")
         df = pd.read_csv(processed_data_path)
-        # Robust handling: if 'letter' not present, fallback to first category column
         if "letter" not in df.columns:
             label_col = df.columns[df.dtypes == "object"][0]
             logger.warning(f"'letter' column not found; using '{label_col}' for label mapping.")
