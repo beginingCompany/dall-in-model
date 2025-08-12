@@ -1,11 +1,19 @@
 import time
+import os
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ValidationError
 from typing import Optional, Union, List
 from app.predict import PersonalityPredictor
 from app.personality_analyzer import PersonalityAnalyzer
 from app.apply_question_repetition_fix import apply_fix
 from app.emergency_question_fix import apply_emergency_fix
+from app.input_processor import format_for_analysis
+
+# Get the directory of the current file
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(current_dir, "static")
 
 app = FastAPI()
 
@@ -15,6 +23,29 @@ apply_emergency_fix()
 
 predictor = PersonalityPredictor(num_labels=120, top_k=3)
 analyzer = PersonalityAnalyzer()
+
+# Mount the static files directory
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Root endpoint to serve the HTML interface
+@app.get("/")
+@app.head("/")  # Adding HEAD method support for status checks
+async def get_root():
+    return FileResponse(os.path.join(static_dir, "index.html"))
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "ok",
+        "uptime": time.time() - app.state.start_time if hasattr(app.state, 'start_time') else 0,
+        "version": "1.0"
+    }
+
+# Store the start time for the uptime calculation
+@app.on_event("startup")
+async def startup_event():
+    app.state.start_time = time.time()
 
 # Simple in-memory user memory storage
 _user_memory_store = {}
@@ -99,11 +130,18 @@ async def analyze_personality(request: Request):
     t0 = time.time()
     try:
         data = await request.json()
-        req = UserRequest(**data)
+        
+        # Process the input data using our formatter
+        formatted_data = format_for_analysis(data)
+        
+        # Then validate with Pydantic
+        req = UserRequest(**formatted_data)
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=ve.errors())
-    except Exception:
+    except ValueError:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Request error: {str(e)}")
 
     # update memory (optional, keep if needed)
     memory = load_user_memory(req.id)
@@ -111,6 +149,66 @@ async def analyze_personality(request: Request):
     memory["new_input"] = (memory.get("new_input", "") + " " + req.get_combined_new_input().strip()).strip()
     save_user_memory(req.id, memory["user_input"], memory["new_input"])
 
+    # Log the input for debugging
+    print(f"Processing analyze-personality request for user ID: {req.id}")
+    print(f"User input (length: {len(req.user_input)}): {req.user_input[:100]}...")
+    print(f"New input items: {len(req.new_input)}")
+    print(f"Languages: {req.languages}")
+    
+    # Check if input is too minimal
+    if len(req.user_input.strip().split()) < 15 and not req.new_input:
+        print("WARNING: Input is too minimal for proper analysis")
+        return {
+            "id": req.id,
+            "status": "minimal_input",
+            "description_english": "Your input is too brief for a complete personality analysis. Please provide more details about yourself.",
+            "description_arabic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "Could you tell me more about yourself, your interests, and your typical behaviors?",
+                "How would you describe your personality to someone who doesn't know you?",
+                "What are some of your strengths and challenges in your daily life?",
+                "How do you typically interact with others in social or work settings?"
+            ]
+        }
+        
+    # Check if input is likely sufficient for analysis (contains trait indicators)
+    has_trait_indicators = False
+    
+    # Simple check for trait-related content
+    trait_keywords = [
+        # Emotional traits
+        "feel", "emotion", "happy", "sad", "angry", "anxious", "calm", "stress", 
+        # Social traits
+        "people", "friend", "social", "interact", "talk", "communicate", "relationship",
+        # Cognitive traits
+        "think", "decision", "problem", "solve", "creative", "analytical", "logical",
+        # Behavioral traits
+        "habit", "routine", "organized", "spontaneous", "plan", "schedule", "activity"
+    ]
+    
+    input_lower = req.user_input.lower()
+    for keyword in trait_keywords:
+        if keyword in input_lower:
+            has_trait_indicators = True
+            break
+    
+    if not has_trait_indicators and len(req.user_input.strip().split()) < 30:
+        print("WARNING: Input lacks personality trait indicators")
+        return {
+            "id": req.id,
+            "status": "insufficient_traits",
+            "description_english": "Your input doesn't contain enough information about your personality traits. Please describe your emotional reactions, social interactions, thinking style, and typical behaviors.",
+            "description_arabic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "How would you describe your typical emotional responses to situations?",
+                "How do you typically interact with others in social settings?",
+                "What is your approach to problem-solving and decision-making?",
+                "What are some of your regular habits or routines?"
+            ]
+        }
+            
     # Prepare input for analyzer
     try:
         gpt_json = analyzer.analyze(
@@ -119,15 +217,97 @@ async def analyze_personality(request: Request):
             new_input=req.new_input,
             languages=req.languages
         )
+        print(f"Analyzer returned response with keys: {list(gpt_json.keys())}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analyzer error: {e}")
+        print(f"ANALYZER ERROR: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        # Return a user-friendly response instead of an error
+        return {
+            "id": req.id,
+            "status": "analyzer_error",
+            "description_english": "We encountered an issue analyzing your input. Please try again with more detailed information.",
+            "description_arabic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "Could you provide more specific details about your personality?",
+                "How would you describe your typical emotional responses?",
+                "What are your typical behaviors in different situations?",
+                "How do you interact with others in social settings?"
+            ]
+        }
 
     # The model's output is in gpt_json['content'] as a JSON string; parse it
     import json
     try:
+        # Debug log the raw response
+        print(f"Raw GPT response: {gpt_json}")
+        
+        if "content" not in gpt_json:
+            print("ERROR: 'content' key missing from analyzer response")
+            # Try to provide a fallback response if missing
+            dummy_response = {
+                "id": req.id,
+                "status": "error",
+                "description_english": "The analyzer encountered an issue processing your request. Please try again.",
+                "description_arabic": "",
+                "missing_traits": [],
+                "clarification_questions": ["Could you provide more information about yourself?"]
+            }
+            return dummy_response
+            
+        if not gpt_json["content"]:
+            print("ERROR: Empty 'content' in analyzer response")
+            raise ValueError("Empty response content")
+            
+        print(f"Parsing content (length: {len(gpt_json['content'])}): {gpt_json['content'][:100]}...")
         model_output = json.loads(gpt_json["content"])
-    except Exception:
-        raise HTTPException(status_code=500, detail={"error": "Invalid JSON from GPT", "raw_response": gpt_json})
+        print("Successfully parsed JSON content")
+        
+    except json.JSONDecodeError as je:
+        print(f"JSON DECODE ERROR: {str(je)}")
+        # Instead of error, provide a meaningful fallback response
+        fallback_response = {
+            "id": req.id,
+            "status": "incomplete",
+            "description_english": "Your input was too brief for a complete analysis. Please provide more information about yourself, your personality traits, habits, and behaviors.",
+            "description_arabic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "Could you tell me more about yourself beyond taking breaks?",
+                "How would you describe your typical interactions with others?",
+                "What kind of activities or work do you enjoy most?",
+                "How do you typically handle challenging situations?"
+            ],
+            "input_tokens": gpt_json.get("input_tokens", 0),
+            "output_tokens": gpt_json.get("output_tokens", 0),
+            "total_tokens": gpt_json.get("total_tokens", 0)
+        }
+        print("Providing fallback response due to JSON decode error")
+        return fallback_response
+    except Exception as e:
+        print(f"ERROR PROCESSING GPT RESPONSE: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        # Instead of error, provide a meaningful fallback response
+        fallback_response = {
+            "id": req.id,
+            "status": "error",
+            "description_english": "We encountered an issue analyzing your input. Please provide more detailed information about yourself.",
+            "description_arabic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "Could you share more about your personality traits?",
+                "How would you describe your typical mood or emotional state?",
+                "Tell me about how you interact with others.",
+                "What are your typical habits or routines?"
+            ],
+            "input_tokens": gpt_json.get("input_tokens", 0),
+            "output_tokens": gpt_json.get("output_tokens", 0),
+            "total_tokens": gpt_json.get("total_tokens", 0)
+        }
+        print("Providing fallback response due to general error")
+        return fallback_response
 
     # Attach token usage if present
     if "input_tokens" in gpt_json:

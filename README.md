@@ -18,6 +18,42 @@ The model outputs:
 - A symbolic code (`letter`)
 - Academic and career recommendations
 - Hobby suggestions
+
+## 📝 Input Processing
+
+The system includes an `input_processor` module to handle and format input data for personality analysis. This processor:
+
+- Combines the initial user input with question-answer pairs
+- Processes multiple questions in a single entry
+- Formats the data for optimal analysis
+
+### Usage Example
+
+```python
+from app.input_processor import format_for_analysis
+
+# Sample input data
+data = {
+    "id": 123,
+    "user_input": "I am a software developer",
+    "new_input": [
+        {
+            "question": "How do you handle stress at work?",
+            "answer": "I take short breaks to clear my mind."
+        }
+    ],
+    "languages": "en"
+}
+
+# Process the data
+processed_data = format_for_analysis(data)
+
+# The processed_data can now be sent to the analyzer
+```
+
+### API Integration
+
+The input processor is automatically used when making requests to the `/analyze-personality` endpoint, ensuring all input is properly formatted before analysis.
 - Descriptions and strengths in **Arabic & English**
 - Cognitive and emotional profiling
 
