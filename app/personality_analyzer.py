@@ -3,7 +3,7 @@ import re
 import json
 import logging
 from typing import List, Dict, Any
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 import tiktoken
 from dotenv import load_dotenv
 
@@ -84,87 +84,86 @@ class PersonalityAnalyzer:
             selected_questions = [random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[t]) for t in missing]
             # Return 1-2 questions maximum to avoid overwhelming the user
             return " ".join(selected_questions[:2])
-
     SYSTEM_PROMPT = """
 You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
 
-You will help me extract character descriptions by reviewing texts submitted by users, which may sometimes be random, and converting them into descriptive texts.
+Purpose
+You will help extract character descriptions by reviewing texts submitted by users — these may sometimes be random — and converting them into concise descriptive texts that capture four key personality traits:
 
-Our method of work will be as follows: I will give you a text, and I want you to check each one to see if it contains the following FOUR KEY PERSONALITY TRAITS:
-1. EMOTIONAL TRAITS: Words like "enthusiastic", "happy", "sad", "calm", "feelings", "emotions", "stress", "excited", "passionate", etc.
-2. SOCIAL TRAITS: Words like "collaborative", "team", "help", "shy", "introvert", "extrovert", "interact", "friendly", etc.
-3. COGNITIVE TRAITS: Words like "think", "critical", "logical", "analytical", "understand", "reason", "solve", "strategic", etc.
-4. BEHAVIORAL TRAITS: Words like "organized", "spontaneous", "routine", "habit", "disciplined", "methodical", etc.
+Emotional
+Social
+Cognitive
+Behavioral
 
-If some or all of these traits are missing, ask descriptive questions to clarify each missing trait individually.
+Multi-User Handling
+Conversations will involve multiple people.
+Each person will have a unique id that identifies their responses and links them to their prior answers.
+Always use the id to maintain continuity and prevent mixing up responses between users.
 
-There are some points to keep in mind: Conversations will involve multiple people, so each person will have a unique ID to remember their previous answers. This will prevent users' answers from being mixed up and the output being inaccurate.
+Process
 
-**Clarification Process:**  
-- On first interaction for an `id`, thank the user for what they shared and reference a detail from their input.  
-- On later clarifications, vary encouragement phrases and avoid repeating identical thank-you wording.  
-- Always read the full conversation history and **never** ask about a trait already addressed.  
-- If an answer is vague, encourage more detail without forcing it.  
-- If the user expresses frustration, acknowledge, show empathy, and either summarize or move to a new question.  
-- The goal is to gather all four aspects with enough richness to build a complete description — once they are covered, stop asking for more unless the user explicitly requests an update.  
+Analyze Input & History
+Review the latest user input (user_input) and the full conversation history (new_input) for the given id.
+Combine information from all turns to build a complete personality profile.
 
----
+Check for Missing Traits
+If all four traits are sufficiently covered, return status "complete".
+If some traits are missing, return status "incomplete" and list them in missing_traits.
+
+Clarification Questions
+If incomplete, generate short, friendly, non-repetitive questions.
+Each question must clarify one missing trait.
+Never ask about traits already covered.
 
 
-**Clarification Question Generation:** 
-- IMPORTANT: Ask ONLY about traits that are missing from the user's input, based on these four categories:
-  * For EMOTIONAL traits missing: Ask about their feelings, emotional responses, or how they handle stress/excitement
-  * For SOCIAL traits missing: Ask about how they interact with others, their social preferences, or teamwork style
-  * For COGNITIVE traits missing: Ask about their thinking style, problem-solving approach, or decision-making
-  * For BEHAVIORAL traits missing: Ask about their routines, organization style, or typical daily habits
-- Generate 1–2 short, friendly, non-repetitive questions in the user's selected language(s).
-- Always personalize by referencing something the user has already shared.
-- Example:  
-  ```json
-  {"clarification_questions": ["That's interesting that you enjoy programming. Could you share how you usually handle unexpected challenges?", "How do you typically spend your weekends?"]}
+id (integer)
+status ("complete" or "incomplete")
+description_english (concise personality description)
+description_arabic (concise personality description in Arabic if possible)
+missing_traits (array or null)
+clarification_questions (array)
+input_tokens (integer)
+output_tokens (integer)
 
-**all examples in this prompt just to show case not a pattern****CRITICAL: OUTPUT FORMAT INSTRUCTIONS**
-1. Your response MUST be a valid JSON object, and nothing else
-2. DO NOT include explanations, markdown formatting, or any text outside the JSON
-3. DO NOT include ```json and ``` tags around your response
-4. Always ensure that your JSON object is properly formatted with quotes around keys and string values
+            LANGUAGE HANDLING:
+            Only fill in 'description_english' if the user's languages field includes "en" or "english". Only fill in 'description_arabic' if the user's languages field includes "ar" or "arabic". If a language is not requested, leave its description field as an empty string.
 
-When all four aspects are covered:
-```json
+            All clarification questions and trait names (in 'missing_traits') must be in the user's requested language(s) as specified in the 'languages' field.
+
+            Do not include any extra text, code blocks, or explanations outside the JSON.
+
+
+Do not include any extra text, code blocks, or explanations outside the JSON.
+
+Example Output — Incomplete
 {
-  "id": <same as input>,
-  "status": "complete",
-  "description_english": "Full personality description text here",
-  "description_arabic": "Arabic translation of the personality description",
-  "missing_traits": [],
-  "clarification_questions": [],
-  "input_tokens": <int>,
-  "output_tokens": <int>,
-  "total_tokens": <int>
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "missing_traits": ["behavioral", "emotional"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
 }
-```
 
-When aspects are missing:
-```json
+Example Output — Complete
 {
-  "id": <same as input>,
-  "status": "incomplete",
-  "missing_traits": ["social_interaction", "daily_habits"],
-  "clarification_questions": ["Question 1?", "Question 2?"],
-  "description_english": "",
-  "description_arabic": "",
-  "input_tokens": <int>,
-  "output_tokens": <int>,
-  "total_tokens": <int>
+    "id": 22,
+    "status": "complete",
+    "description_arabic": "شخص يتمتع بقدرات تحليلية قوية، وسلوك اجتماعي هادئ، وأسلوب اتخاذ قرارات عقلاني ومتوازن عاطفيًا.",
+    "description_english": "A person with strong analytical abilities, a calm social demeanor, and a rational yet emotionally balanced decision-making style.",
+    "missing_traits": [],
+    "clarification_questions": [],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
 }
-```
-
-IMPORTANT JSON FORMATTING RULE:
-- Your output MUST be ONLY the JSON object itself
-- No text before or after the JSON
-- No code block markers (```) or comments outside the JSON
-- Double-check that all quotes and braces are properly matched
-
+IMPORTANT: Only output the JSON object, no explanations or formatting.
 """
 
     def __init__(self, model: str = "gpt-3.5-turbo"):
@@ -194,24 +193,7 @@ IMPORTANT JSON FORMATTING RULE:
         # Method 1: Try to extract from code blocks
         pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
         match = re.search(pattern, text)
-        if match:
-            json_content = match.group(1).strip()
-            # Validate if it's a proper JSON object starting with { and ending with }
-            if json_content.startswith('{') and json_content.endswith('}'):
-                return json_content
-        
-        # Method 2: Find JSON wrapped in braces
-        json_start = text.find("{")
-        json_end = text.rfind("}")
-        if json_start != -1 and json_end != -1 and json_end > json_start:
-            return text[json_start:json_end+1].strip()
-        
-        # Method 3: Check if the entire text is a valid JSON
-        text_stripped = text.strip()
-        if text_stripped.startswith('{') and text_stripped.endswith('}'):
-            return text_stripped
-            
-        # Method 4: Try to extract the meaningful content from the text response
+
         # If we find something that looks like a description, use it
         if "you are" in text.lower() or "you seem" in text.lower() or "you appear" in text.lower():
             description = text.strip()
@@ -221,6 +203,7 @@ IMPORTANT JSON FORMATTING RULE:
                 "description_arabic": ""  # This will be filled in later if needed
             })
             
+
         # If no valid JSON found, create a meaningful default JSON
         if not text:
             return '{"status": "incomplete", "clarification_questions": ["Could you provide more information about yourself?"]}'
@@ -292,13 +275,8 @@ IMPORTANT JSON FORMATTING RULE:
         num_tokens += 3
         return num_tokens
 
-    def call_gpt(self, input_text: str, languages: List[str], id: int, max_tokens: int = 1200) -> dict:
-        prompt = json.dumps({
-            "user_input": input_text,
-            "new_input": "",
-            "id": id,
-            "languages": languages
-        }, ensure_ascii=False)
+    def call_gpt(self, input_data: dict, max_tokens: int = 1200) -> dict:
+        prompt = json.dumps(input_data, ensure_ascii=False)
 
         messages = [
             {"role": "system", "content": self.SYSTEM_PROMPT},
@@ -330,98 +308,23 @@ IMPORTANT JSON FORMATTING RULE:
 
     def analyze(
         self,
+        id: int,
         user_input: str,
-        new_input: str = "",
-        languages: List[str] = ["english"],
-        id: int = 1
+        new_input: list = None,
+        languages: str = "en"
     ) -> dict:
         """
         Analyze user input to generate personality descriptions.
-        Includes robust error handling for invalid JSON responses.
+        Returns ONLY the raw output from the GPT model, with no fallback or post-processing.
         """
         self.logger.debug(f"Starting analysis for user {id}")
-        combined_input = self.combine_inputs_safely(user_input, new_input)
-        gpt_response = self.call_gpt(combined_input, languages, id=id)
-        json_text = self.extract_json(gpt_response["content"])
-        
-        # Try to parse as JSON with multiple fallback strategies
-        try:
-            gpt_json = json.loads(json_text)
-            self.logger.debug("Successfully parsed JSON response")
-        except json.JSONDecodeError as e:
-            self.logger.warning(f"JSON parsing error: {e}. Attempting to fix malformed JSON.")
-            
-            # Try again with some common JSON fixes
-            try:
-                # Replace single quotes with double quotes
-                fixed_text = json_text.replace("'", '"')
-                gpt_json = json.loads(fixed_text)
-                self.logger.debug("Successfully parsed JSON after quote replacement")
-            except json.JSONDecodeError:
-                self.logger.warning("JSON fixes failed. Creating structured JSON from text response.")
-                # Create a structured JSON from the text response
-                gpt_json = self.create_json_from_text(
-                    gpt_response["content"], 
-                    id,
-                    languages
-                )
-                self.logger.info("Created structured JSON from text response")
-        
-        # Attach token usage
-        gpt_json["input_tokens"] = gpt_response.get("input_tokens")
-        gpt_json["output_tokens"] = gpt_response.get("output_tokens")
-        gpt_json["total_tokens"] = gpt_response.get("total_tokens")
-
-        # Normalize language codes to handle both full names and codes
-        normalized_langs = []
-        for lang in languages:
-            if isinstance(lang, str):
-                lang_lower = lang.lower()
-                if lang_lower in ["english", "en"]:
-                    normalized_langs.append("english")
-                if lang_lower in ["arabic", "ar"]:
-                    normalized_langs.append("arabic")
-        
-        # Always ensure we have a status
-        if "status" not in gpt_json:
-            gpt_json["status"] = "complete"  # Default to complete if input is good enough
-            
-        # For any input with developer + python, generate a fallback description
-        combined_input_lower = combined_input.lower() if combined_input else ""
-        contains_dev_info = "developer" in combined_input_lower and "python" in combined_input_lower
-        social_info = "team" in combined_input_lower or "interact" in combined_input_lower or "meeting" in combined_input_lower
-        
-        # Always provide descriptions for sufficiently detailed inputs
-        if contains_dev_info:
-            if (any(lang in ["english", "en"] for lang in languages) and not gpt_json.get("description_english")):
-                description = f"Based on your input, you are an AI developer with a passion for mathematics and programming, especially Python. You appear to have analytical skills and enjoy solving complex problems."
-                
-                # Add social aspects if present
-                if social_info:
-                    description += " In your professional environment, you interact mainly through team meetings and code reviews, suggesting you value structured collaboration and technical discussions."
-                    
-                gpt_json["description_english"] = description
-                gpt_json["status"] = "complete"
-            
-            if (any(lang in ["arabic", "ar"] for lang in languages) and not gpt_json.get("description_arabic")):
-                description_ar = "بناءً على المعلومات التي قدمتها، أنت مطور ذكاء اصطناعي لديك شغف بالرياضيات والبرمجة، خاصة بلغة بايثون. يبدو أن لديك مهارات تحليلية وتستمتع بحل المشاكل المعقدة."
-                
-                # Add social aspects if present
-                if social_info:
-                    description_ar += " في بيئتك المهنية، تتفاعل بشكل أساسي من خلال اجتماعات الفريق ومراجعات الكود، مما يشير إلى أنك تقدر التعاون المنظم والمناقشات التقنية."
-                    
-                gpt_json["description_arabic"] = description_ar
-                gpt_json["status"] = "complete"
-                
-        # If descriptions are still empty, mark as incomplete
-        if (
-            (any(lang in ["english", "en"] for lang in languages) and not gpt_json.get("description_english")) or
-            (any(lang in ["arabic", "ar"] for lang in languages) and not gpt_json.get("description_arabic"))
-        ):
-            gpt_json["status"] = "incomplete"
-            if not gpt_json.get("clarification_questions"):
-                gpt_json["clarification_questions"] = [
-                    "Could you provide more detail about your personality traits so I can give you a complete description?"
-                ]
-
-        return gpt_json
+        if new_input is None:
+            new_input = []
+        input_data = {
+            "id": id,
+            "user_input": user_input,
+            "new_input": new_input,
+            "languages": languages
+        }
+        gpt_response = self.call_gpt(input_data)
+        return gpt_response

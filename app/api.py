@@ -105,104 +105,52 @@ async def analyze_personality(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid input JSON")
 
-    # update memory 
+    # update memory (optional, keep if needed)
     memory = load_user_memory(req.id)
     memory["user_input"] = (memory.get("user_input", "") + " " + req.user_input.strip()).strip()
     memory["new_input"] = (memory.get("new_input", "") + " " + req.get_combined_new_input().strip()).strip()
     save_user_memory(req.id, memory["user_input"], memory["new_input"])
 
-    # Ensure we have language(s) as a list
-    languages = req.get_languages()
-    if isinstance(languages, str):
-        languages = [languages]
-        
+    # Prepare input for analyzer
     try:
-        # Build full context from user_input and new_input (Q&A pairs)
-        full_context = PersonalityAnalyzer.build_full_context(req.user_input, req.new_input)
-        gpt_json = analyzer.analyze(full_context, "", languages)
+        gpt_json = analyzer.analyze(
+            id=req.id,
+            user_input=req.user_input,
+            new_input=req.new_input,
+            languages=req.languages
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analyzer error: {e}")
 
-    result = {
-        "id": req.id,
-        "input_tokens": gpt_json.get("input_tokens"),
-        "output_tokens": gpt_json.get("output_tokens"),
-        "total_tokens": gpt_json.get("total_tokens"),
-    }
+    # The model's output is in gpt_json['content'] as a JSON string; parse it
+    import json
+    try:
+        model_output = json.loads(gpt_json["content"])
+    except Exception:
+        raise HTTPException(status_code=500, detail={"error": "Invalid JSON from GPT", "raw_response": gpt_json})
 
-    if "description_arabic" in gpt_json or "description_english" in gpt_json:
-        # Check if descriptions are actually provided and contain real descriptions (not questions)
-        eng_desc = gpt_json.get("description_english", "").strip()
-        ar_desc = gpt_json.get("description_arabic", "").strip()
-        
-        has_english = eng_desc and len(eng_desc) > 0
-        has_arabic = ar_desc and len(ar_desc) > 0
-        
-        # Check if the "description" is actually a question (common issue)
-        is_eng_question = has_english and (eng_desc.endswith("?") or "could you" in eng_desc.lower() or "can you" in eng_desc.lower())
-        is_ar_question = has_arabic and ar_desc.endswith("؟")
-        
-        # Languages requested by the user
-        langs = req.get_languages()
-        needs_english = any(lang in ["english", "en"] for lang in langs)
-        needs_arabic = any(lang in ["arabic", "ar"] for lang in langs)
-        
-        # Only mark as complete if the requested language descriptions are provided and are not questions
-        is_complete = True
-        if (needs_english and (not has_english or is_eng_question)) or (needs_arabic and (not has_arabic or is_ar_question)):
-            is_complete = False
-            
-        # If descriptions are actually questions, add them to clarification_questions
-        clarification_questions = []
-        if not is_complete:
-            if is_eng_question and needs_english:
-                clarification_questions.append(eng_desc)
-            if is_ar_question and needs_arabic:
-                clarification_questions.append(ar_desc)
-                
-        result.update({
-            "status": "complete" if is_complete else "incomplete",
-            "description_arabic": ar_desc if has_arabic and not is_ar_question else "",
-            "description_english": eng_desc if has_english and not is_eng_question else "",
-            "clarification_questions": clarification_questions if clarification_questions else None
-        })
-    elif "missing_traits" in gpt_json or "clarification_questions" in gpt_json:
-        # If status is incomplete but no clarification questions provided, add a default question
-        clarification_questions = gpt_json.get("clarification_questions")
-        if gpt_json.get("status") == "incomplete" and not clarification_questions:
-            clarification_questions = ["Could you tell me more about your personality traits? For example, how do you think and approach problems, or how do you interact with others?"]
-            
-        result.update({
-            "status": "incomplete",
-            "description_arabic": gpt_json.get("description_arabic", ""),
-            "description_english": gpt_json.get("description_english", ""),
-            "missing_traits": gpt_json.get("missing_traits"),
-            "clarification_questions": clarification_questions
-        })
-    elif "clarification_prompt" in gpt_json or "clarification_prompts" in gpt_json:
-        questions = []
-        if "clarification_prompts" in gpt_json and gpt_json["clarification_prompts"]:
-            questions = gpt_json["clarification_prompts"]
-        elif "clarification_prompt" in gpt_json and gpt_json["clarification_prompt"]:
-            questions = [gpt_json["clarification_prompt"]]
-        result.update({
-            "status": "incomplete",
-            "description_arabic": gpt_json.get("description_arabic", ""),
-            "description_english": gpt_json.get("description_english", ""),
-            "missing_traits": None,
-            "clarification_questions": questions
-        })
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "Unexpected GPT output", "raw_response": gpt_json},
-        )
+    # Attach token usage if present
+    if "input_tokens" in gpt_json:
+        model_output["input_tokens"] = gpt_json["input_tokens"]
+    if "output_tokens" in gpt_json:
+        model_output["output_tokens"] = gpt_json["output_tokens"]
+    if "total_tokens" in gpt_json:
+        model_output["total_tokens"] = gpt_json["total_tokens"]
 
-    # Final check: If status is incomplete but no questions provided, add a generic question
-    if result.get("status") == "incomplete" and (not result.get("clarification_questions") or result.get("clarification_questions") is None):
-        if full_context and isinstance(full_context, str) and "software developer" in full_context.lower():
-            result["clarification_questions"] = ["Could you tell me more about how you approach problems and organize your work as a developer?"]
-        else:
-            result["clarification_questions"] = ["Could you share more about your personality traits? For example, how do you typically react to challenges or interact with others?"]
-    
-    return result
+    # Ensure 'id' is always an integer for response validation
+    try:
+        model_output["id"] = int(model_output["id"])
+    except Exception:
+        model_output["id"] = req.id
+
+    # Enforce language output: only fill in requested language(s)
+    requested_langs = req.languages
+    if isinstance(requested_langs, str):
+        requested_langs = [requested_langs]
+    requested_langs = [l.lower() for l in requested_langs]
+    if not ("en" in requested_langs or "english" in requested_langs):
+        model_output["description_english"] = ""
+    if not ("ar" in requested_langs or "arabic" in requested_langs):
+        model_output["description_arabic"] = ""
+
+    return model_output
