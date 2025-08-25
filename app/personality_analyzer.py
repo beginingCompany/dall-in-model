@@ -116,102 +116,34 @@ class PersonalityAnalyzer:
     def get_identity_response(user_input: str, language: str = "en") -> str:
         """
         Get the appropriate identity response based on user input and language.
-        Uses fuzzy matching to detect similar questions in both English and Arabic.
+        Uses simple keyword matching to detect identity questions.
         Returns the response string or empty string if no match.
         """
-        import re
-        
         text = user_input.lower().strip()
         
-        # Enhanced matching patterns for better detection
-        enhanced_patterns = {
-            "who_are_you": [
-                r"who\s+are\s+you", r"tell\s+me\s+about\s+(you|yourself)", r"introduce\s+yourself",
-                r"who\s+are\s+you\s+exactly", r"tell\s+me\s+about\s+your\s+identity",
-                r"من\s+أنت", r"مين\s+انت", r"مين\s+أنت", r"عرفني\s+(على\s+)?نفسك", r"احكيلي\s+عنك", 
-                r"من\s+انت\s+بالضبط", r"مين\s+انت\s+بالضبط", r"قولي\s+مين\s+انت", r"انت\s+مين"
-            ],
-            "what_is_begining": [
-                r"what\s+is\s+begining", r"explain\s+begining", r"about\s+begining", 
-                r"what'?s\s+begining\s+about", r"tell\s+me\s+about\s+begining",
-                r"ما\s+هو\s+begining", r"ايش\s+begining", r"شو\s+هو\s+begining", 
-                r"شرحلي\s+begining", r"عن\s+begining", r"احكيلي\s+عن\s+begining",
-                r"ما\s+معنى\s+begining", r"ايش\s+يعني\s+begining", r"begining\s+يعني\s+ايش"
-            ],
-            "purpose": [
-                r"what\s+is\s+your\s+purpose", r"why\s+were\s+you\s+created", r"why\s+are\s+you\s+here",
-                r"your\s+purpose", r"what\s+do\s+you\s+aim", r"your\s+goal", r"tell\s+me\s+about\s+your\s+purpose",
-                r"ما\s+هو\s+هدفك", r"ايش\s+هدفك", r"شو\s+هدفك", r"ليش\s+انت\s+هنا", 
-                r"شو\s+غايتك", r"احكيلي\s+عن\s+هدفك", r"ما\s+غرضك", r"ايش\s+غرضك",
-                r"ليش\s+اتصنعت", r"ليش\s+اتطورت", r"لماذا\s+انت\s+هنا"
-            ],
-            "role": [
-                r"what\s+is\s+your\s+role", r"what\s+do\s+you\s+do", r"your\s+function", r"what'?s\s+your\s+function",
-                r"ما\s+هو\s+دورك", r"ايش\s+دورك", r"شو\s+دورك", r"شو\s+بتعمل", 
-                r"وظيفتك\s+ايش", r"ايش\s+وظيفتك", r"شو\s+وظيفتك", r"دورك\s+ايش",
-                r"ايش\s+شغلك", r"شو\s+شغلك", r"بتشتغل\s+ايش"
-            ],
-            "developer": [
-                r"who\s+(made|built|created|developed)\s+you", r"who\s+is\s+your\s+developer",
-                r"your\s+(maker|creator|developer)", r"who\s+designed\s+you", r"who\s+programmed\s+you",
-                r"من\s+(صنعك|بناك|طورك|صممك|عملك)", r"من\s+هو\s+مطورك", r"مين\s+عملك",
-                r"مين\s+(صنعك|بناك|طورك|صممك)", r"مين\s+(الي|اللي)\s+مطورك", 
-                r"مين\s+(الي|اللي)\s+(صنعك|بناك|طورك|عملك)", r"مين\s+مطورك"
-            ],
-            "team": [
-                r"who\s+is\s+your\s+team", r"who\s+(works\s+with|behind)\s+you", r"your\s+team", 
-                r"who'?s\s+your\s+(development\s+)?team", r"what'?s\s+your\s+team\s+like",
-                r"من\s+هو\s+فريقك", r"مين\s+فريقك", r"شو\s+فريقك", r"من\s+يعمل\s+معك", 
-                r"مين\s+فريق\s+التطوير", r"مين\s+(الي|اللي)\s+معك", r"فريقك\s+مين",
-                r"مين\s+(الي|اللي)\s+يشتغل\s+معك", r"مين\s+زملاؤك"
-            ],
-            "understand_personality": [
-                r"can\s+you\s+(really\s+)?understand", r"can\s+you\s+analyze\s+me", r"do\s+you\s+understand\s+me",
-                r"are\s+you\s+accurate", r"can\s+you\s+read\s+personality",
-                r"هل\s+يمكنك\s+(حقا\s+)?فهم", r"تقدر\s+تحللني", r"بتفهمني", r"دقيق\s+انت",
-                r"هل\s+تفهم\s+الشخصية", r"تقدر\s+تفهم\s+شخصيتي", r"ممكن\s+تحللني",
-                r"بتعرف\s+تحلل\s+الشخصية", r"مدى\s+دقتك", r"هل\s+انت\s+دقيق"
-            ],
-            "how_analyze": [
-                r"how\s+do\s+you\s+(work|analyze)", r"how\s+does\s+(this|your\s+analysis)\s+work", r"your\s+method",
-                r"how\s+does\s+this\s+analysis\s+work", r"what'?s\s+your\s+method",
-                r"كيف\s+تعمل", r"كيف\s+تحلل", r"شلون\s+تعمل", r"شلون\s+تحلل",
-                r"ايش\s+طريقتك", r"شو\s+طريقتك", r"شلون\s+تشتغل", r"كيف\s+يشتغل\s+تحليلك",
-                r"بأي\s+طريقة\s+تحلل", r"آلية\s+عملك", r"كيف\s+تقوم\s+بالتحليل"
-            ],
-            "objectives": [
-                r"what\s+are\s+the\s+objectives", r"goals\s+of\s+begining", r"what\s+begining\s+aims\s+(for)?",
-                r"what\s+does\s+begining\s+aim\s+for", r"objectives\s+of\s+begining", r"begining\s+objectives",
-                r"ما\s+هي\s+أهداف", r"اهداف\s+begining", r"أهداف\s+begining", 
-                r"غايات\s+المشروع", r"ما\s+أهداف\s+begining", r"ايش\s+أهداف\s+begining",
-                r"شو\s+أهداف\s+begining", r"ما\s+غايات\s+begining"
-            ]
+        # Auto-detect language from input if not specified
+        detected_lang = language
+        if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):  # Arabic characters detected
+            detected_lang = "ar"
+        
+        # Simple keyword-based matching for identity questions
+        identity_keywords = {
+            "who_are_you": ["who are you", "من أنت", "مين انت", "مين أنت", "tell me about you", "introduce yourself", "عرفني نفسك", "احكيلي عنك"],
+            "what_is_begining": ["what is begining", "ما هو begining", "ايش begining", "شو هو begining", "explain begining", "شرحلي begining"],
+            "purpose": ["purpose", "هدفك", "why were you created", "why are you here", "ليش انت هنا", "ما غرضك"],
+            "role": ["what do you do", "your role", "دورك", "وظيفتك", "شو بتعمل", "ايش شغلك"],
+            "developer": ["who made you", "who built you", "مطورك", "من صنعك", "مين عملك", "who is your developer"],
+            "team": ["your team", "فريقك", "who works with you", "من يعمل معك", "مين معك"],
+            "understand_personality": ["can you understand", "تقدر تحللني", "بتفهمني", "can you analyze me", "هل تفهم الشخصية"],
+            "how_analyze": ["how do you work", "كيف تعمل", "how do you analyze", "كيف تحلل", "طريقتك", "آلية عملك"],
+            "objectives": ["objectives", "أهداف", "goals", "what begining aims", "غايات المشروع"]
         }
         
-        # Check enhanced patterns
-        for category, patterns in enhanced_patterns.items():
-            for pattern in patterns:
-                if re.search(pattern, text):
+        # Check for keyword matches
+        for category, keywords in identity_keywords.items():
+            for keyword in keywords:
+                if keyword in text:
                     response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[category]
-                    # Auto-detect language from input if not specified
-                    detected_lang = language
-                    if re.search(r'[\u0600-\u06FF]', user_input):  # Arabic characters detected
-                        detected_lang = "ar"
-                    
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return response_data["arabic"]
-                    else:
-                        return response_data["english"]
-        
-        # Fallback to original trigger matching
-        for response_data in PersonalityAnalyzer.IDENTITY_RESPONSES.values():
-            for trigger in response_data["triggers"]:
-                if trigger.lower() in text:
-                    # Auto-detect language from input
-                    detected_lang = language
-                    if re.search(r'[\u0600-\u06FF]', user_input):  # Arabic characters detected
-                        detected_lang = "ar"
-                    
                     if detected_lang.lower() in ["ar", "arabic"]:
                         return response_data["arabic"]
                     else:
@@ -239,8 +171,9 @@ class PersonalityAnalyzer:
         else:
             # For multiple missing traits, select one question from each category
             selected_questions = [random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[t]) for t in missing]
-            # Return 1-2 questions maximum to avoid overwhelming the user
-            return " ".join(selected_questions[:2])
+            # Return 1-2 questions maximum to avoid overwhelming the user 
+            return " ".join(selected_questions[:])
+        
     SYSTEM_PROMPT = """
 You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
 
@@ -262,39 +195,22 @@ Identity & Redirection Handling
 # -----------------------------
 
 Q: Who are you? / من أنت؟
-   • Triggers if user asks about identity, self, "tell me about you", "introduce yourself".
-
 
 Q: What is BEGINING? / ما هو BEGINING؟
-   • Triggers if user asks about meaning, definition, or nature of BEGINING ("what’s BEGINING about?", "explain BEGINING", "BEGINING يعني ايه").
-
 
 Q: What is your purpose? / ما هو هدفك؟
-   • Triggers if user asks about "purpose", "why were you created", "why are you here".
-
 
 Q: What is your role? / ما هو دورك؟
-   • Triggers if user asks about "role", "function", "what do you do".
-
 
 Q: Who is your developer? / من هو مطورك؟
-   • Triggers if user asks about "developer", "who made you", "who built you".
-
 
 Q: Who is your team? / من هو فريقك؟
-   • Triggers if user asks about "team", "who’s behind you", "who’s working with you".
-
 
 Q: Can you really understand my personality? / هل يمكنك حقًا فهم شخصيتي؟
-   • Triggers if user questions ability, accuracy, "can you analyze me", "do you understand me".
-
 
 Q: How do you analyze personality? / كيف تحلل الشخصية؟
-   • Triggers if user asks about method, "how do you work", "how do you analyze".
-
 
 Q: What are the objectives of BEGINING? / ما هي أهداف BEGINING؟
-   • Triggers if user asks about "objectives", "goals", "what BEGINING aims for".
 
    
 Purpose
@@ -553,9 +469,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
     ) -> dict:
         """
         Analyze user input to generate personality descriptions.
-        Returns ONLY the raw output from the GPT model, with post-processing for identity responses.
+        The GPT model will intelligently detect and handle identity questions.
         """
-        import re
         
         self.logger.debug(f"Starting analysis for user {id}")
         if new_input is None:
@@ -563,11 +478,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         
         # Auto-detect language from user input if Arabic characters are present
         detected_languages = languages
-        if re.search(r'[\u0600-\u06FF]', user_input):
+        if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):
             detected_languages = "ar"
-        
-        # Check for identity response with language detection
-        identity_response = self.get_identity_response(user_input, detected_languages)
         
         input_data = {
             "id": id,
@@ -596,12 +508,6 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                     "output_tokens": gpt_response.get("output_tokens", 0),
                     "total_tokens": gpt_response.get("total_tokens", 0)
                 }
-            
-            # Add identity response if detected
-            if identity_response:
-                result["description_identity"] = identity_response
-            else:
-                result["description_identity"] = None
                 
             return result
             
@@ -612,7 +518,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "status": "incomplete",
                 "description_english": "",
                 "description_arabic": "",
-                "description_identity": identity_response if identity_response else None,
+                "description_identity": None,
                 "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
                 "clarification_questions": ["Could you tell me more about yourself?"],
                 "input_tokens": gpt_response.get("input_tokens", 0),
