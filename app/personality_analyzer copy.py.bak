@@ -62,163 +62,31 @@ class PersonalityAnalyzer:
         ]
     }
     
-    # Identity question mapping - moved from prompt to save tokens
-    IDENTITY_RESPONSES = {
-        "who_are_you": {
-            "triggers": ["who are you", "tell me about you", "introduce yourself", "من أنت"],
-            "english": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
-            "arabic": "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية."
-        },
-        "what_is_begining": {
-            "triggers": ["what is begining", "explain begining", "ما هو BEGINING", "BEGINING يعني ايه"],
-            "english": "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. This framework helps explain how people process experiences and develop their potential.",
-            "arabic": "BEGINING هو أداة تحليلية رمزية تستكشف أسس التميز الفكري والسلوكي والاجتماعي. يصنف الأفراد إلى 120 نوعًا من الشخصيات، يمثل كل منها سمات وقدرات وميول محددة، مما يساعد على فهم كيفية معالجة الأفراد لتجاربهم وتطوير إمكاناتهم."
-        },
-        "purpose": {
-            "triggers": ["purpose", "why were you created", "why are you here", "ما هو هدفك"],
-            "english": "My purpose is to guide you in discovering your strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you.",
-            "arabic": "هدفي هو إرشادك لاكتشاف نقاط قوتك وأنماطك وميولك، لتتمكن من فهم نفسك بشكل أفضل وطريقة تفاعلك مع العالم من حولك."
-        },
-        "role": {
-            "triggers": ["what is your role", "what do you do", "your function", "ما هو دورك"],
-            "english": "My role is to explain the insights from the scale, connect them to your personal traits, and help you see how they relate to your goals and daily life.",
-            "arabic": "دوري هو شرح النتائج المستخلصة من المقياس، وربطها بسماتك الشخصية، ومساعدتك على فهم علاقتها بأهدافك وحياتك اليومية."
-        },
-        "developer": {
-            "triggers": ["who is your developer", "who made you", "who built you", "من هو مطورك", "من صنعك", "من بناك", "مين مطورك", "مين الي مطورك"],
-            "english": "I was developed by a team of researchers and engineers from Saudi Arabia, working on the BEGINING personality trait measurement project.",
-            "arabic": "تم تطويري من قبل فريق من الباحثين والمهندسين السعوديين، العاملين على مشروع BEGINING لقياس سمات الشخصية."
-        },
-        "team": {
-            "triggers": ["who is your team", "who's behind you", "who's working with you", "من هو فريقك"],
-            "english": "My team includes Saudi experts in psychology, sociology, education, and artificial intelligence, all collaborating to build BEGINING.",
-            "arabic": "يتكون فريقي من خبراء سعوديين في علم النفس، وعلم الاجتماع، والتعليم، والذكاء الاصطناعي، يتعاونون لبناء مشروع BEGINING."
-        },
-        "understand_personality": {
-            "triggers": ["can you really understand", "can you analyze me", "do you understand me", "هل يمكنك حقًا فهم شخصيتي"],
-            "english": "I don't replace professional psychology, but I can help highlight personality types and patterns that describe your unique profile.",
-            "arabic": "أنا لا أستبدل علم النفس المتخصص، لكن يمكنني أن أساعدك على اكتشاف أنماط وأنواع شخصية تصف ملفك الفريد."
-        },
-        "how_analyze": {
-            "triggers": ["how do you work", "how do you analyze", "كيف تحلل الشخصية"],
-            "english": "I analyze your personality using a structured scale that groups people into 120 personality types. Each type reflects a mix of capabilities, tendencies, and behaviors that show how you think, act, and grow.",
-            "arabic": "أحلل شخصيتك باستخدام مقياس منظم يصنف الأفراد إلى 120 نوعًا من الشخصيات، حيث يعكس كل نوع مزيجًا من القدرات والميول والسلوكيات، مما يوضح كيف تفكر وتتصرّف وتنمو."
-        },
-        "objectives": {
-            "triggers": ["what begining aims for", "ما هي أهداف BEGINING", "objectives of begining", "goals of begining"],
-            "english": "1. Educational and psychological guidance for students.\n2. Human resource development and career counseling.\n3. Academic research in behavior and productivity.\n4. Future integration into AI modeling and artificial consciousness design.",
-            "arabic": "1. الإرشاد التربوي والنفسي للطلاب.\n2. تطوير الموارد البشرية والإرشاد المهني.\n3. البحث الأكاديمي في السلوك والإنتاجية.\n4. التكامل المستقبلي مع نماذج الذكاء الاصطناعي وتصميم الوعي الاصطناعي."
-        }
-    }
-        
-    
-    @staticmethod
-    def get_identity_response(user_input: str, language: str = "en") -> str:
+    def analyze(self, id: int, user_input: str, new_input: list = None, languages: str = "en") -> dict:
         """
-        Get the appropriate identity response based on user input and language.
-        Uses fuzzy matching to detect similar questions in both English and Arabic.
-        Returns the response string or empty string if no match.
+        Analyze user input to generate personality descriptions.
+        Returns ONLY the raw output from the GPT model, with no fallback or post-processing.
         """
-        import re
-        
-        text = user_input.lower().strip()
-        
-        # Enhanced matching patterns for better detection
-        enhanced_patterns = {
-            "who_are_you": [
-                r"who\s+are\s+you", r"tell\s+me\s+about\s+(you|yourself)", r"introduce\s+yourself",
-                r"who\s+are\s+you\s+exactly", r"tell\s+me\s+about\s+your\s+identity",
-                r"من\s+أنت", r"مين\s+انت", r"مين\s+أنت", r"عرفني\s+(على\s+)?نفسك", r"احكيلي\s+عنك", 
-                r"من\s+انت\s+بالضبط", r"مين\s+انت\s+بالضبط", r"قولي\s+مين\s+انت", r"انت\s+مين"
-            ],
-            "what_is_begining": [
-                r"what\s+is\s+begining", r"explain\s+begining", r"about\s+begining", 
-                r"what'?s\s+begining\s+about", r"tell\s+me\s+about\s+begining",
-                r"ما\s+هو\s+begining", r"ايش\s+begining", r"شو\s+هو\s+begining", 
-                r"شرحلي\s+begining", r"عن\s+begining", r"احكيلي\s+عن\s+begining",
-                r"ما\s+معنى\s+begining", r"ايش\s+يعني\s+begining", r"begining\s+يعني\s+ايش"
-            ],
-            "purpose": [
-                r"what\s+is\s+your\s+purpose", r"why\s+were\s+you\s+created", r"why\s+are\s+you\s+here",
-                r"your\s+purpose", r"what\s+do\s+you\s+aim", r"your\s+goal", r"tell\s+me\s+about\s+your\s+purpose",
-                r"ما\s+هو\s+هدفك", r"ايش\s+هدفك", r"شو\s+هدفك", r"ليش\s+انت\s+هنا", 
-                r"شو\s+غايتك", r"احكيلي\s+عن\s+هدفك", r"ما\s+غرضك", r"ايش\s+غرضك",
-                r"ليش\s+اتصنعت", r"ليش\s+اتطورت", r"لماذا\s+انت\s+هنا"
-            ],
-            "role": [
-                r"what\s+is\s+your\s+role", r"what\s+do\s+you\s+do", r"your\s+function", r"what'?s\s+your\s+function",
-                r"ما\s+هو\s+دورك", r"ايش\s+دورك", r"شو\s+دورك", r"شو\s+بتعمل", 
-                r"وظيفتك\s+ايش", r"ايش\s+وظيفتك", r"شو\s+وظيفتك", r"دورك\s+ايش",
-                r"ايش\s+شغلك", r"شو\s+شغلك", r"بتشتغل\s+ايش"
-            ],
-            "developer": [
-                r"who\s+(made|built|created|developed)\s+you", r"who\s+is\s+your\s+developer",
-                r"your\s+(maker|creator|developer)", r"who\s+designed\s+you", r"who\s+programmed\s+you",
-                r"من\s+(صنعك|بناك|طورك|صممك|عملك)", r"من\s+هو\s+مطورك", r"مين\s+عملك",
-                r"مين\s+(صنعك|بناك|طورك|صممك)", r"مين\s+(الي|اللي)\s+مطورك", 
-                r"مين\s+(الي|اللي)\s+(صنعك|بناك|طورك|عملك)", r"مين\s+مطورك"
-            ],
-            "team": [
-                r"who\s+is\s+your\s+team", r"who\s+(works\s+with|behind)\s+you", r"your\s+team", 
-                r"who'?s\s+your\s+(development\s+)?team", r"what'?s\s+your\s+team\s+like",
-                r"من\s+هو\s+فريقك", r"مين\s+فريقك", r"شو\s+فريقك", r"من\s+يعمل\s+معك", 
-                r"مين\s+فريق\s+التطوير", r"مين\s+(الي|اللي)\s+معك", r"فريقك\s+مين",
-                r"مين\s+(الي|اللي)\s+يشتغل\s+معك", r"مين\s+زملاؤك"
-            ],
-            "understand_personality": [
-                r"can\s+you\s+(really\s+)?understand", r"can\s+you\s+analyze\s+me", r"do\s+you\s+understand\s+me",
-                r"are\s+you\s+accurate", r"can\s+you\s+read\s+personality",
-                r"هل\s+يمكنك\s+(حقا\s+)?فهم", r"تقدر\s+تحللني", r"بتفهمني", r"دقيق\s+انت",
-                r"هل\s+تفهم\s+الشخصية", r"تقدر\s+تفهم\s+شخصيتي", r"ممكن\s+تحللني",
-                r"بتعرف\s+تحلل\s+الشخصية", r"مدى\s+دقتك", r"هل\s+انت\s+دقيق"
-            ],
-            "how_analyze": [
-                r"how\s+do\s+you\s+(work|analyze)", r"how\s+does\s+(this|your\s+analysis)\s+work", r"your\s+method",
-                r"how\s+does\s+this\s+analysis\s+work", r"what'?s\s+your\s+method",
-                r"كيف\s+تعمل", r"كيف\s+تحلل", r"شلون\s+تعمل", r"شلون\s+تحلل",
-                r"ايش\s+طريقتك", r"شو\s+طريقتك", r"شلون\s+تشتغل", r"كيف\s+يشتغل\s+تحليلك",
-                r"بأي\s+طريقة\s+تحلل", r"آلية\s+عملك", r"كيف\s+تقوم\s+بالتحليل"
-            ],
-            "objectives": [
-                r"what\s+are\s+the\s+objectives", r"goals\s+of\s+begining", r"what\s+begining\s+aims\s+(for)?",
-                r"what\s+does\s+begining\s+aim\s+for", r"objectives\s+of\s+begining", r"begining\s+objectives",
-                r"ما\s+هي\s+أهداف", r"اهداف\s+begining", r"أهداف\s+begining", 
-                r"غايات\s+المشروع", r"ما\s+أهداف\s+begining", r"ايش\s+أهداف\s+begining",
-                r"شو\s+أهداف\s+begining", r"ما\s+غايات\s+begining"
-            ]
+        if new_input is None:
+            new_input = []
+        input_data = {
+            "id": id,
+            "user_input": user_input,
+            "new_input": new_input,
+            "languages": languages
         }
-        
-        # Check enhanced patterns
-        for category, patterns in enhanced_patterns.items():
-            for pattern in patterns:
-                if re.search(pattern, text):
-                    response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[category]
-                    # Auto-detect language from input if not specified
-                    detected_lang = language
-                    if re.search(r'[\u0600-\u06FF]', user_input):  # Arabic characters detected
-                        detected_lang = "ar"
-                    
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return response_data["arabic"]
-                    else:
-                        return response_data["english"]
-        
-        # Fallback to original trigger matching
-        for response_data in PersonalityAnalyzer.IDENTITY_RESPONSES.values():
-            for trigger in response_data["triggers"]:
-                if trigger.lower() in text:
-                    # Auto-detect language from input
-                    detected_lang = language
-                    if re.search(r'[\u0600-\u06FF]', user_input):  # Arabic characters detected
-                        detected_lang = "ar"
-                    
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return response_data["arabic"]
-                    else:
-                        return response_data["english"]
-        
-        return ""
-    
+        result = self.call_gpt(input_data)
+        # If the input is an identity/objectives query, fill description_english with the mapped message
+        if self.is_identity_query(user_input):
+            # Only fill if language is English
+            if "en" in str(languages).lower() or "english" in str(languages).lower():
+                result["description_english"] = (
+                    "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. "
+                    "It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. "
+                    "This framework helps explain how people process experiences and develop their potential."
+                )
+        return result
+
     @staticmethod
     def generate_clarification_prompt(user_input: str) -> str:
         import random
@@ -240,10 +108,12 @@ class PersonalityAnalyzer:
             # For multiple missing traits, select one question from each category
             selected_questions = [random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[t]) for t in missing]
             # Return 1-2 questions maximum to avoid overwhelming the user
-            return " ".join(selected_questions[:2])
-    SYSTEM_PROMPT = """
+            return " ".join(selected_questions[:])
+    BASE_PROMPT = """
 You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
+"""
 
+    IDENTITY_PROMPT = """
 Identity & Redirection Handling
 
 - General Rule:
@@ -256,47 +126,65 @@ Identity & Redirection Handling
 
 - For on-topic but incomplete inputs, do not include this reminder message in 'description_english' or 'description_arabic'. Leave them empty until traits are complete.
 
-
 # -----------------------------
 # Question → Intent Mapping
 # -----------------------------
 
 Q: Who are you? / من أنت؟
    • Triggers if user asks about identity, self, "tell me about you", "introduce yourself".
-
+   • English: "I’m Minus Zero, part of the BEGINING project — a personality trait measurement system. I’m here to help you explore your traits, tendencies, and inner potential."
+   • Arabic: "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. جئت لأساعدك على استكشاف سماتك وميولك وإمكاناتك الداخلية."
 
 Q: What is BEGINING? / ما هو BEGINING؟
    • Triggers if user asks about meaning, definition, or nature of BEGINING ("what’s BEGINING about?", "explain BEGINING", "BEGINING يعني ايه").
-
+   • English: "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. This framework helps explain how people process experiences and develop their potential."
+   • Arabic: "BEGINING هو أداة تحليلية رمزية تستكشف أسس التميز الفكري والسلوكي والمجتمعي. يصنف الأفراد إلى 120 نوعًا من الشخصيات، يمثل كل منها سمات وقدرات وميول محددة. يوفر هذا الإطار وسيلة لفهم كيفية معالجة الأفراد لتجاربهم وتطوير إمكاناتهم."
 
 Q: What is your purpose? / ما هو هدفك؟
    • Triggers if user asks about "purpose", "why were you created", "why are you here".
-
+   • English: "My purpose is to guide you in discovering your strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you."
+   • Arabic: "هدفي هو أن أوجهك لاكتشاف نقاط قوتك وأنماطك وميولك حتى تتمكن من فهم نفسك بشكل أفضل وكيفية تفاعلك مع العالم من حولك."
 
 Q: What is your role? / ما هو دورك؟
    • Triggers if user asks about "role", "function", "what do you do".
-
+   • English: "My role is to explain the insights from the scale, connect them to your personal traits, and help you see how they relate to your goals and daily life."
+   • Arabic: "دوري هو شرح النتائج المستخلصة من المقياس، وربطها بسماتك الشخصية، ومساعدتك على فهم علاقتها بأهدافك وحياتك اليومية."
 
 Q: Who is your developer? / من هو مطورك؟
    • Triggers if user asks about "developer", "who made you", "who built you".
-
+   • English: "I was developed by a team of researchers and engineers from Saudi Arabia, working on the BEGINING personality trait measurement project."
+   • Arabic: "قمت بتطويري فريق من الباحثين والمهندسين من السعودية، يعملون على مشروع BEGINING لقياس سمات الشخصية."
 
 Q: Who is your team? / من هو فريقك؟
    • Triggers if user asks about "team", "who’s behind you", "who’s working with you".
-
+   • English: "My team includes Saudi experts in psychology, sociology, education, and artificial intelligence, all collaborating to build BEGINING."
+   • Arabic: "فريقي يتكون من خبراء سعوديين في علم النفس، وعلم الاجتماع، والتعليم، والذكاء الاصطناعي، يعملون معًا لبناء مشروع BEGINING."
 
 Q: Can you really understand my personality? / هل يمكنك حقًا فهم شخصيتي؟
    • Triggers if user questions ability, accuracy, "can you analyze me", "do you understand me".
-
+   • English: "I don’t replace professional psychology, but I can help highlight personality types and patterns that describe your unique profile."
+   • Arabic: "أنا لا أستبدل علم النفس المتخصص، لكن يمكنني أن أساعدك على اكتشاف أنماط وأنواع شخصية تصف ملفك الفريد."
 
 Q: How do you analyze personality? / كيف تحلل الشخصية؟
    • Triggers if user asks about method, "how do you work", "how do you analyze".
-
+   • English: "I analyze your personality using a structured scale that groups people into 120 personality types. Each type reflects a mix of capabilities, tendencies, and behaviors that show how you think, act, and grow."
+   • Arabic: "أحلل شخصيتك باستخدام مقياس منظم يصنف الناس إلى 120 نوعًا من الشخصيات. يعكس كل نوع مزيجًا من القدرات والميول والسلوكيات التي تظهر كيف تفكر وتتصرف وتنمو."
 
 Q: What are the objectives of BEGINING? / ما هي أهداف BEGINING؟
    • Triggers if user asks about "objectives", "goals", "what BEGINING aims for".
+   • English:
+      1. Educational and psychological guidance for students.
+      2. Human resource development and career counseling.
+      3. Academic research in behavior and productivity.
+      4. Future integration into AI modeling and artificial consciousness design.
+   • Arabic:
+      1. الإرشاد التربوي والنفسي للطلاب.
+      2. تطوير الموارد البشرية والإرشاد المهني.
+      3. البحث الأكاديمي في السلوك والإنتاجية.
+      4. الدمج المستقبلي في نماذج الذكاء الاصطناعي وتصميم الوعي الاصطناعي.
+"""
 
-   
+    TRAIT_ANALYSIS_PROMPT = """
 Purpose
 You will help extract character descriptions by reviewing texts submitted by users — and converting them into concise descriptive texts that capture four key personality traits:
 
@@ -329,14 +217,16 @@ Off-Topic & Identity Integration
 - Always detect identity queries or off-topic input even if mixed with valid personality descriptions.
 - Include the redirection message in the appropriate language field.
 - Still track missing traits and generate clarification questions for incomplete inputs.
+"""
 
+    OUTPUT_FORMAT_PROMPT = """
 Output Format
 {
     "id": <int>,
     "status": "complete" or "incomplete",
+    "description_identity": <string> or null,
     "description_english": <string>,
     "description_arabic": <string>,
-    "description_identity": <string> or null,
     "missing_traits": [<array>] or [],
     "clarification_questions": [<array>] or [],
     "input_tokens": <int>,
@@ -358,9 +248,8 @@ Example Output — Incomplete but off-topic / identity query
 {
     "id": 22,
     "status": "incomplete",
-    "description_arabic": "",
-    "description_english": "",
-    "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
+    "description_arabic": "أنا ماينس زيرو، مشارك في BEGINING، وأنا هنا لمساعدتك في تحليل شخصيتك. لنواصل ذلك.",
+    "description_english": "I am Minus Zero, involved in BEGINING, and I am here to help you analyze your personality. Let’s continue with that.",
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
         "How do you usually respond when faced with unexpected challenges?",
@@ -377,7 +266,6 @@ Example Output — Incomplete (on-topic)
     "status": "incomplete",
     "description_arabic": "",
     "description_english": "",
-    "description_identity": null,
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
         "How do you usually respond when faced with unexpected challenges?",
@@ -394,7 +282,6 @@ Example Output — Complete
     "status": "complete",
     "description_arabic": "شخص يتمتع بقدرات تحليلية قوية، وسلوك اجتماعي هادئ، وأسلوب اتخاذ قرارات عقلاني ومتوازن عاطفيًا.",
     "description_english": "A person with strong analytical abilities, a calm social demeanor, and a rational yet emotionally balanced decision-making style.",
-    "description_identity": null,
     "missing_traits": [],
     "clarification_questions": [],
     "input_tokens": 1245,
@@ -403,6 +290,30 @@ Example Output — Complete
 }
 IMPORTANT: Only output the JSON object, no explanations or formatting.
 """
+
+    @staticmethod
+    def build_system_prompt(user_input: str) -> str:
+        """
+        Dynamically build the system prompt. Only include IDENTITY_PROMPT if user_input matches identity intent.
+        """
+        parts = [PersonalityAnalyzer.BASE_PROMPT]
+        if PersonalityAnalyzer.is_identity_query(user_input):
+            parts.append(PersonalityAnalyzer.IDENTITY_PROMPT)
+        parts.append(PersonalityAnalyzer.TRAIT_ANALYSIS_PROMPT)
+        parts.append(PersonalityAnalyzer.OUTPUT_FORMAT_PROMPT)
+        return "\n".join(parts)
+
+    @staticmethod
+    def is_identity_query(user_input: str) -> bool:
+        # Expanded keywords and phrases for flexible intent detection
+        identity_keywords = [
+            # English
+            "who are you", "what is begining", "purpose", "role", "developer", "team", "objectives", "goal", "mission", "aim", "why do you exist", "why were you created", "what do you aim to achieve", "tell me about your goals", "what is your mission", "what is your objective", "what are you trying to do", "what is your function", "what is your job", "what is your task", "what is your aim", "what is your intention",
+            # Arabic
+            "من أنت", "ما هو BEGINING", "هدفك", "دورك", "مطورك", "فريقك", "أهدافك", "غايتك", "مهمتك", "رسالتك", "لماذا تم إنشاؤك", "لماذا أنت هنا", "ما الذي تهدف إليه", "حدثني عن أهدافك", "ما هي مهمتك", "ما هي غايتك", "ما هو دورك", "ما هو هدفك"
+        ]
+        text = user_input.lower()
+        return any(kw in text for kw in identity_keywords)
 
     def __init__(self, model: str = "gpt-3.5-turbo"):
         self.model = model
@@ -514,15 +425,14 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         return num_tokens
 
     def call_gpt(self, input_data: dict, max_tokens: int = 1200) -> dict:
+        user_input = input_data.get("user_input", "")
+        system_prompt = self.build_system_prompt(user_input)
         prompt = json.dumps(input_data, ensure_ascii=False)
-
         messages = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ]
-
         input_tokens = self.num_tokens_from_messages(messages, model=self.model)
-
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -530,92 +440,25 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 temperature=0.0,
                 max_tokens=max_tokens,
             )
-        except OpenAIError as e:
-            self.logger.error(f"OpenAI API Error: {e}")
-            raise RuntimeError(f"OpenAI API Error: {e}")
-
-        content = response.choices[0].message.content
-        usage = getattr(response, "usage", None)
-
-        return {
-            "content": content,
-            "input_tokens": input_tokens,
-            "output_tokens": getattr(usage, "completion_tokens", None) if usage else None,
-            "total_tokens": getattr(usage, "total_tokens", None) if usage else None,
-        }
-
-    def analyze(
-        self,
-        id: int,
-        user_input: str,
-        new_input: list = None,
-        languages: str = "en"
-    ) -> dict:
-        """
-        Analyze user input to generate personality descriptions.
-        Returns ONLY the raw output from the GPT model, with post-processing for identity responses.
-        """
-        import re
-        
-        self.logger.debug(f"Starting analysis for user {id}")
-        if new_input is None:
-            new_input = []
-        
-        # Auto-detect language from user input if Arabic characters are present
-        detected_languages = languages
-        if re.search(r'[\u0600-\u06FF]', user_input):
-            detected_languages = "ar"
-        
-        # Check for identity response with language detection
-        identity_response = self.get_identity_response(user_input, detected_languages)
-        
-        input_data = {
-            "id": id,
-            "user_input": user_input,
-            "new_input": new_input,
-            "languages": detected_languages
-        }
-        gpt_response = self.call_gpt(input_data)
-        
-        # Parse the GPT response content if it's JSON
-        try:
-            content = gpt_response.get("content", "")
-            if content.strip().startswith("{"):
-                result = json.loads(content)
-            else:
-                # If not JSON, create a basic structure
-                result = {
-                    "id": id,
-                    "status": "incomplete",
-                    "description_english": "",
-                    "description_arabic": "",
-                    "description_identity": None,
-                    "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-                    "clarification_questions": ["Could you tell me more about yourself?"],
-                    "input_tokens": gpt_response.get("input_tokens", 0),
-                    "output_tokens": gpt_response.get("output_tokens", 0),
-                    "total_tokens": gpt_response.get("total_tokens", 0)
-                }
-            
-            # Add identity response if detected
-            if identity_response:
-                result["description_identity"] = identity_response
-            else:
-                result["description_identity"] = None
-                
-            return result
-            
-        except json.JSONDecodeError:
-            # Fallback if JSON parsing fails
+            content = response.choices[0].message.content
+            usage = getattr(response, "usage", None)
             return {
-                "id": id,
-                "status": "incomplete",
+                "content": content,
+                "input_tokens": input_tokens,
+                "output_tokens": getattr(usage, "completion_tokens", None) if usage else None,
+                "total_tokens": getattr(usage, "total_tokens", None) if usage else None,
+            }
+        except OpenAIError as e:
+            self.logger.error(f"OpenAI API error: {e}")
+            # Always return a valid dict, even on error
+            return {
+                "content": "",
+                "input_tokens": input_tokens,
+                "output_tokens": 0,
+                "total_tokens": input_tokens,
+                "status": "error",
                 "description_english": "",
                 "description_arabic": "",
-                "description_identity": identity_response if identity_response else None,
-                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-                "clarification_questions": ["Could you tell me more about yourself?"],
-                "input_tokens": gpt_response.get("input_tokens", 0),
-                "output_tokens": gpt_response.get("output_tokens", 0),
-                "total_tokens": gpt_response.get("total_tokens", 0)
+                "missing_traits": [],
+                "clarification_questions": []
             }

@@ -64,6 +64,7 @@ class TraitResponse(BaseModel):
     status: str
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
+    description_identity: Optional[str] = None
     missing_traits: Optional[List[str]] = ""
     clarification_questions: Optional[List[str]] = [""]
     input_tokens: Optional[int] = None
@@ -205,64 +206,11 @@ async def analyze_personality(request: Request):
     #         ]
     #     }
 
-    # The model's output is in gpt_json['content'] as a JSON string; parse it
-    # import json
-    # try:
-    #     # Debug log the raw response
-    #     print(f"Raw GPT response: {gpt_json}")
-        
-    #     if "content" not in gpt_json:
-    #         print("ERROR: 'content' key missing from analyzer response")
-    #         # Try to provide a fallback response if missing
-    #         dummy_response = {
-    #             "id": req.id,
-    #             "status": "error",
-    #             "description_english": "",
-    #             "description_arabic": "",
-    #             "missing_traits": [],
-    #             "clarification_questions": ["Could you provide more information about yourself?"]
-    #         }
-    #         return dummy_response
-            
-    #     if not gpt_json["content"]:
-    #         print("ERROR: Empty 'content' in analyzer response")
-    #         raise ValueError("Empty response content")
-            
-    #     print(f"Parsing content (length: {len(gpt_json['content'])}): {gpt_json['content'][:100]}...")
-    #     model_output = json.loads(gpt_json["content"])
-    #     print("Successfully parsed JSON content")
-        
-    # except json.JSONDecodeError as je:
-        # print(f"JSON DECODE ERROR: {str(je)}")
-        # Instead of error, provide a meaningful fallback response
-    import json
-    # Try to parse the model output from gpt_json["content"], fallback if parsing fails
-    try:
-        if "content" not in gpt_json or not gpt_json["content"]:
-            raise ValueError("No content in analyzer response")
-        model_output = json.loads(gpt_json["content"])
-    except Exception:
-        model_output = {
-            "id": req.id,
-            "status": "incomplete",
-            "description_english": "",
-            "description_arabic": "",
-            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-            "clarification_questions": [
-                "Could you tell me more about yourself beyond taking breaks?",
-                "How would you describe your typical interactions with others?",
-                "What kind of activities or work do you enjoy most?",
-                "How do you typically handle challenging situations?"
-            ]
-        }
-
-    # Attach token usage if present
-    if "input_tokens" in gpt_json:
-        model_output["input_tokens"] = gpt_json["input_tokens"]
-    if "output_tokens" in gpt_json:
-        model_output["output_tokens"] = gpt_json["output_tokens"]
-    if "total_tokens" in gpt_json:
-        model_output["total_tokens"] = gpt_json["total_tokens"]
+    # The analyzer now returns the result directly as a dictionary, not as JSON string in "content"
+    print(f"Raw analyzer response: {gpt_json}")
+    
+    # The gpt_json is already the parsed result from the analyzer
+    model_output = gpt_json
 
     # Ensure 'id' is always an integer for response validation
     try:
