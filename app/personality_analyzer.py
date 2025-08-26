@@ -116,7 +116,7 @@ class PersonalityAnalyzer:
     def get_identity_response(user_input: str, language: str = "en") -> str:
         """
         Get the appropriate identity response based on user input and language.
-        Uses simple keyword matching to detect identity questions.
+        Uses precise keyword matching to detect identity questions only.
         Returns the response string or empty string if no match.
         """
         text = user_input.lower().strip()
@@ -126,23 +126,54 @@ class PersonalityAnalyzer:
         if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):  # Arabic characters detected
             detected_lang = "ar"
         
-        # Simple keyword-based matching for identity questions
+        # More precise keyword-based matching for identity questions only
+        # Only match when it's clearly asking about the system, not describing themselves
         identity_keywords = {
-            "who_are_you": ["who are you", "من أنت", "مين انت", "مين أنت", "tell me about you", "introduce yourself", "عرفني نفسك", "احكيلي عنك"],
-            "what_is_begining": ["what is begining", "ما هو begining", "ايش begining", "شو هو begining", "explain begining", "شرحلي begining"],
-            "purpose": ["purpose", "هدفك", "why were you created", "why are you here", "ليش انت هنا", "ما غرضك"],
-            "role": ["what do you do", "your role", "دورك", "وظيفتك", "شو بتعمل", "ايش شغلك"],
-            "developer": ["who made you", "who built you", "مطورك", "من صنعك", "مين عملك", "who is your developer"],
-            "team": ["your team", "فريقك", "who works with you", "من يعمل معك", "مين معك"],
-            "understand_personality": ["can you understand", "تقدر تحللني", "بتفهمني", "can you analyze me", "هل تفهم الشخصية"],
-            "how_analyze": ["how do you work", "كيف تعمل", "how do you analyze", "كيف تحلل", "طريقتك", "آلية عملك"],
-            "objectives": ["objectives", "أهداف", "goals", "what begining aims", "غايات المشروع"]
+            "who_are_you": [
+                "who are you", "من أنت", "مين انت", "مين أنت", 
+                "tell me about you", "introduce yourself", "عرفني نفسك", "احكيلي عنك",
+                "what are you", "who r u", "who are u"
+            ],
+            "what_is_begining": [
+                "what is begining", "ما هو begining", "ايش begining", "شو هو begining", 
+                "explain begining", "شرحلي begining", "about begining", "tell me about begining"
+            ],
+            "purpose": [
+                "what is your purpose", "ما هو هدفك", "why were you created", "why are you here", 
+                "ليش انت هنا", "ما غرضك", "your purpose", "what's your purpose"
+            ],
+            "role": [
+                "what is your role", "what do you do", "your role", "ما هو دورك", 
+                "وظيفتك", "شو بتعمل", "ايش شغلك", "what's your function", "your function"
+            ],
+            "developer": [
+                "who is your developer", "who made you", "who built you", "who created you",
+                "من هو مطورك", "من صنعك", "من بناك", "مين مطورك", "مين الي مطورك",
+                "who developed you", "your developer", "your creator"
+            ],
+            "team": [
+                "who is your team", "your team", "فريقك", "who works with you", 
+                "من يعمل معك", "مين معك", "who's behind you", "your development team"
+            ],
+            "understand_personality": [
+                "can you understand me", "تقدر تحللني", "بتفهمني", "can you analyze me", 
+                "هل تفهم الشخصية", "do you understand personality", "can you really understand"
+            ],
+            "how_analyze": [
+                "how do you work", "كيف تعمل", "how do you analyze", "كيف تحلل", 
+                "how does this work", "طريقتك", "آلية عملك", "your method"
+            ],
+            "objectives": [
+                "what are the objectives", "أهداف begining", "goals of begining", 
+                "what begining aims for", "غايات المشروع", "objectives of begining"
+            ]
         }
         
-        # Check for keyword matches
+        # Check for exact phrase matches only (not just word containment)
         for category, keywords in identity_keywords.items():
             for keyword in keywords:
-                if keyword in text:
+                # Use more precise matching - the keyword should be the main content of the input
+                if keyword == text or text.startswith(keyword) or text.endswith(keyword):
                     response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[category]
                     if detected_lang.lower() in ["ar", "arabic"]:
                         return response_data["arabic"]
@@ -180,9 +211,15 @@ You are a sociologist and can analyze and extract character descriptions from te
 Identity & Redirection Handling
 
 - General Rule:
-  If the user asks identity-related questions (even if phrased differently), respond with the mapped message in 'description_identity' field.  
+  If the user asks identity-related questions about YOU/THE SYSTEM (even if phrased differently), respond with the mapped message in 'description_identity' field.  
   Use intent-based matching, not exact string matching.
   IMPORTANT: Still include clarification_questions for missing personality traits even when responding to identity questions.
+  
+- CRITICAL DISTINCTION: 
+  * "I am a developer" = User describing THEMSELVES (personality trait) → NO identity response
+  * "Who is your developer" = User asking about THE SYSTEM → identity response
+  * "I work in a team" = User describing THEMSELVES → NO identity response  
+  * "Who is your team" = User asking about THE SYSTEM → identity response
 
 - If the user drifts away from the task, includes irrelevant content, or asks off-topic questions (except relevant identity questions below), return JSON where 'description_english' or 'description_arabic' contains the reminder:
    • English: "I’m Minus Zero, part of the BEGINING project — a personality trait measurement system. I’m here to help you explore your traits, tendencies, and inner potential."
@@ -272,6 +309,23 @@ Language Handling
 Restrictions
 - Always return valid JSON only.
 - Do not include text, explanations, or code outside JSON.
+
+Example Output — Personality Description (NOT Identity)
+{
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "description_identity": null,
+    "missing_traits": ["behavioral", "emotional", "social"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
 
 Example Output — Identity Question with Clarification
 {
