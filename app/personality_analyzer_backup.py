@@ -661,7 +661,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             # Generate clarification questions if traits are missing
             clarification_questions = []
             if missing_traits:
-                clarification_questions = self.generate_clarification_questions(missing_traits, detected_languages)
+                clarification_questions = self.generate_clarification_questions(missing_traits)
                 if not clarification_questions:  # If empty, generate a basic question
                     clarification_questions = ["Could you tell me more about yourself to help me understand your personality better?"]
             
