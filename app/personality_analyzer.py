@@ -11,17 +11,152 @@ load_dotenv()
 
 class PersonalityAnalyzer:
     @staticmethod
+    def _is_identity_trigger(answer: str) -> bool:
+        """
+        Use GPT to intelligently detect if an answer is an identity trigger.
+        This replaces regex patterns with AI-based detection.
+        """
+        if not answer or len(answer.strip()) < 2:
+            return False
+            
+        try:
+            from openai import OpenAI
+            client = OpenAI()
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": """You are an identity trigger detector. Your job is to determine if a given text is asking about AI identity, purpose, or capabilities.
+
+Identity triggers include questions/statements like:
+- "Who are you?" / "من أنت؟"
+- "What are you?" / "ما أنت؟" 
+- "What is your purpose?" / "ما هو هدفك؟"
+- "Who created you?" / "من صنعك؟"
+- "What can you do?" / "ماذا تستطيع أن تفعل؟"
+- "How do you work?" / "كيف تعمل؟"
+- And similar identity/capability questions in any language
+
+Respond with ONLY "yes" if it's an identity trigger, or "no" if it's not."""
+                    },
+                    {
+                        "role": "user", 
+                        "content": f"Is this an identity trigger? Text: '{answer.strip()}'"
+                    }
+                ],
+                max_tokens=10,
+                temperature=0
+            )
+            
+            result = response.choices[0].message.content.strip().lower()
+            return result == "yes"
+            
+        except Exception as e:
+            print(f"Error in identity detection: {e}")
+            # Fallback: basic keyword check
+            answer_lower = answer.lower().strip()
+            identity_keywords = ["who are you", "what are you", "من أنت", "ما أنت", "your purpose", "who created", "who made"]
+            return any(keyword in answer_lower for keyword in identity_keywords)
+
+    @staticmethod
     def build_full_context(user_input: str, new_input: list) -> str:
         """
         Combine the original user_input and all Q&A pairs from new_input into a single context string.
+        Excludes answers that match identity triggers as they don't contribute to personality analysis.
         """
         context = user_input.strip()
         for qa in new_input:
             q = qa.get("question", "").strip()
             a = qa.get("answer", "").strip()
-            if q and a:
+            # EXCLUDE identity triggers from personality context
+            if q and a and not PersonalityAnalyzer._is_identity_trigger(a):
                 context += f"\nQ: {q}\nA: {a}"
         return context
+
+    @staticmethod
+    @staticmethod
+    def handle_answer(question: str, answer: str, context: list, language: str = "en") -> dict:
+        """
+        Handle an answer to a personality question by checking for identity queries first,
+        then proceeding with trait filling if appropriate.
+        
+        Args:
+            question: The personality question that was asked
+            answer: The user's answer to the question
+            context: Previous conversation context
+            language: Language for identity response ("en" or "ar")
+            
+        Returns:
+            dict: Either identity response or trait filling result
+        """
+        # Check for identity queries FIRST
+        if PersonalityAnalyzer.detect_identity_question(answer, context):  
+            # Return static identity response based on language
+            if language == "ar":
+                static_response = "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية."
+            else:
+                static_response = "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential."
+            
+            return {
+                "type": "identity",
+                "description_identity": static_response,
+                "skip_traits": True
+            }
+        
+        # If it's NOT an identity query → proceed with trait filling
+        return PersonalityAnalyzer.fill_traits(question, answer, context)
+
+    @staticmethod
+    def detect_identity_question(answer: str, context: list = None) -> bool:
+        """
+        Detect if an answer is actually an identity question.
+        Uses the existing get_identity_response logic but returns boolean.
+        
+        Args:
+            answer: The user's answer to check
+            context: Conversation context for context-aware detection
+            
+        Returns:
+            bool: True if this is an identity question, False otherwise
+        """
+        # Use existing identity detection logic
+        identity_response = PersonalityAnalyzer.get_identity_response(
+            answer, 
+            language="en", 
+            openai_client=None,  # Skip GPT check for simple detection
+            conversation_context=context
+        )
+        return bool(identity_response)
+
+    @staticmethod
+    def fill_traits(question: str, answer: str, context: list) -> dict:
+        """
+        Fill personality traits based on question and answer.
+        This is a placeholder for the actual trait filling logic.
+        
+        Args:
+            question: The personality question
+            answer: The user's answer
+            context: Conversation context
+            
+        Returns:
+            dict: Trait filling result
+        """
+        # Analyze the answer for personality traits
+        detected_traits = []
+        for trait, pattern in PersonalityAnalyzer.TRAIT_PATTERNS.items():
+            if re.search(pattern, answer.lower()):
+                detected_traits.append(trait)
+        
+        return {
+            "type": "traits",
+            "detected_traits": detected_traits,
+            "question": question,
+            "answer": answer,
+            "skip_traits": False
+        }
 
     # Define trait patterns and templates as class variables
     TRAIT_PATTERNS = {
@@ -94,60 +229,51 @@ class PersonalityAnalyzer:
     }
 }
     
-    # Identity question mapping - moved from prompt to save tokens
+    # Identity question mapping - now uses GPT for intelligent detection
     IDENTITY_RESPONSES = {
         "who_are_you": {
-            "triggers": ["^who are you\\??$", "^what are you\\??$", "^tell me about yourself\\??$", "^introduce yourself\\??$", "^من أنت\\??$"],
             "english": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential. Let's get started by discovering a bit about you.",
             "arabic": "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ بالتعرف عليك قليلًا."
         },
         "what_is_begining": {
-            "triggers": ["^what is begining\\??$", "^explain begining\\??$", "^tell me about begining\\??$", "^ما هو BEGINING\\??$", "^BEGINING يعني ايه\\??$"],
             "english": "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. To continue, let's explore your personality step by step.",
             "arabic": "BEGINING هو أداة تحليلية رمزية تستكشف أسس التميز الفكري والسلوكي والاجتماعي. يصنف الأفراد إلى 120 نوعًا من الشخصيات، يمثل كل منها سمات وقدرات وميول محددة. لنستمر، دعنا نستكشف شخصيتك خطوة بخطوة."
         },
         "purpose": {
-            "triggers": ["^what is your purpose\\??$", "^why were you created\\??$", "^why are you here\\??$", "^what's your purpose\\??$", "^ما هو هدفك\\??$", "^ليش انت موجود\\??$"],
             "english": "My purpose is to guide you in discovering your strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you. Let's begin uncovering what makes you unique.",
             "arabic": "هدفي هو إرشادك لاكتشاف نقاط قوتك وأنماطك وميولك، لتتمكن من فهم نفسك بشكل أفضل وطريقة تفاعلك مع العالم من حولك. لنبدأ باكتشاف ما يميزك."
         },
         "role": {
-            "triggers": ["^what is your role\\??$", "^what do you do\\??$", "^what's your function\\??$", "^what's your job\\??$", "^ما هو دورك\\??$", "^ايش شغلك\\??$"],
             "english": "My role is to explain the insights from the scale, connect them to your personal traits, and help you see how they relate to your goals and daily life. Now, let's take the first step in exploring your traits.",
             "arabic": "دوري هو شرح النتائج المستخلصة من المقياس، وربطها بسماتك الشخصية، ومساعدتك على فهم علاقتها بأهدافك وحياتك اليومية. الآن، لنأخذ الخطوة الأولى لاستكشاف سماتك."
         },
         "developer": {
-            "triggers": ["^who is your developer\\??$", "^who made you\\??$", "^who built you\\??$", "^who created you\\??$", "^من هو مطورك\\??$", "^من صنعك\\??$", "^من بناك\\??$", "^مين مطورك\\??$", "^مين الي مطورك\\??$"],
             "english": "I was developed by a team of researchers and engineers from Saudi Arabia, working on the BEGINING personality trait measurement project. Let's start this journey of self-discovery together.",
             "arabic": "تم تطويري من قبل فريق من الباحثين والمهندسين السعوديين، العاملين على مشروع BEGINING لقياس سمات الشخصية. لنبدأ هذه الرحلة لاكتشاف الذات معًا."
         },
         "team": {
-            "triggers": ["^who is your team\\??$", "^who's behind you\\??$", "^who's working with you\\??$", "^who works with you\\??$", "^من هو فريقك\\??$", "^مين فريقك\\??$"],
             "english": "My team includes Saudi experts in psychology, sociology, education, and artificial intelligence, all collaborating to build BEGINING. We're ready to learn more about you, starting now.",
             "arabic": "يتكون فريقي من خبراء سعوديين في علم النفس، وعلم الاجتماع، والتعليم، والذكاء الاصطناعي، يتعاونون لبناء مشروع BEGINING. نحن جاهزون لمعرفة المزيد عنك، لنبدأ الآن."
         },
         "understand_personality": {
-            "triggers": ["^can you really understand personality\\??$", "^can you analyze personality\\??$", "^can you understand me\\??$", "^are you able to understand\\??$", "^هل يمكنك حقًا فهم شخصيتي\\??$", "^هل تقدر تفهم الشخصية\\??$"],
             "english": "I don't replace professional psychology, but I can help highlight personality types and patterns that describe your unique profile. Let's begin by exploring your traits in detail.",
             "arabic": "أنا لا أستبدل علم النفس المتخصص، لكن يمكنني أن أساعدك على اكتشاف أنماط وأنواع شخصية تصف ملفك الفريد. لنبدأ باستكشاف سماتك بالتفصيل."
         },
         "how_analyze": {
-            "triggers": ["^how do you work\\??$", "^how do you analyze\\??$", "^how does this work\\??$", "^how do you analyze personality\\??$", "^كيف تحلل الشخصية\\??$", "^كيف تشتغل\\??$"],
             "english": "I analyze your personality using a structured scale that groups people into 120 personality types. Each type reflects a mix of capabilities, tendencies, and behaviors that show how you think, act, and grow. Let's take the first step in understanding your profile.",
             "arabic": "أحلل شخصيتك باستخدام مقياس منظم يصنف الأفراد إلى 120 نوعًا من الشخصيات، حيث يعكس كل نوع مزيجًا من القدرات والميول والسلوكيات، مما يوضح كيف تفكر وتتصرّف وتنمو. لنأخذ الخطوة الأولى لفهم ملفك الشخصي."
         },
         "objectives": {
-            "triggers": ["^what begining aims for\\??$", "^what are begining objectives\\??$", "^ما هي أهداف BEGINING\\??$", "^objectives of begining\\??$", "^goals of begining\\??$", "^ايش اهداف بيجينينج\\??$"],
             "english": "1. Educational and psychological guidance for students.\n2. Human resource development and career counseling.\n3. Academic research in behavior and productivity.\n4. Future integration into AI modeling and artificial consciousness design. Let's move forward by exploring your traits one step at a time.",
             "arabic": "1. الإرشاد التربوي والنفسي للطلاب.\n2. تطوير الموارد البشرية والإرشاد المهني.\n3. البحث الأكاديمي في السلوك والإنتاجية.\n4. التكامل المستقبلي مع نماذج الذكاء الاصطناعي وتصميم الوعي الاصطناعي. لننتقل للأمام باستكشاف سماتك خطوة بخطوة."
         }
     }
         
     @staticmethod
-    def get_identity_response(user_input: str, language: str = "en", openai_client=None) -> str:
+    def get_identity_response(user_input: str, language: str = "en", openai_client=None, conversation_context: list = None) -> str:
         """
         Get the appropriate identity response based on user input and language.
-        Uses strict pattern matching with regex to avoid confusion with user self-description.
+        Uses GPT to intelligently detect identity questions and ALWAYS responds when detected.
         Returns the response string or empty string if no match.
         """
         # Auto-detect language from input if not specified
@@ -156,67 +282,71 @@ class PersonalityAnalyzer:
             detected_lang = "ar"
         
         # Clean input for matching
-        text = user_input.lower().strip()
+        text = user_input.strip()
         
-        # Use regex patterns to match EXACT identity questions only
-        for category, data in PersonalityAnalyzer.IDENTITY_RESPONSES.items():
-            for trigger in data["triggers"]:
-                # Use regex to match exact patterns (avoiding substring matches in user descriptions)
-                if re.match(trigger, text, re.IGNORECASE):
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return data["arabic"]
-                    else:
-                        return data["english"]
-        
-        # Secondary GPT check only for ambiguous cases
-        if openai_client and any(word in text for word in ["you", "your", "انت", "انتم"]):
-            try:
-                identity_detection_prompt = f"""
-Task: Determine ONLY if this is a direct question about the AI system itself.
+        # Use GPT to intelligently detect if this is an identity question
+        try:
+            if not openai_client:
+                from openai import OpenAI
+                openai_client = OpenAI()
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": f"""You are an identity question detector. Determine if the user is asking about AI identity, purpose, or capabilities.
 
-CRITICAL RULES:
-- "I am a developer" = User describing THEMSELVES → "none"
-- "I work with teams" = User describing THEMSELVES → "none"  
-- "I like helping people" = User describing THEMSELVES → "none"
-- "My purpose is..." = User describing THEMSELVES → "none"
-- "Who is your developer?" = Question about AI → "developer"
-- "What do you do?" = Question about AI → "role"
-- "What is your purpose?" = Question about AI → "purpose"
+Identity questions include:
+- "Who are you?" / "من أنت؟"
+- "What are you?" / "ما أنت؟" 
+- "What is your purpose?" / "ما هو هدفك؟"
+- "Who created you?" / "من صنعك؟"
+- "What can you do?" / "ماذا تستطيع أن تفعل؟"
+- "How do you work?" / "كيف تعمل؟"
+- Questions about BEGINING project
+- Similar identity/capability questions in any language
 
-Only return category if:
-1. The question directly asks about YOU/YOUR (the AI)
-2. Uses interrogative words (who, what, how, why) about the AI
-3. Is NOT user describing their own traits/work/purpose
+NOT identity questions:
+- Personality descriptions ("I am outgoing", "I like meeting people")
+- Emotional states ("I am sad", "I feel anxious")
+- Personal preferences ("I enjoy...", "I prefer...")
+- Life experiences ("I work as...", "I studied...")
 
-Categories: who_are_you, developer, role, team, how_analyze, purpose, what_is_begining, understand_personality, objectives
+IMPORTANT: Always detect identity questions regardless of conversation context.
 
-Input: "{user_input}"
-
-Respond with category name or "none":"""
-
-                messages = [{"role": "user", "content": identity_detection_prompt}]
-
-                response = openai_client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=messages,
-                    temperature=0.0,
-                    max_tokens=15,
-                )
-
-                detected_category = response.choices[0].message.content.strip().lower()
-                
-                if detected_category in PersonalityAnalyzer.IDENTITY_RESPONSES:
-                    response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[detected_category]
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return response_data["arabic"]
-                    else:
-                        return response_data["english"]
-                        
-            except Exception as e:
-                # If GPT fails, rely on regex matching only
-                pass
-        
-        return ""
+Respond with ONLY the category name if it's an identity question (who_are_you, what_is_begining, purpose, role, developer, team, understand_personality, how_analyze, objectives) or "none" if not."""
+                    },
+                    {
+                        "role": "user", 
+                        "content": f"Is this an identity question? Text: '{text}'"
+                    }
+                ],
+                max_tokens=20,
+                temperature=0
+            )
+            
+            result = response.choices[0].message.content.strip().lower()
+            
+            # If no identity question detected, return empty
+            if result == "none":
+                return ""
+            
+            # Find the matching category and return appropriate response
+            for category, data in PersonalityAnalyzer.IDENTITY_RESPONSES.items():
+                if category == result:
+                    return data["arabic"] if detected_lang == "ar" else data["english"]
+            
+            return ""  # No matching category found
+            
+        except Exception as e:
+            print(f"Error in identity detection: {e}")
+            # Fallback to simple keyword detection
+            text_lower = text.lower()
+            if any(keyword in text_lower for keyword in ["who are you", "what are you", "من أنت", "ما أنت"]):
+                data = PersonalityAnalyzer.IDENTITY_RESPONSES["who_are_you"]
+                return data["arabic"] if detected_lang == "ar" else data["english"]
+            return ""
     
     @staticmethod
     def generate_clarification_questions(missing_traits: list, language: str = "english") -> list:
@@ -276,6 +406,12 @@ You are a sociologist and can analyze and extract character descriptions from te
 
 Identity & Redirection Handling
 
+CRITICAL CONTEXT-AWARENESS:
+- If the input contains "context_flag": "mid_conversation", this means the user is in the middle of a personality analysis conversation and their response may SOUND like an identity question but is actually a confused/deflecting answer to a personality question.
+- In this case, treat their input as personality-related content, NOT as an identity question.
+- Do NOT populate the 'description_identity' field for mid-conversation responses.
+- ALWAYS RESPECT THE CONTEXT FLAG - if it says "mid_conversation", do NOT trigger identity responses regardless of what the text says.
+
 - General Rule:
   If the user asks identity-related questions about YOU/THE SYSTEM (even if phrased differently), respond with the mapped message in 'description_identity' field.  
   Use intent-based matching, not exact string matching.
@@ -287,32 +423,19 @@ Identity & Redirection Handling
   * "I work in a team" = User describing THEMSELVES → NO identity response  
   * "Who is your team" = User asking about THE SYSTEM → identity response
 
+- CONTEXT-AWARE EXCEPTION:
+  * "who are you" in mid-conversation = confused answer → NO identity response, treat as personality input
+  * "who are you" as standalone question = genuine identity question → identity response
+  * ANY identity-like phrase with context_flag "mid_conversation" → NO identity response
+
+- CONVERSATION CONTEXT RULES:
+  * If context_flag is "mid_conversation", the user_input should be treated as a personality answer, not an identity question
+  * Look at the conversation history (new_input) to understand what question the user is answering
+  * Short, confused responses in conversation context are personality data, not identity questions
+
 - If the user drifts away from the task, includes irrelevant content, or asks off-topic questions (except relevant identity questions below), return JSON where 'description_english' or 'description_arabic' contains the reminder:
 
 - For on-topic but incomplete inputs, do not include this reminder message in 'description_english' or 'description_arabic'. Leave them empty until traits are complete.
-
-
-# -----------------------------
-# Question → Intent Mapping 
-# -----------------------------
-
-Q: Who are you? / من أنت؟
-
-Q: What is BEGINING? / ما هو BEGINING؟
-
-Q: What is your purpose? / ما هو هدفك؟
-
-Q: What is your role? / ما هو دورك؟
-
-Q: Who is your developer? / من هو مطورك؟
-
-Q: Who is your team? / من هو فريقك؟
-
-Q: Can you really understand my personality? / هل يمكنك حقًا فهم شخصيتي؟
-
-Q: How do you analyze personality? / كيف تحلل الشخصية؟
-
-Q: What are the objectives of BEGINING? / ما هي أهداف BEGINING؟
 
    
 Purpose
@@ -332,7 +455,21 @@ Process
 
 Analyze Input & History
 Review the latest user input (user_input) and the full conversation history (new_input) for the given id.
+Use the provided context_analysis and full_conversation_text to understand the complete context.
 Combine information from all turns to build a complete personality profile.
+
+COMPREHENSIVE CONTEXT ANALYSIS:
+1. Use full_conversation_text to see the complete user narrative
+2. Review context_analysis for insights about conversation flow and detected traits
+3. Consider conversation_summary for understanding the interaction history
+4. Pay attention to context_flag to determine if this is mid-conversation or new interaction
+
+CRITICAL: If context_flag is "mid_conversation", the user_input is likely a confused/deflecting answer to a personality question from the conversation history. DO NOT treat it as an identity question. Instead:
+1. Look at the most recent question in new_input to understand what the user was supposed to answer
+2. Treat the user_input as personality-related data, even if it sounds like "who are you" or similar  
+3. Extract any personality insights from the user_input (even confused responses can show traits like uncertainty, deflection patterns, etc.)
+4. Use the full_conversation_text to maintain context about what traits have already been revealed
+5. Continue the personality analysis without triggering identity responses
 
 Check for Missing Traits
 If all four traits are sufficiently covered, return status "complete".
@@ -369,7 +506,14 @@ Language Handling
 - Only fill in 'description_english' if the user's languages field includes "en" or "english".
 - Only fill in 'description_arabic' if the user's languages field includes "ar" or "arabic".
 - If a language is not requested, leave its description field empty.
-- All clarification questions and trait names (in 'missing_traits') must be in the user's requested language(s).
+- CRITICAL: All clarification questions and trait names (in 'missing_traits') must be in the user's requested language(s).
+- If languages="ar", ALL clarification questions must be in Arabic
+- If languages="en", ALL clarification questions must be in English
+- Never mix languages in clarification questions
+
+LANGUAGE EXAMPLES:
+Arabic (languages="ar"): ["كيف تتعامل عادةً مع عواطفك في المواقف الصعبة؟"]
+English (languages="en"): ["How do you typically handle your emotions in challenging situations?"]
 
 Restrictions
 - Always return valid JSON only.
@@ -413,7 +557,7 @@ Example Output — Off-topic (non-identity):
     "status": "incomplete",
     "description_arabic": "",
     "description_english": "",
-    "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
+    "description_identity": null,
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
         "How do you usually respond when faced with unexpected challenges?"
@@ -423,7 +567,7 @@ Example Output — Off-topic (non-identity):
     "total_tokens": 1317
 }
 
-Example Output — Complete
+Example Output — Complete will always include identity as null
 {
     "id": 22,
     "status": "complete",
@@ -456,7 +600,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         return f"{user_input.strip()}\n{new_input.strip()}"
 
     @staticmethod
-    def extract_json(text: str) -> str:
+    def extract_json(text: str, languages: str = "en") -> str:
         """
         Extract JSON from text using multiple methods.
         1. Try to find json in code blocks
@@ -479,7 +623,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
 
         # If no valid JSON found, create a meaningful default JSON
         if not text:
-            return '{"status": "incomplete", "clarification_questions": ["Could you provide more information about yourself?"]}'
+            fallback_question = "هل يمكنك تقديم المزيد من المعلومات عن نفسك؟" if languages == "ar" else "Could you provide more information about yourself?"
+            return json.dumps({"status": "incomplete", "clarification_questions": [fallback_question]})
         
         # Create a default response with status complete for cases with enough information
         if "developer" in text.lower() and ("team" in text.lower() or "professional" in text.lower()):
@@ -490,7 +635,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             })
             
         # Return a JSON structure with the original text as a question
-        return '{"status": "incomplete", "clarification_questions": ["Could you tell me more about how you interact with others in your professional environment?"]}'
+        fallback_question = "هل يمكنك إخباري المزيد عن كيفية تفاعلك مع الآخرين في بيئة العمل؟" if languages == "ar" else "Could you tell me more about how you interact with others in your professional environment?"
+        return json.dumps({"status": "incomplete", "clarification_questions": [fallback_question]})
     
     @staticmethod
     def create_json_from_text(text: str, id: int, languages: List[str]) -> dict:
@@ -604,19 +750,73 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             detected_languages = "ar"
         
         # FIRST: Check if this is an identity question using IDENTITY_RESPONSES with GPT intelligence
-        identity_response = self.get_identity_response(user_input, detected_languages, self.client)
+        # Pass conversation context for better identity detection
+        # IMPORTANT: Only include completed Q&A pairs, not the current user_input being processed
+        conversation_context = []
+        identity_question_found = False
+        identity_source = ""
+        
+        # Check main user_input for identity questions
+        identity_response = self.get_identity_response(
+            user_input, 
+            detected_languages, 
+            self.client,
+            conversation_context=[]
+        )
         
         if identity_response:
-            # This is an identity question - return predefined response
-            # For trait analysis, use only the conversation history (new_input), not the current identity question
+            identity_question_found = True
+            identity_source = "main_input"
+        
+        # ALSO check answers in new_input for identity questions
+        if not identity_question_found and new_input:
+            for qa in new_input:
+                q = qa.get("question", "").strip()
+                a = qa.get("answer", "").strip()
+                if a:
+                    answer_identity_response = self.get_identity_response(
+                        a, 
+                        detected_languages, 
+                        self.client,
+                        conversation_context=[]
+                    )
+                    if answer_identity_response:
+                        identity_question_found = True
+                        identity_response = answer_identity_response
+                        identity_source = f"conversation_answer: {a}"
+                        break
+        
+        # Build conversation context for trait analysis (excluding current user_input)
+        for qa in new_input:
+            q = qa.get("question", "").strip()
+            a = qa.get("answer", "").strip()
+            # Only include Q&A pairs where the answer is NOT the current user_input being processed
+            if q and a and a.strip() != user_input.strip():
+                conversation_context.append(f"Q: {q}\nA: {a}")
+        
+        # If we have an ongoing conversation and the input looks like an identity question,
+        # but our context-aware filtering says it's not genuine, treat it as personality input
+        is_ongoing_conversation = conversation_context and len(conversation_context) > 0
+        looks_like_identity = any(word in user_input.lower() for word in ["you", "your", "who", "what"])
+        
+        if identity_question_found:
+            # This is a genuine identity question - return static predefined response
+            # Return static identity response based on language
+            if detected_languages == "ar":
+                static_identity_response = "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية."
+            else:
+                static_identity_response = "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential."
+            
+            # For trait analysis, use only the conversation history (new_input), excluding identity triggers
             full_context = ""
             for qa in new_input:
                 q = qa.get("question", "").strip()
                 a = qa.get("answer", "").strip()
-                if q and a:
+                # EXCLUDE identity triggers from trait analysis
+                if q and a and not self._is_identity_trigger(a):
                     full_context += f"\nQ: {q}\nA: {a}"
             
-            # Determine missing traits from the conversation history ONLY (excluding current identity question)
+            # Determine missing traits from the conversation history ONLY (excluding identity triggers)
             missing_traits = []
             present_traits = []
             
@@ -631,27 +831,54 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             if missing_traits:
                 clarification_questions = self.generate_clarification_questions(missing_traits, detected_languages)
                 if not clarification_questions:  # If empty, generate a basic question
-                    clarification_questions = ["Could you tell me more about yourself to help me understand your personality better?"]
+                    fallback_question = "هل يمكنك إخباري المزيد عن نفسك لمساعدتي في فهم شخصيتك بشكل أفضل؟" if detected_languages == "ar" else "Could you tell me more about yourself to help me understand your personality better?"
+                    clarification_questions = [fallback_question]
             
             return {
                 "id": id,
                 "status": "complete" if not missing_traits else "incomplete",
                 "description_english": "" if detected_languages == "ar" else "",
                 "description_arabic": "" if detected_languages == "en" else "",
-                "description_identity": identity_response,
+                "description_identity": static_identity_response,
                 "missing_traits": missing_traits,
                 "clarification_questions": clarification_questions,
                 "input_tokens": len(user_input.split()),  # Approximate token count
-                "output_tokens": len(identity_response.split()),
-                "total_tokens": len(user_input.split()) + len(identity_response.split())
+                "output_tokens": len(static_identity_response.split()),
+                "total_tokens": len(user_input.split()) + len(static_identity_response.split())
             }
         
         # SECOND: If not an identity question, proceed with GPT analysis
+        # Add context flag for mid-conversation identity-like responses
+        # Also include full conversation context for better analysis
+        full_conversation_context = ""
+        if new_input:
+            for qa in new_input:
+                q = qa.get("question", "").strip()
+                a = qa.get("answer", "").strip()
+                # EXCLUDE answers that match identity triggers - they don't contribute to personality analysis
+                if q and a and not self._is_identity_trigger(a):
+                    full_conversation_context += f"\nQ: {q}\nA: {a}"
+        
+        # Build comprehensive context for GPT
+        context_analysis = ""
+        if is_ongoing_conversation:
+            context_analysis = f"""
+CONVERSATION CONTEXT:
+- Total exchanges: {len(conversation_context)}
+- Current input appears to be: {'a confused/deflecting answer' if looks_like_identity else 'a normal personality response'}
+- User was asked about: {new_input[-1].get('question', 'unknown') if new_input else 'unknown'}
+- Previous valid answers show traits: {', '.join([trait for trait, pattern in self.TRAIT_PATTERNS.items() if re.search(pattern, full_conversation_context.lower())])}
+"""
+        
         input_data = {
             "id": id,
             "user_input": user_input,
             "new_input": new_input,
-            "languages": detected_languages
+            "languages": detected_languages,
+            "context_flag": "mid_conversation" if (is_ongoing_conversation and looks_like_identity) else "normal",
+            "conversation_summary": f"User has been answering personality questions. Previous exchanges: {len(conversation_context)}. Full context: {full_conversation_context}" if is_ongoing_conversation else "New conversation",
+            "context_analysis": context_analysis,
+            "full_conversation_text": self.build_full_context(user_input, new_input)
         }
         gpt_response = self.call_gpt(input_data)
         
@@ -661,7 +888,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             if content.strip().startswith("{"):
                 result = json.loads(content)
             else:
-                # If not JSON, create a basic structure
+                # If not JSON, create a basic structure with language-appropriate questions
+                fallback_question = "Could you tell me more about yourself?" if detected_languages == "en" else "هل يمكنك أن تخبرني المزيد عن نفسك؟"
                 result = {
                     "id": id,
                     "status": "incomplete",
@@ -669,7 +897,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                     "description_arabic": "",
                     "description_identity": None,
                     "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-                    "clarification_questions": ["Could you tell me more about yourself?"],
+                    "clarification_questions": [fallback_question],
                     "input_tokens": gpt_response.get("input_tokens", 0),
                     "output_tokens": gpt_response.get("output_tokens", 0),
                     "total_tokens": gpt_response.get("total_tokens", 0)
@@ -678,7 +906,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             return result
             
         except json.JSONDecodeError:
-            # Fallback if JSON parsing fails
+            # Fallback if JSON parsing fails - also language-aware
+            fallback_question = "Could you tell me more about yourself?" if detected_languages == "en" else "هل يمكنك أن تخبرني المزيد عن نفسك؟"
             return {
                 "id": id,
                 "status": "incomplete",
@@ -686,7 +915,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "description_arabic": "",
                 "description_identity": None,
                 "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-                "clarification_questions": ["Could you tell me more about yourself?"],
+                "clarification_questions": [fallback_question],
                 "input_tokens": gpt_response.get("input_tokens", 0),
                 "output_tokens": gpt_response.get("output_tokens", 0),
                 "total_tokens": gpt_response.get("total_tokens", 0)

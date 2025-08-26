@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
-from personality_analyzer import PersonalityAnalyzer
+from app.personality_analyzer import PersonalityAnalyzer
 
 def demonstrate_improvements():
     """Demonstrate all the improvements made to the personality analyzer"""
@@ -27,14 +27,14 @@ def demonstrate_improvements():
         ("I am a developer", "❌ BEFORE: Triggered 'developer' response"),
         ("My purpose is to help others", "❌ BEFORE: Triggered 'purpose' response"),
         ("I work in a team", "❌ BEFORE: Triggered 'team' response"),
-        ("Who is your developer?", "✅ SHOULD: Trigger 'developer' response"),
-        ("What is your purpose?", "✅ SHOULD: Trigger 'purpose' response"),
-        ("Who is your team?", "✅ SHOULD: Trigger 'team' response"),
+        ("Who is your developer?", "SHOULD: Trigger 'developer' response"),
+        ("What is your purpose?", "SHOULD: Trigger 'purpose' response"),
+        ("Who is your team?", "SHOULD: Trigger 'team' response"),
     ]
     
     for test_input, expectation in test_cases:
         identity_response = analyzer.get_identity_response(test_input, "en", analyzer.client)
-        status = "✅ CORRECT" if (identity_response == "" and "BEFORE" in expectation) or (identity_response != "" and "SHOULD" in expectation) else "❌ WRONG"
+        status = "CORRECT" if (identity_response == "" and "BEFORE" in expectation) or (identity_response != "" and "SHOULD" in expectation) else "❌ WRONG"
         print(f"   {status}: '{test_input}' -> {'No response' if not identity_response else 'Identity response'}")
     
     # ===== IMPROVEMENT 2: CONVERSATION CONTINUITY =====
@@ -65,8 +65,8 @@ def demonstrate_improvements():
     )
     
     print(f"\n   User asks: '{identity_question}'")
-    print(f"   ✅ Identity response given: {'Yes' if result.get('description_identity') else 'No'}")
-    print(f"   ✅ Conversation history preserved: Missing traits = {result.get('missing_traits', [])}")
+    print(f"   Identity response given: {'Yes' if result.get('description_identity') else 'No'}")
+    print(f"   Conversation history preserved: Missing traits = {result.get('missing_traits', [])}")
     print(f"      (Only 'emotional' missing - cognitive, social, behavioral detected from history)")
     
     # ===== IMPROVEMENT 3: ONE QUESTION PER REQUEST =====
@@ -81,17 +81,17 @@ def demonstrate_improvements():
         questions = analyzer.generate_clarification_questions(missing_traits, "english")
         print(f"   Request {i+1}: {len(questions)} question(s) -> {questions[0] if questions else 'None'}...")
     
-    print("\n   ✅ Consistently generates exactly 1 question per request")
-    print("   ✅ Questions vary to cover different traits over time")
+    print("\n   Consistently generates exactly 1 question per request")
+    print("   Questions vary to cover different traits over time")
     
     # ===== SUMMARY =====
     print("\n📋 SUMMARY OF IMPROVEMENTS")
     print("=" * 40)
-    print("✅ Identity detection now uses strict regex patterns + GPT intelligence")
-    print("✅ User self-descriptions no longer trigger identity responses")
-    print("✅ Conversation history is preserved during identity questions")
-    print("✅ Only one clarification question per request (no user overwhelm)")
-    print("✅ System is more robust and user-friendly")
+    print("Identity detection now uses strict regex patterns + GPT intelligence")
+    print("User self-descriptions no longer trigger identity responses")
+    print("Conversation history is preserved during identity questions")
+    print("Only one clarification question per request (no user overwhelm)")
+    print("System is more robust and user-friendly")
     
     print("\n🎯 IMPACT:")
     print("   - No more false identity detection")
