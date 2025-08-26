@@ -97,47 +97,47 @@ class PersonalityAnalyzer:
     # Identity question mapping - moved from prompt to save tokens
     IDENTITY_RESPONSES = {
         "who_are_you": {
-            "triggers": ["who are you", "tell me about you", "introduce yourself", "من أنت"],
+            "triggers": ["^who are you\\??$", "^what are you\\??$", "^tell me about yourself\\??$", "^introduce yourself\\??$", "^من أنت\\??$"],
             "english": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential. Let's get started by discovering a bit about you.",
             "arabic": "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ بالتعرف عليك قليلًا."
         },
         "what_is_begining": {
-            "triggers": ["what is begining", "explain begining", "ما هو BEGINING", "BEGINING يعني ايه"],
+            "triggers": ["^what is begining\\??$", "^explain begining\\??$", "^tell me about begining\\??$", "^ما هو BEGINING\\??$", "^BEGINING يعني ايه\\??$"],
             "english": "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. To continue, let's explore your personality step by step.",
             "arabic": "BEGINING هو أداة تحليلية رمزية تستكشف أسس التميز الفكري والسلوكي والاجتماعي. يصنف الأفراد إلى 120 نوعًا من الشخصيات، يمثل كل منها سمات وقدرات وميول محددة. لنستمر، دعنا نستكشف شخصيتك خطوة بخطوة."
         },
         "purpose": {
-            "triggers": ["purpose", "why were you created", "why are you here", "ما هو هدفك"],
+            "triggers": ["^what is your purpose\\??$", "^why were you created\\??$", "^why are you here\\??$", "^what's your purpose\\??$", "^ما هو هدفك\\??$", "^ليش انت موجود\\??$"],
             "english": "My purpose is to guide you in discovering your strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you. Let's begin uncovering what makes you unique.",
             "arabic": "هدفي هو إرشادك لاكتشاف نقاط قوتك وأنماطك وميولك، لتتمكن من فهم نفسك بشكل أفضل وطريقة تفاعلك مع العالم من حولك. لنبدأ باكتشاف ما يميزك."
         },
         "role": {
-            "triggers": ["what is your role", "what do you do", "your function", "ما هو دورك"],
+            "triggers": ["^what is your role\\??$", "^what do you do\\??$", "^what's your function\\??$", "^what's your job\\??$", "^ما هو دورك\\??$", "^ايش شغلك\\??$"],
             "english": "My role is to explain the insights from the scale, connect them to your personal traits, and help you see how they relate to your goals and daily life. Now, let's take the first step in exploring your traits.",
             "arabic": "دوري هو شرح النتائج المستخلصة من المقياس، وربطها بسماتك الشخصية، ومساعدتك على فهم علاقتها بأهدافك وحياتك اليومية. الآن، لنأخذ الخطوة الأولى لاستكشاف سماتك."
         },
         "developer": {
-            "triggers": ["who is your developer", "who made you", "who built you", "من هو مطورك", "من صنعك", "من بناك", "مين مطورك", "مين الي مطورك"],
+            "triggers": ["^who is your developer\\??$", "^who made you\\??$", "^who built you\\??$", "^who created you\\??$", "^من هو مطورك\\??$", "^من صنعك\\??$", "^من بناك\\??$", "^مين مطورك\\??$", "^مين الي مطورك\\??$"],
             "english": "I was developed by a team of researchers and engineers from Saudi Arabia, working on the BEGINING personality trait measurement project. Let's start this journey of self-discovery together.",
             "arabic": "تم تطويري من قبل فريق من الباحثين والمهندسين السعوديين، العاملين على مشروع BEGINING لقياس سمات الشخصية. لنبدأ هذه الرحلة لاكتشاف الذات معًا."
         },
         "team": {
-            "triggers": ["who is your team", "who's behind you", "who's working with you", "من هو فريقك"],
+            "triggers": ["^who is your team\\??$", "^who's behind you\\??$", "^who's working with you\\??$", "^who works with you\\??$", "^من هو فريقك\\??$", "^مين فريقك\\??$"],
             "english": "My team includes Saudi experts in psychology, sociology, education, and artificial intelligence, all collaborating to build BEGINING. We're ready to learn more about you, starting now.",
             "arabic": "يتكون فريقي من خبراء سعوديين في علم النفس، وعلم الاجتماع، والتعليم، والذكاء الاصطناعي، يتعاونون لبناء مشروع BEGINING. نحن جاهزون لمعرفة المزيد عنك، لنبدأ الآن."
         },
         "understand_personality": {
-            "triggers": ["can you really understand", "can you analyze me", "do you understand me", "هل يمكنك حقًا فهم شخصيتي"],
+            "triggers": ["^can you really understand personality\\??$", "^can you analyze personality\\??$", "^can you understand me\\??$", "^are you able to understand\\??$", "^هل يمكنك حقًا فهم شخصيتي\\??$", "^هل تقدر تفهم الشخصية\\??$"],
             "english": "I don't replace professional psychology, but I can help highlight personality types and patterns that describe your unique profile. Let's begin by exploring your traits in detail.",
             "arabic": "أنا لا أستبدل علم النفس المتخصص، لكن يمكنني أن أساعدك على اكتشاف أنماط وأنواع شخصية تصف ملفك الفريد. لنبدأ باستكشاف سماتك بالتفصيل."
         },
         "how_analyze": {
-            "triggers": ["how do you work", "how do you analyze", "كيف تحلل الشخصية"],
+            "triggers": ["^how do you work\\??$", "^how do you analyze\\??$", "^how does this work\\??$", "^how do you analyze personality\\??$", "^كيف تحلل الشخصية\\??$", "^كيف تشتغل\\??$"],
             "english": "I analyze your personality using a structured scale that groups people into 120 personality types. Each type reflects a mix of capabilities, tendencies, and behaviors that show how you think, act, and grow. Let's take the first step in understanding your profile.",
             "arabic": "أحلل شخصيتك باستخدام مقياس منظم يصنف الأفراد إلى 120 نوعًا من الشخصيات، حيث يعكس كل نوع مزيجًا من القدرات والميول والسلوكيات، مما يوضح كيف تفكر وتتصرّف وتنمو. لنأخذ الخطوة الأولى لفهم ملفك الشخصي."
         },
         "objectives": {
-            "triggers": ["what begining aims for", "ما هي أهداف BEGINING", "objectives of begining", "goals of begining"],
+            "triggers": ["^what begining aims for\\??$", "^what are begining objectives\\??$", "^ما هي أهداف BEGINING\\??$", "^objectives of begining\\??$", "^goals of begining\\??$", "^ايش اهداف بيجينينج\\??$"],
             "english": "1. Educational and psychological guidance for students.\n2. Human resource development and career counseling.\n3. Academic research in behavior and productivity.\n4. Future integration into AI modeling and artificial consciousness design. Let's move forward by exploring your traits one step at a time.",
             "arabic": "1. الإرشاد التربوي والنفسي للطلاب.\n2. تطوير الموارد البشرية والإرشاد المهني.\n3. البحث الأكاديمي في السلوك والإنتاجية.\n4. التكامل المستقبلي مع نماذج الذكاء الاصطناعي وتصميم الوعي الاصطناعي. لننتقل للأمام باستكشاف سماتك خطوة بخطوة."
         }
@@ -147,7 +147,7 @@ class PersonalityAnalyzer:
     def get_identity_response(user_input: str, language: str = "en", openai_client=None) -> str:
         """
         Get the appropriate identity response based on user input and language.
-        Uses GPT model to intelligently detect identity questions and map them to IDENTITY_RESPONSES.
+        Uses strict pattern matching with regex to avoid confusion with user self-description.
         Returns the response string or empty string if no match.
         """
         # Auto-detect language from input if not specified
@@ -155,53 +155,56 @@ class PersonalityAnalyzer:
         if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):  # Arabic characters detected
             detected_lang = "ar"
         
-        # Use GPT to determine if this is an identity question and which category it belongs to
-        if openai_client:
+        # Clean input for matching
+        text = user_input.lower().strip()
+        
+        # Use regex patterns to match EXACT identity questions only
+        for category, data in PersonalityAnalyzer.IDENTITY_RESPONSES.items():
+            for trigger in data["triggers"]:
+                # Use regex to match exact patterns (avoiding substring matches in user descriptions)
+                if re.match(trigger, text, re.IGNORECASE):
+                    if detected_lang.lower() in ["ar", "arabic"]:
+                        return data["arabic"]
+                    else:
+                        return data["english"]
+        
+        # Secondary GPT check only for ambiguous cases
+        if openai_client and any(word in text for word in ["you", "your", "انت", "انتم"]):
             try:
                 identity_detection_prompt = f"""
-Task: Determine if the user is asking about the AI system or describing themselves.
+Task: Determine ONLY if this is a direct question about the AI system itself.
 
-CRITICAL: Users often describe their own traits for personality analysis.
-- "I am a developer" = User personality info → "none"
-- "I work with teams" = User personality info → "none"  
-- "I like helping people" = User personality info → "none"
+CRITICAL RULES:
+- "I am a developer" = User describing THEMSELVES → "none"
+- "I work with teams" = User describing THEMSELVES → "none"  
+- "I like helping people" = User describing THEMSELVES → "none"
+- "My purpose is..." = User describing THEMSELVES → "none"
 - "Who is your developer?" = Question about AI → "developer"
 - "What do you do?" = Question about AI → "role"
+- "What is your purpose?" = Question about AI → "purpose"
 
-AI Categories (only if asking ABOUT the AI):
-- who_are_you: Who/what is the AI
-- developer: Who created the AI  
-- role: AI's job/function
-- team: AI's team
-- how_analyze: How AI works
-- purpose: Why AI exists
-- what_is_begining: About BEGINING project
-- understand_personality: AI's abilities
-- objectives: BEGINING goals
+Only return category if:
+1. The question directly asks about YOU/YOUR (the AI)
+2. Uses interrogative words (who, what, how, why) about the AI
+3. Is NOT user describing their own traits/work/purpose
+
+Categories: who_are_you, developer, role, team, how_analyze, purpose, what_is_begining, understand_personality, objectives
 
 Input: "{user_input}"
 
-Decision process:
-1. Does it start with "I am/I like/I work/I have"? → Likely "none" (user info)
-2. Does it ask "who/what/how/why" about YOU/YOUR? → Likely AI question
-3. If unclear, default to "none" (personality analysis is primary function)
-
 Respond with category name or "none":"""
 
-                messages = [
-                    {"role": "user", "content": identity_detection_prompt}
-                ]
+                messages = [{"role": "user", "content": identity_detection_prompt}]
 
                 response = openai_client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
                     temperature=0.0,
-                    max_tokens=10,
+                    max_tokens=15,
                 )
 
                 detected_category = response.choices[0].message.content.strip().lower()
                 
-                # Check if the detected category exists in our IDENTITY_RESPONSES
                 if detected_category in PersonalityAnalyzer.IDENTITY_RESPONSES:
                     response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[detected_category]
                     if detected_lang.lower() in ["ar", "arabic"]:
@@ -210,40 +213,16 @@ Respond with category name or "none":"""
                         return response_data["english"]
                         
             except Exception as e:
-                # Fallback to basic keyword matching if GPT fails
+                # If GPT fails, rely on regex matching only
                 pass
-        
-        # Fallback: Basic keyword matching for when GPT is not available
-        text = user_input.lower().strip()
-        
-        # Simplified keyword matching as fallback
-        basic_keywords = {
-            "who_are_you": ["who are you", "من أنت"],
-            "developer": ["your developer", "مطورك", "who made you", "who built you"],
-            "team": ["team", "فريقك"],
-            "purpose": ["purpose", "هدفك"],
-            "role": ["role", "دورك", "what do you do"],
-            "what_is_begining": ["begining", "what is begining"],
-            "how_analyze": ["how do you work", "how do you analyze"],
-            "objectives": ["objectives", "goals"]
-        }
-        
-        for category, keywords in basic_keywords.items():
-            for keyword in keywords:
-                if keyword in text:
-                    response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[category]
-                    if detected_lang.lower() in ["ar", "arabic"]:
-                        return response_data["arabic"]
-                    else:
-                        return response_data["english"]
         
         return ""
     
     @staticmethod
     def generate_clarification_questions(missing_traits: list, language: str = "english") -> list:
         """
-        Generate clarification questions for missing personality traits.
-        Returns a list of questions, one for each missing trait.
+        Generate ONE clarification question for missing personality traits.
+        Returns a list with maximum one question to avoid overwhelming the user.
         Args:
             missing_traits: List of trait categories that need clarification
             language: Language for questions ("english" or "arabic")
@@ -256,13 +235,14 @@ Respond with category name or "none":"""
         # Determine language key for templates
         lang_key = "arabic" if language.lower() in ["ar", "arabic"] else "english"
         
-        clarification_questions = []
-        for trait in missing_traits:
-            if trait in PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key]:
-                question = random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key][trait])
-                clarification_questions.append(question)
+        # Select only ONE random trait to ask about
+        selected_trait = random.choice(missing_traits)
         
-        return clarification_questions
+        if selected_trait in PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key]:
+            question = random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key][selected_trait])
+            return [question]  # Return only one question
+        
+        return []
     
     @staticmethod
     def generate_clarification_prompt(user_input: str) -> str:
@@ -313,7 +293,7 @@ Identity & Redirection Handling
 
 
 # -----------------------------
-# Question → Intent Mapping
+# Question → Intent Mapping 
 # -----------------------------
 
 Q: Who are you? / من أنت؟
@@ -359,9 +339,10 @@ If all four traits are sufficiently covered, return status "complete".
 If some traits are missing, return status "incomplete" and list them in missing_traits.
 
 Clarification Questions
-If incomplete, generate short, friendly, non-repetitive questions.
-Each question must clarify one missing trait.
+If incomplete, generate ONE short, friendly, non-repetitive question.
+Select one missing trait at random to ask about.
 Never ask about traits already covered.
+IMPORTANT: Generate only ONE clarification question per response to avoid overwhelming the user.
 IMPORTANT: Always include clarification_questions when missing_traits is not empty, even for identity questions.
 
 Off-Topic & Identity Integration
@@ -403,8 +384,7 @@ Example Output — Personality Description (NOT Identity)
     "description_identity": null,
     "missing_traits": ["behavioral", "emotional", "social"],
     "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?",
-        "What situations tend to make you feel most stressed or relaxed?"
+        "How do you usually respond when faced with unexpected challenges?"
     ],
     "input_tokens": 1245,
     "output_tokens": 74,
@@ -420,8 +400,7 @@ Example Output — Identity Question with Clarification
     "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?",
-        "What situations tend to make you feel most stressed or relaxed?"
+        "How do you usually respond when faced with unexpected challenges?"
     ],
     "input_tokens": 1245,
     "output_tokens": 74,
@@ -437,23 +416,7 @@ Example Output — Off-topic (non-identity):
     "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?",
-        "What situations tend to make you feel most stressed or relaxed?"
-    ],
-    "input_tokens": 1245,
-    "output_tokens": 74,
-    "total_tokens": 1317
-}
-{
-    "id": 22,
-    "status": "incomplete",
-    "description_arabic": "",
-    "description_english": "",
-    "description_identity": null,
-    "missing_traits": ["behavioral", "emotional"],
-    "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?",
-        "What situations tend to make you feel most stressed or relaxed?"
+        "How do you usually respond when faced with unexpected challenges?"
     ],
     "input_tokens": 1245,
     "output_tokens": 74,
@@ -645,10 +608,15 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         
         if identity_response:
             # This is an identity question - return predefined response
-            # Still check for missing personality traits and include clarification questions
-            full_context = self.build_full_context(user_input, new_input)
+            # For trait analysis, use only the conversation history (new_input), not the current identity question
+            full_context = ""
+            for qa in new_input:
+                q = qa.get("question", "").strip()
+                a = qa.get("answer", "").strip()
+                if q and a:
+                    full_context += f"\nQ: {q}\nA: {a}"
             
-            # Determine missing traits from the conversation history
+            # Determine missing traits from the conversation history ONLY (excluding current identity question)
             missing_traits = []
             present_traits = []
             
