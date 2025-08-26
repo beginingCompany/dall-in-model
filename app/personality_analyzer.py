@@ -219,7 +219,7 @@ Respond with category name or "none":"""
         # Simplified keyword matching as fallback
         basic_keywords = {
             "who_are_you": ["who are you", "من أنت"],
-            "developer": ["developer", "مطورك", "who made you", "who built you"],
+            "developer": ["your developer", "مطورك", "who made you", "who built you"],
             "team": ["team", "فريقك"],
             "purpose": ["purpose", "هدفك"],
             "role": ["role", "دورك", "what do you do"],
