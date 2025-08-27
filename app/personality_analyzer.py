@@ -34,6 +34,113 @@ class PersonalityAnalyzer:
                 context += f"\nQ: {q}\nA: {a}"
         return context
 
+    @staticmethod
+    def detect_personal_introduction(text: str) -> tuple:
+        """
+        Detect if user is introducing themselves with name or job title.
+        Returns a tuple: (has_introduction: bool, name: str, job_title: str, greeting_message: str)
+        """
+        if not text:
+            return False, "", "", ""
+        
+        text_lower = text.lower().strip()
+        name = ""
+        job_title = ""
+        
+        # Patterns for name introduction
+        name_patterns = [
+            # English patterns
+            r'\bi am ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            r'\bmy name is ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            r'\bi\'m ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            r'\bcall me ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            
+            # Arabic patterns
+            r'\bاسمي ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
+            r'\bأنا ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
+            r'\bانا ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
+            r'\bادعني ([أ-ي]+(?:\s+[أ-ي]+)*)\b'
+        ]
+        
+        # Patterns for job title introduction
+        job_patterns = [
+            # English patterns
+            r'\bi am (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator|student|intern)\b',
+            r'\bi\'m (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator|student|intern)\b',
+            r'\bi work as (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator)\b',
+            r'\bmy job is (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator)\b',
+            
+            # Short forms
+            r'\bi am (?:a )?(dev|eng|prog|admin|mgr)\b',
+            r'\bi\'m (?:a )?(dev|eng|prog|admin|mgr)\b',
+            
+            # Arabic patterns
+            r'\bأنا (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني|طالب|متدرب)\b',
+            r'\bانا (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني|طالب|متدرب)\b',
+            r'\bوظيفتي (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني)\b',
+            r'\bعملي (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني)\b'
+        ]
+        
+        # Combined patterns (name + job)
+        combined_patterns = [
+            # English: "I am eng Ahmed", "I'm dev John"
+            r'\bi am (?:a )?(dev|eng|prog|admin|mgr|developer|engineer|programmer|designer|manager)\s+([A-Z][a-z]+)\b',
+            r'\bi\'m (?:a )?(dev|eng|prog|admin|mgr|developer|engineer|programmer|designer|manager)\s+([A-Z][a-z]+)\b',
+            
+            # Arabic: "انا مهندس أحمد"
+            r'\b(?:أنا|انا)\s+(مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير)\s+([أ-ي]+)\b'
+        ]
+        
+        # Check for name patterns
+        for pattern in name_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                name = match.group(1).strip()
+                break
+        
+        # Check for job patterns
+        for pattern in job_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                job_title = match.group(1).strip()
+                break
+        
+        # Check for combined patterns
+        for pattern in combined_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                job_title = match.group(1).strip()
+                name = match.group(2).strip()
+                break
+        
+        # Generate greeting message if introduction detected
+        if name or job_title:
+            # Determine language (Arabic if contains Arabic characters)
+            is_arabic = bool(re.search(r'[\u0600-\u06FF]', text))
+            
+            if is_arabic:
+                if name and job_title:
+                    greeting = f"أهلاً وسهلاً {name}! تشرفنا بلقائك. أرى أنك {job_title}، هذا رائع!"
+                elif name:
+                    greeting = f"أهلاً وسهلاً {name}! تشرفنا بلقائك."
+                elif job_title:
+                    greeting = f"أهلاً! أرى أنك {job_title}، هذا رائع!"
+                else:
+                    greeting = "أهلاً بك!"
+            else:
+                if name and job_title:
+                    greeting = f"Hi {name}! Great to meet you. I see you're a {job_title}, that's awesome!"
+                elif name:
+                    greeting = f"Hi {name}! Great to meet you."
+                elif job_title:
+                    greeting = f"Hi there! I see you're a {job_title}, that's awesome!"
+                else:
+                    greeting = "Hi there!"
+            
+            return True, name, job_title, greeting
+        
+        return False, "", "", ""
+
     # Define trait patterns and templates as class variables
     TRAIT_PATTERNS = {
         "emotional": r"enthusiastic|happy|sad|calm|feel(s)?|emotion|stress|excited|passion|motivat(ed|ion)|anxiety|angry|nervous|worried|content|optimistic|pessimistic|joyful|frustrated|relaxed|overwhelmed|mood|temper|patient|sensitive|expressive|reserved|emotional intelligence|cope|satisfaction|proud|embarrassed|guilty|inspired",
@@ -1007,6 +1114,7 @@ Status Types
 Output Format
 id (integer)
 status ("complete", "incomplete", "identity", or "off_topic")
+personal_greeting (string - friendly greeting when user introduces themselves, empty string if no introduction)
 description_english (concise personality description)
 description_arabic (concise personality description in Arabic if possible)
 description_identity (only for identity status - IDENTITY_RESPONSES)
@@ -1030,6 +1138,7 @@ Example Output — Incomplete
 {
     "id": 22,
     "status": "incomplete",
+    "personal_greeting": "",
     "description_arabic": "",
     "description_english": "",
     "missing_traits": ["behavioral", "emotional"],
@@ -1045,6 +1154,7 @@ Example Output — Complete
 {
     "id": 22,
     "status": "complete",
+    "personal_greeting": "",
     "description_arabic": "شخص يتمتع بقدرات تحليلية قوية، وسلوك اجتماعي هادئ، وأسلوب اتخاذ قرارات عقلاني ومتوازن عاطفيًا.",
     "description_english": "A person with strong analytical abilities, a calm social demeanor, and a rational yet emotionally balanced decision-making style.",
     "missing_traits": [],
@@ -1228,6 +1338,23 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             detected_lang = self.detect_language(recent_text)
             languages = "ar" if detected_lang == "arabic" else "en"
         
+        # Personal introduction detection logic:
+        # Check for user introducing themselves with name or job title
+        personal_greeting = ""
+        introduction_text = ""
+        
+        if new_input:
+            # Check the LAST answer for personal introduction
+            last_qa = new_input[-1]
+            introduction_text = last_qa.get("answer", "").strip()
+        else:
+            # Check initial user_input for personal introduction
+            introduction_text = user_input
+        
+        has_intro, name, job_title, greeting = self.detect_personal_introduction(introduction_text)
+        if has_intro:
+            personal_greeting = greeting
+        
         # Identity detection logic:
         # 1. If new_input is empty -> check user_input (first interaction)
         # 2. If new_input exists -> only check LAST answer, ignore user_input (history)
@@ -1265,6 +1392,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "content": json.dumps({
                     "id": id,
                     "status": "identity",
+                    "personal_greeting": personal_greeting,
                     "description_identity": identity_text,
                     "description_english": "",
                     "description_arabic": "",
@@ -1307,6 +1435,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "content": json.dumps({
                     "id": id,
                     "status": "off_topic",
+                    "personal_greeting": personal_greeting,
                     "description_off_topic": off_topic_response,
                     "description_english": "",
                     "description_arabic": "",
@@ -1323,7 +1452,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             "id": id,
             "user_input": user_input,
             "new_input": new_input,
-            "languages": languages
+            "languages": languages,
+            "personal_greeting": personal_greeting
         }
         gpt_response = self.call_gpt(input_data)
         return gpt_response

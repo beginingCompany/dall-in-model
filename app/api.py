@@ -68,6 +68,7 @@ class UserRequest(BaseModel):
 class TraitResponse(BaseModel):
     id: int
     status: str
+    personal_greeting: Optional[str] = ""  # New field for friendly greetings
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
     description_identity: Optional[str] = ""  # Field for identity responses
@@ -183,6 +184,7 @@ async def analyze_personality(request: Request):
         return TraitResponse(
             id=req.id,
             status="incomplete",
+            personal_greeting="",
             description_english="",
             description_arabic="",
             description_identity="",
@@ -212,6 +214,7 @@ async def analyze_personality(request: Request):
         model_output = {
             "id": req.id,
             "status": "incomplete",
+            "personal_greeting": "",
             "description_english": "",
             "description_arabic": "",
             "description_identity": "",
@@ -229,6 +232,7 @@ async def analyze_personality(request: Request):
         model_output = {
             "id": req.id,
             "status": "incomplete",
+            "personal_greeting": "",
             "description_english": "",
             "description_arabic": "",
             "description_identity": "",
@@ -257,6 +261,7 @@ async def analyze_personality(request: Request):
         model_output["id"] = req.id
 
     # Ensure all required fields exist with defaults
+    model_output.setdefault("personal_greeting", "")
     model_output.setdefault("description_english", "")
     model_output.setdefault("description_arabic", "")
     model_output.setdefault("description_identity", "")
