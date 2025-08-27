@@ -919,10 +919,11 @@ Focus on INTENT over exact wording.
         return traits_needing_clarification
 
     @staticmethod
-    def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 2, asked_questions: list = None) -> list:
+    def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 1, asked_questions: list = None) -> list:
         """
         Generate clarification questions for missing traits in the appropriate language.
         Avoids repeating previously asked questions.
+        Always returns exactly one question to maintain conversation flow.
         """
         import random
         
@@ -944,16 +945,25 @@ Focus on INTENT over exact wording.
         shuffled_traits = missing_traits.copy()
         random.shuffle(shuffled_traits)
         
-        # Generate questions for up to max_questions traits
-        for trait in shuffled_traits[:1]:
+        # Always generate exactly one question
+        for trait in shuffled_traits:
             if trait in templates:
                 available_questions = [q for q in templates[trait] if q not in asked_questions]
                 if available_questions:
                     question = random.choice(available_questions)
                     questions.append(question)
+                    break  # Only take one question
                 elif templates[trait]:  # Fallback if all questions were asked
                     question = random.choice(templates[trait])
                     questions.append(question)
+                    break  # Only take one question
+        
+        # Ensure we always return exactly one question if traits exist
+        if not questions and missing_traits:
+            # Fallback to first available trait if none had available questions
+            first_trait = shuffled_traits[0]
+            if first_trait in templates and templates[first_trait]:
+                questions.append(random.choice(templates[first_trait]))
         
         return questions
     SYSTEM_PROMPT = """
@@ -983,9 +993,10 @@ If all four traits are sufficiently covered, return status "complete".
 If some traits are missing, return status "incomplete" and list them in missing_traits.
 
 Clarification Questions
-If incomplete, generate short, friendly, non-repetitive questions.
-Each question must clarify one missing trait.
+If incomplete, generate only ONE short, friendly, non-repetitive question.
+The single question should focus on the most important missing trait.
 Never ask about traits already covered.
+Always return exactly one question in the clarification_questions array.
 
 Status Types
 - "complete": All four personality traits are sufficiently covered
@@ -1023,8 +1034,7 @@ Example Output — Incomplete
     "description_english": "",
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?",
-        "What situations tend to make you feel most stressed or relaxed?"
+        "How do you usually respond when faced with unexpected challenges?"
     ],
     "input_tokens": 1245,
     "output_tokens": 74,
@@ -1246,7 +1256,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             
             # Generate clarification questions to continue the conversation
             clarification_questions = self.generate_clarification_questions(
-                missing_traits, languages, max_questions=2, asked_questions=asked_questions
+                missing_traits, languages, max_questions=1, asked_questions=asked_questions
             )
             
             # Return identity response with clarification questions to continue conversation
