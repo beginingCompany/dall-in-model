@@ -2,6 +2,7 @@ import os
 import re
 import json
 import logging
+import unicodedata
 from typing import List, Dict, Any
 from openai import OpenAI, OpenAIError
 import tiktoken
@@ -10,6 +11,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class PersonalityAnalyzer:
+    @staticmethod
+    def detect_language(text: str) -> str:
+        """
+        Auto-detect language from text content.
+        Returns 'arabic' if Arabic characters are found, otherwise 'english'.
+        """
+        if re.search(r'[\u0600-\u06FF]', text):
+            return "arabic"
+        return "english"
+    
     @staticmethod
     def build_full_context(user_input: str, new_input: list) -> str:
         """
@@ -178,7 +189,7 @@ Identity question categories:
 2. what_is_begining - asking about the BEGINING project ("what is begining", "ما هو بيجينينغ", "ما هو مشروع بيجينينغ", etc.)
 3. purpose - asking about purpose ("why were you created", "what's your purpose", "ما هو هدفك", "لماذا تم إنشاؤك", etc.)
 4. role - asking about role/function ("what do you do", "what's your role", "ما هو دورك", "ما وظيفتك", etc.)
-5. developer - asking about creators ("who made you", "who's your developer", "من مطورك","من طورك", "من صنعك", "من أنشأك", etc.)
+5. developer - asking about creators ("who made you", "who's your developer", "من مطورك", "من صنعك", "من أنشأك", etc.)
 6. team - asking about the team ("who's your team", "who's behind you", "من فريقك", "من وراءك", etc.)
 7. understand_personality - asking about capabilities ("can you understand me", "هل تفهمني", "هل يمكنك فهم شخصيتي", etc.)
 8. how_analyze - asking about methodology ("how do you work", "how do you analyze", "كيف تعمل", "كيف تحلل", etc.)
@@ -275,7 +286,9 @@ Examples (Non-identity):
         if not text:
             return False, None, None
             
+        # Normalize Arabic text to handle diacritics
         text_lower = text.lower().strip()
+        text_lower = unicodedata.normalize("NFKD", text_lower)
         
         # Enhanced keyword-based fallback with more variations and flexibility
         identity_keywords = {
@@ -396,8 +409,20 @@ Examples (Non-identity):
         
         for trait, pattern in PersonalityAnalyzer.TRAIT_PATTERNS.items():
             matches = re.findall(pattern, all_text)
-            # Need multiple matches or detailed responses for each trait
-            if len(matches) < 2:
+            
+            # Get all answers for this trait to check depth
+            trait_answers = [answer for answer in personality_answers 
+                           if re.search(pattern, answer)]
+            
+            # Check if we need more clarification based on:
+            # 1. Number of matches (< 2)
+            # 2. Length of answers (< 10 words average)
+            # 3. Variety of trait expressions
+            avg_length = sum(len(answer.split()) for answer in trait_answers) / max(len(trait_answers), 1)
+            
+            if (len(matches) < 2 or 
+                avg_length < 10 or 
+                len(trait_answers) == 0):
                 traits_needing_clarification.append(trait)
         
         # Always return at least some traits to keep conversation going
@@ -412,14 +437,18 @@ Examples (Non-identity):
         return traits_needing_clarification
 
     @staticmethod
-    def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 2) -> list:
+    def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 2, asked_questions: list = None) -> list:
         """
         Generate clarification questions for missing traits in the appropriate language.
+        Avoids repeating previously asked questions.
         """
         import random
         
         if not missing_traits:
             return []
+        
+        if asked_questions is None:
+            asked_questions = []
         
         # Determine language preference
         is_arabic = "ar" in languages or "arabic" in languages.lower()
@@ -434,10 +463,15 @@ Examples (Non-identity):
         random.shuffle(shuffled_traits)
         
         # Generate questions for up to max_questions traits
-        for trait in shuffled_traits[:max_questions]:
+        for trait in shuffled_traits[:1]:
             if trait in templates:
-                question = random.choice(templates[trait])
-                questions.append(question)
+                available_questions = [q for q in templates[trait] if q not in asked_questions]
+                if available_questions:
+                    question = random.choice(available_questions)
+                    questions.append(question)
+                elif templates[trait]:  # Fallback if all questions were asked
+                    question = random.choice(templates[trait])
+                    questions.append(question)
         
         return questions
     SYSTEM_PROMPT = """
@@ -534,7 +568,12 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY not set in .env")
         self.client = OpenAI(api_key=self.api_key)
-        self.logger = logging.getLogger("PersonalityAnalyzer")
+        
+        # Setup logging
+        self.logger = logging.getLogger(__name__)
+        if not self.logger.handlers:
+            logging.basicConfig(level=logging.INFO)
+            self.logger.setLevel(logging.INFO)
 
     @staticmethod
     def combine_inputs_safely(user_input: str, new_input: str) -> str:
@@ -683,6 +722,18 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         if new_input is None:
             new_input = []
         
+        # Auto-detect language if not specified or if "auto" is passed
+        if languages == "auto" or not languages:
+            # Check most recent input for language
+            recent_text = ""
+            if new_input:
+                recent_text = new_input[-1].get("answer", "")
+            else:
+                recent_text = user_input
+            
+            detected_lang = self.detect_language(recent_text)
+            languages = "ar" if detected_lang == "arabic" else "en"
+        
         # Identity detection logic:
         # 1. If new_input is empty -> check user_input (first interaction)
         # 2. If new_input exists -> only check LAST answer, ignore user_input (history)
@@ -702,8 +753,17 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             # Analyze what personality traits are still missing
             missing_traits = self.analyze_missing_traits(user_input, new_input)
             
+            # Extract previously asked questions to avoid repetition
+            asked_questions = []
+            for qa in new_input:
+                question = qa.get("question", "").strip()
+                if question:
+                    asked_questions.append(question)
+            
             # Generate clarification questions to continue the conversation
-            clarification_questions = self.generate_clarification_questions(missing_traits, languages, max_questions=2)
+            clarification_questions = self.generate_clarification_questions(
+                missing_traits, languages, max_questions=2, asked_questions=asked_questions
+            )
             
             # Return identity response with clarification questions to continue conversation
             identity_text = self.get_identity_response(response_data, languages)
