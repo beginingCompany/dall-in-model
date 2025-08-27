@@ -109,7 +109,7 @@ class PersonalityAnalyzer:
     IDENTITY_RESPONSES = {
         "who_are_you": {
             "english": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential. Let's get started by discovering a bit about you.",
-            "arabic": "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ بالتعرف عليك قليلًا."
+            "arabic": "أنا Minus Zero، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ بالتعرف عليك قليلًا."
         },
         "what_is_begining": {
             "english": "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. To continue, let's explore your personality step by step.",
@@ -149,19 +149,19 @@ class PersonalityAnalyzer:
     OFF_TOPIC_RESPONSES = {
         "general_unrelated": {
             "english": "I'm Minus Zero, a personality analysis system designed to help you discover your unique traits and characteristics. I specialize in understanding personality patterns, not general knowledge questions. Let's focus on exploring your personality instead! Could you tell me something about yourself, your habits, or how you typically respond to different situations?",
-            "arabic": "أنا ماينس زيرو، نظام تحليل الشخصية المصمم لمساعدتك على اكتشاف سماتك وخصائصك الفريدة. أتخصص في فهم أنماط الشخصية، وليس الأسئلة المعرفية العامة. دعنا نركز على استكشاف شخصيتك بدلاً من ذلك! هل يمكنك إخباري شيئاً عن نفسك، أو عاداتك، أو كيف تستجيب عادةً للمواقف المختلفة؟"
+            "arabic": "أنا Minus Zero، نظام تحليل الشخصية المصمم لمساعدتك على اكتشاف سماتك وخصائصك الفريدة. أتخصص في فهم أنماط الشخصية، وليس الأسئلة المعرفية العامة. دعنا نركز على استكشاف شخصيتك بدلاً من ذلك! هل يمكنك إخباري شيئاً عن نفسك، أو عاداتك، أو كيف تستجيب عادةً للمواقف المختلفة؟"
         },
         "gibberish": {
             "english": "I notice your message contains unclear text that I can't understand. As Minus Zero, I'm here to help you explore your personality traits and characteristics. Let's get back on track! Could you share something meaningful about yourself - perhaps how you handle challenges, interact with others, or approach decision-making?",
-            "arabic": "ألاحظ أن رسالتك تحتوي على نص غير واضح لا أستطيع فهمه. أنا ماينس زيرو، وأنا هنا لمساعدتك على استكشاف سمات شخصيتك وخصائصك. دعنا نعود إلى المسار الصحيح! هل يمكنك مشاركة شيء مفيد عن نفسك - ربما كيف تتعامل مع التحديات، أو تتفاعل مع الآخرين، أو تتخذ القرارات؟"
+            "arabic": "ألاحظ أن رسالتك تحتوي على نص غير واضح لا أستطيع فهمه. أنا Minus Zero، وأنا هنا لمساعدتك على استكشاف سمات شخصيتك وخصائصك. دعنا نعود إلى المسار الصحيح! هل يمكنك مشاركة شيء مفيد عن نفسك - ربما كيف تتعامل مع التحديات، أو تتفاعل مع الآخرين، أو تتخذ القرارات؟"
         },
         "factual_questions": {
             "english": "That's an interesting question, but I'm Minus Zero - a personality analysis system focused on understanding human traits and behaviors. I don't provide general information or facts about the world. Instead, I help you discover insights about your own personality! What would you like to explore about yourself today?",
-            "arabic": "هذا سؤال مثير للاهتمام، لكنني ماينس زيرو - نظام تحليل الشخصية المتخصص في فهم السمات والسلوكيات البشرية. لا أقدم معلومات عامة أو حقائق عن العالم. بدلاً من ذلك، أساعدك على اكتشاف رؤى حول شخصيتك! ماذا تود أن تستكشف عن نفسك اليوم؟"
+            "arabic": "هذا سؤال مثير للاهتمام، لكنني Minus Zero - نظام تحليل الشخصية المتخصص في فهم السمات والسلوكيات البشرية. لا أقدم معلومات عامة أو حقائق عن العالم. بدلاً من ذلك، أساعدك على اكتشاف رؤى حول شخصيتك! ماذا تود أن تستكشف عن نفسك اليوم؟"
         },
         "technical_questions": {
             "english": "I understand you might be curious about technical topics, but I'm Minus Zero, specialized in personality analysis within the BEGINING project. My expertise is in understanding your unique psychological profile and traits. Let's dive into what makes you unique as a person! How do you typically approach new challenges or situations?",
-            "arabic": "أفهم أنك قد تكون فضولياً حول المواضيع التقنية، لكنني ماينس زيرو، متخصص في تحليل الشخصية ضمن مشروع BEGINING. خبرتي في فهم ملفك النفسي الفريد وسماتك. دعنا نتعمق في ما يجعلك شخصاً فريداً! كيف تتعامل عادةً مع التحديات أو المواقف الجديدة؟"
+            "arabic": "أفهم أنك قد تكون فضولياً حول المواضيع التقنية، لكنني Minus Zero، متخصص في تحليل الشخصية ضمن مشروع BEGINING. خبرتي في فهم ملفك النفسي الفريد وسماتك. دعنا نتعمق في ما يجعلك شخصاً فريداً! كيف تتعامل عادةً مع التحديات أو المواقف الجديدة؟"
         }
     }
     
@@ -914,7 +914,7 @@ Focus on INTENT over exact wording.
             import random
             all_traits = ["emotional", "social", "cognitive", "behavioral"]
             random.shuffle(all_traits)
-            return all_traits[:2]
+            return all_traits[:1]
         
         return traits_needing_clarification
 
