@@ -170,13 +170,36 @@ class PersonalityAnalyzer:
 
     def detect_identity_question(self, text: str) -> tuple:
         """
-        Use GPT to intelligently detect if the user is asking an identity question about the system.
+        Enhanced identity detection using GPT with smart keyword fallback.
         Returns a tuple: (is_identity_question: bool, response_key: str, response_data: dict)
         """
         if not text:
             return False, None, None
+        
+        try:
+            # First attempt: Standard GPT classification
+            gpt_result = self._gpt_identity_classification(text)
+            if gpt_result[0]:  # If GPT found identity question
+                return gpt_result
             
-        # Use GPT to classify the question
+            # Second attempt: Check if text is similar to identity keywords
+            # This handles cases like "من طورك" which might not be in examples
+            is_similar = self._is_similar_to_identity_keywords(text)
+            if is_similar:
+                # Re-process with GPT using enhanced prompt with keyword context
+                enhanced_result = self._gpt_identity_classification_with_context(text, is_similar)
+                if enhanced_result[0]:
+                    return enhanced_result
+            
+            # Third attempt: Direct keyword fallback
+            return self._fallback_identity_detection(text)
+            
+        except Exception as e:
+            self.logger.error(f"Error in identity detection: {e}")
+            return self._fallback_identity_detection(text)
+    
+    def _gpt_identity_classification(self, text: str) -> tuple:
+        """Standard GPT classification for identity questions."""
         identity_classification_prompt = f"""
 Analyze this user input and determine if they are asking an identity question about the AI system/chatbot.
 
@@ -240,43 +263,151 @@ Examples (Non-identity):
 "أنا سعيد اليوم" -> "NOT_IDENTITY"
 """
 
-        try:
-            messages = [
-                {"role": "system", "content": "You are an expert at classifying user questions about AI systems."},
-                {"role": "user", "content": identity_classification_prompt}
-            ]
-            
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.0,
-                max_tokens=50,
-            )
-            
-            result = response.choices[0].message.content.strip()
-            
-            # Handle different response formats from GPT
-            if "IDENTITY:" in result:
-                # Extract the category after IDENTITY:
-                if result.startswith("IDENTITY:"):
-                    category = result.split("IDENTITY:")[1].strip()
+        messages = [
+            {"role": "system", "content": "You are an expert at classifying user questions about AI systems."},
+            {"role": "user", "content": identity_classification_prompt}
+        ]
+        
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.0,
+            max_tokens=50,
+        )
+        
+        result = response.choices[0].message.content.strip()
+        
+        # Handle different response formats from GPT
+        if "IDENTITY:" in result:
+            # Extract the category after IDENTITY:
+            if result.startswith("IDENTITY:"):
+                category = result.split("IDENTITY:")[1].strip()
+            else:
+                # Handle format like: "text" -> "IDENTITY:category"
+                parts = result.split("IDENTITY:")
+                if len(parts) > 1:
+                    category = parts[1].strip().strip('"')
                 else:
-                    # Handle format like: "text" -> "IDENTITY:category"
-                    parts = result.split("IDENTITY:")
-                    if len(parts) > 1:
-                        category = parts[1].strip().strip('"')
-                    else:
-                        return False, None, None
-                
-                if category in self.IDENTITY_RESPONSES:
-                    return True, category, self.IDENTITY_RESPONSES[category]
+                    return False, None, None
             
-            return False, None, None
-            
-        except Exception as e:
-            self.logger.error(f"Error in identity detection: {e}")
-            # Fallback to simple keyword matching if GPT fails
-            return self._fallback_identity_detection(text)
+            if category in self.IDENTITY_RESPONSES:
+                return True, category, self.IDENTITY_RESPONSES[category]
+        
+        return False, None, None
+    
+    def _is_similar_to_identity_keywords(self, text: str) -> str:
+        """
+        Check if text is similar to identity keywords even if not exact match.
+        Returns the likely category if similar, None otherwise.
+        """
+        text_lower = text.lower().strip()
+        text_lower = unicodedata.normalize("NFKD", text_lower)
+        
+        # Define similarity patterns for each category
+        similarity_patterns = {
+            "developer": [
+                # Arabic roots and variations
+                "طور", "طوّر", "صنع", "بنى", "أنشأ", "صمم", "عمل",
+                # Question words
+                "من", "مين", "منو", "who",
+                # English roots
+                "develop", "create", "make", "build", "design"
+            ],
+            "purpose": [
+                # Arabic roots
+                "هدف", "غاي", "مهم", "قصد", "غرض",
+                # Question words
+                "لماذا", "ليش", "ليه", "ما", "ايش", "شو", "وش", "why", "what",
+                # English roots
+                "purpose", "goal", "mission", "why", "reason"
+            ],
+            "role": [
+                # Arabic roots
+                "دور", "وظيف", "عمل", "شغل", "مهم",
+                # Question words
+                "ما", "ايش", "شو", "وش", "what",
+                # English roots
+                "role", "job", "function", "work", "do"
+            ],
+            "who_are_you": [
+                # Arabic
+                "أنت", "انت", "نفس", "هوي",
+                # Question words
+                "من", "مين", "منو", "who",
+                # English
+                "you", "identity", "yourself"
+            ]
+        }
+        
+        # Count matches for each category
+        category_scores = {}
+        for category, patterns in similarity_patterns.items():
+            score = 0
+            for pattern in patterns:
+                if pattern in text_lower:
+                    score += 1
+            category_scores[category] = score
+        
+        # Return category with highest score (if > 1)
+        best_category = max(category_scores, key=category_scores.get)
+        if category_scores[best_category] >= 2:  # At least 2 pattern matches
+            return best_category
+        
+        return None
+    
+    def _gpt_identity_classification_with_context(self, text: str, suggested_category: str) -> tuple:
+        """
+        Enhanced GPT classification with keyword context for edge cases.
+        """
+        enhanced_prompt = f"""
+Analyze this user input for identity questions about the AI system/chatbot.
+
+User input: "{text}"
+
+CONTEXT: This text shows similarity to "{suggested_category}" identity questions.
+Common patterns for {suggested_category}:
+- developer: asking about creators, who made/built/developed the system
+- purpose: asking about goals, mission, why the system exists
+- role: asking about function, job, what the system does
+- who_are_you: asking about identity, who/what the system is
+
+Look for the INTENT behind the question, even with:
+- Typos or misspellings
+- Informal language
+- Different word order
+- Arabic dialectal variations
+- Missing or extra words
+
+Categories:
+1. who_are_you, 2. what_is_begining, 3. purpose, 4. role, 5. developer, 6. team, 7. understand_personality, 8. how_analyze, 9. objectives
+
+Respond ONLY with:
+- "IDENTITY:category_name" if it's an identity question
+- "NOT_IDENTITY" if it's not an identity question
+
+Focus on INTENT over exact wording.
+"""
+
+        messages = [
+            {"role": "system", "content": "You are an expert at understanding user intent in questions about AI systems, even with variations in wording."},
+            {"role": "user", "content": enhanced_prompt}
+        ]
+        
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.1,  # Slightly higher temperature for flexibility
+            max_tokens=50,
+        )
+        
+        result = response.choices[0].message.content.strip()
+        
+        if "IDENTITY:" in result:
+            category = result.split("IDENTITY:")[1].strip()
+            if category in self.IDENTITY_RESPONSES:
+                return True, category, self.IDENTITY_RESPONSES[category]
+        
+        return False, None, None
     
     def _fallback_identity_detection(self, text: str) -> tuple:
         """
@@ -296,50 +427,98 @@ Examples (Non-identity):
                 "developer", "made you", "built you", "created you", "creator", "ur developer", 
                 "your developer", "who developed", "who built", "who created", "ur creator",
                 "your creator", "who made", "developed by", "created by", "who ur developer",
-                "من مطورك", "من صنعك", "من أنشأك", "من بناك", "مطور", "مطورك", "من صممك"
+                # Arabic variations - including مين (who) variants
+                "من مطورك", "مين مطورك", "منو مطورك", "من طورك", "مين طورك", "منو طورك",
+                "من صنعك", "مين صنعك", "منو صنعك", "من أنشأك", "مين أنشأك", "منو أنشأك",
+                "من بناك", "مين بناك", "منو بناك", "من صممك", "مين صممك", "منو صممك",
+                "مطور", "مطورك", "طورك", "صانعك", "منشئك", "بانيك", "مصممك"
             ],
             "purpose": [
                 "purpose", "why were you created", "why are you here", "ur purpose", "your purpose",
                 "what ur purpose", "what is ur purpose", "what's ur purpose", "why u here",
                 "why you here", "what for", "ur goal", "your goal", "ur mission", "your mission",
-                "ما هو هدفك", "لماذا تم إنشاؤك", "هدفك", "غايتك", "مهمتك", "لماذا أنت هنا"
+                # Arabic variations - including ايش/شو/وش (what) variants
+                "ما هو هدفك", "ايش هدفك", "شو هدفك", "وش هدفك", "إيش هدفك",
+                "لماذا تم إنشاؤك", "ليش تم إنشاؤك", "ليه تم إنشاؤك", "لايش تم إنشاؤك",
+                "هدفك", "غايتك", "مهمتك", "مقصدك", "غرضك",
+                "لماذا أنت هنا", "ليش أنت هنا", "ليه أنت هنا", "لايش أنت هنا"
             ],
             "role": [
                 "what do you do", "your role", "your function", "ur role", "ur function",
                 "what ur role", "what is ur role", "what's ur role", "what u do", "ur job",
                 "your job", "ur work", "your work", "ur task", "your task",
-                "ما هو دورك", "ما وظيفتك", "دورك", "وظيفتك", "عملك", "مهامك"
+                # Arabic variations
+                "ما هو دورك", "ايش دورك", "شو دورك", "وش دورك", "إيش دورك",
+                "ما وظيفتك", "ايش وظيفتك", "شو وظيفتك", "وش وظيفتك", "إيش وظيفتك",
+                "دورك", "وظيفتك", "عملك", "مهامك", "شغلك", "وظيفك"
             ],
             "who_are_you": [
                 "who are you", "who r u", "who ru", "who u", "tell me about you", "introduce yourself",
                 "about you", "who is this", "ur identity", "your identity",
-                "من أنت", "عرف بنفسك", "من انت", "هويتك"
+                # Arabic variations - including all "who" variants
+                "من أنت", "مين أنت", "منو أنت", "من انت", "مين انت", "منو انت",
+                "عرف بنفسك", "عرفني بنفسك", "قل لي من أنت", "قول لي من أنت",
+                "هويتك", "هويك", "شخصيتك"
             ],
             "what_is_begining": [
                 "what is begining", "begining", "explain begining", "about begining",
                 "begining project", "what begining", "tell me about begining",
-                "ما هو بيجينينغ", "ما هو مشروع بيجينينغ", "بيجينينغ", "مشروع بيجينينغ"
+                # Arabic variations
+                "ما هو بيجينينغ", "ايش بيجينينغ", "شو بيجينينغ", "وش بيجينينغ", "إيش بيجينينغ",
+                "ما هو مشروع بيجينينغ", "ايش مشروع بيجينينغ", "شو مشروع بيجينينغ",
+                "بيجينينغ", "مشروع بيجينينغ", "برنامج بيجينينغ"
             ],
             "team": [
                 "your team", "who's behind you", "who's working with you", "ur team",
                 "who behind you", "ur colleagues", "your colleagues", "who with you",
-                "من فريقك", "من وراءك", "فريقك", "زملاؤك", "من معك"
+                # Arabic variations
+                "من فريقك", "مين فريقك", "منو فريقك", "من وراءك", "مين وراءك", "منو وراءك",
+                "فريقك", "زملاؤك", "زملائك", "من معك", "مين معك", "منو معك",
+                "فريق العمل", "الفريق", "زملاء العمل"
             ],
             "understand_personality": [
                 "can you understand", "do you understand", "understand me", "analyze me",
                 "can u understand", "do u understand", "ur understanding", "your understanding",
-                "هل تفهمني", "هل يمكنك فهمي", "تفهمني", "تحليلي"
+                # Arabic variations
+                "هل تفهمني", "تفهمني", "تفهم شخصيتي", "هل يمكنك فهمي",
+                "هل تقدر تفهمني", "تقدر تفهمني", "ممكن تفهمني",
+                "تحليلي", "تحلل شخصيتي", "تحلل طباعي"
             ],
             "how_analyze": [
                 "how do you work", "how do you analyze", "how u work", "how u analyze",
                 "ur method", "your method", "how you function", "how u function",
-                "كيف تعمل", "كيف تحلل", "طريقتك", "كيف تشتغل"
+                # Arabic variations
+                "كيف تعمل", "كيف تشتغل", "كيف تحلل", "كيف تشتغل",
+                "طريقتك", "طريقة عملك", "آلية عملك", "منهجك",
+                "كيف تحلل الشخصية", "كيف تحلل الطباع"
             ],
             "objectives": [
                 "your objectives", "ur objectives", "your goals", "ur goals", "objectives",
                 "what ur objectives", "what are ur objectives", "ur aims", "your aims",
-                "ما أهدافك", "ما غاياتك", "أهدافك", "غاياتك"
+                # Arabic variations
+                "ما أهدافك", "ايش أهدافك", "شو أهدافك", "وش أهدافك", "إيش أهدافك",
+                "ما غاياتك", "ايش غاياتك", "شو غاياتك", "وش غاياتك",
+                "أهدافك", "غاياتك", "مقاصدك", "طموحاتك"
             ]
+        }
+        
+        # Arabic word roots for flexible matching
+        arabic_root_patterns = {
+            "developer": {
+                "roots": ["طور", "طوّر", "بنى", "صنع", "صمم", "أنشأ", "عمل"],
+                "question_words": ["من", "مين", "منو"],
+                "suffixes": ["ك", "نك", "اك"]
+            },
+            "purpose": {
+                "roots": ["هدف", "غاي", "مهم", "قصد", "غرض"],
+                "question_words": ["ما", "ايش", "شو", "وش", "إيش", "لماذا", "ليش", "ليه", "لايش"],
+                "suffixes": ["ك", "تك", ""]
+            },
+            "role": {
+                "roots": ["دور", "وظيف", "عمل", "شغل", "مهم"],
+                "question_words": ["ما", "ايش", "شو", "وش", "إيش"],
+                "suffixes": ["ك", "تك", ""]
+            }
         }
         
         # Use flexible matching - check if any keyword appears in the text
@@ -348,6 +527,29 @@ Examples (Non-identity):
                 if keyword in text_lower:
                     if category in self.IDENTITY_RESPONSES:
                         return True, category, self.IDENTITY_RESPONSES[category]
+        
+        # Advanced Arabic root-based matching for variations like "مين مطورك"
+        for category, pattern_info in arabic_root_patterns.items():
+            roots = pattern_info["roots"]
+            question_words = pattern_info["question_words"]
+            suffixes = pattern_info["suffixes"]
+            
+            # Check for question word + root + suffix combinations
+            for question_word in question_words:
+                for root in roots:
+                    for suffix in suffixes:
+                        # Generate possible combinations
+                        combinations = [
+                            f"{question_word} {root}{suffix}",  # "مين طورك"
+                            f"{question_word}{root}{suffix}",   # "مينطورك" (no space)
+                            f"{question_word} م{root}{suffix}", # "مين مطورك"
+                            f"{question_word}م{root}{suffix}",  # "مينمطورك"
+                        ]
+                        
+                        for combination in combinations:
+                            if combination in text_lower:
+                                if category in self.IDENTITY_RESPONSES:
+                                    return True, category, self.IDENTITY_RESPONSES[category]
         
         # Additional pattern-based matching for even more flexibility
         # Handle patterns like "what's ur [X]", "ur [X]", etc.
