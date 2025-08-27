@@ -145,6 +145,26 @@ class PersonalityAnalyzer:
         }
     }
     
+    # Off-topic responses for when users ask unrelated questions
+    OFF_TOPIC_RESPONSES = {
+        "general_unrelated": {
+            "english": "I'm Minus Zero, a personality analysis system designed to help you discover your unique traits and characteristics. I specialize in understanding personality patterns, not general knowledge questions. Let's focus on exploring your personality instead! Could you tell me something about yourself, your habits, or how you typically respond to different situations?",
+            "arabic": "أنا ماينس زيرو، نظام تحليل الشخصية المصمم لمساعدتك على اكتشاف سماتك وخصائصك الفريدة. أتخصص في فهم أنماط الشخصية، وليس الأسئلة المعرفية العامة. دعنا نركز على استكشاف شخصيتك بدلاً من ذلك! هل يمكنك إخباري شيئاً عن نفسك، أو عاداتك، أو كيف تستجيب عادةً للمواقف المختلفة؟"
+        },
+        "gibberish": {
+            "english": "I notice your message contains unclear text that I can't understand. As Minus Zero, I'm here to help you explore your personality traits and characteristics. Let's get back on track! Could you share something meaningful about yourself - perhaps how you handle challenges, interact with others, or approach decision-making?",
+            "arabic": "ألاحظ أن رسالتك تحتوي على نص غير واضح لا أستطيع فهمه. أنا ماينس زيرو، وأنا هنا لمساعدتك على استكشاف سمات شخصيتك وخصائصك. دعنا نعود إلى المسار الصحيح! هل يمكنك مشاركة شيء مفيد عن نفسك - ربما كيف تتعامل مع التحديات، أو تتفاعل مع الآخرين، أو تتخذ القرارات؟"
+        },
+        "factual_questions": {
+            "english": "That's an interesting question, but I'm Minus Zero - a personality analysis system focused on understanding human traits and behaviors. I don't provide general information or facts about the world. Instead, I help you discover insights about your own personality! What would you like to explore about yourself today?",
+            "arabic": "هذا سؤال مثير للاهتمام، لكنني ماينس زيرو - نظام تحليل الشخصية المتخصص في فهم السمات والسلوكيات البشرية. لا أقدم معلومات عامة أو حقائق عن العالم. بدلاً من ذلك، أساعدك على اكتشاف رؤى حول شخصيتك! ماذا تود أن تستكشف عن نفسك اليوم؟"
+        },
+        "technical_questions": {
+            "english": "I understand you might be curious about technical topics, but I'm Minus Zero, specialized in personality analysis within the BEGINING project. My expertise is in understanding your unique psychological profile and traits. Let's dive into what makes you unique as a person! How do you typically approach new challenges or situations?",
+            "arabic": "أفهم أنك قد تكون فضولياً حول المواضيع التقنية، لكنني ماينس زيرو، متخصص في تحليل الشخصية ضمن مشروع BEGINING. خبرتي في فهم ملفك النفسي الفريد وسماتك. دعنا نتعمق في ما يجعلك شخصاً فريداً! كيف تتعامل عادةً مع التحديات أو المواقف الجديدة؟"
+        }
+    }
+    
     @staticmethod
     def generate_clarification_prompt(user_input: str) -> str:
         import random
@@ -176,6 +196,56 @@ class PersonalityAnalyzer:
         if not text:
             return False, None, None
         
+        # Normalize text for analysis
+        text_lower = text.lower().strip()
+        
+        # FIRST: Check for statements about the system (NOT questions)
+        statement_patterns = [
+            r'\byou are (a |an )?chatbot\b',
+            r'\byou are (a |an )?robot\b',
+            r'\byou are (a |an )?ai\b',
+            r'\byour purpose is\b',
+            r'\byour role is\b'
+        ]
+        
+        for pattern in statement_patterns:
+            if re.search(pattern, text_lower):
+                return False, None, None  # Statement, not question
+        
+        # SECOND: Handle mixed content - check for questions in the text
+        # Look for question words/patterns even in mixed sentences
+        question_indicators = [
+            r'\bwhat do you do\b',
+            r'\bwho are you\b', 
+            r'\bwhat.*your (purpose|role|goal|objective)',
+            r'\bwho.*your (developer|creator|maker)',
+            r'\bما (هدفك|دورك)\b',
+            r'\bمن (أنت|مطورك)\b'
+        ]
+        
+        has_question = False
+        for pattern in question_indicators:
+            if re.search(pattern, text_lower):
+                has_question = True
+                break
+        
+        # If mixed content but no clear question, treat as personality
+        if not has_question and ('.' in text or len(text.split()) > 8):
+            # Check if it looks like mixed content (multiple sentences)
+            sentences = text.split('.')
+            if len(sentences) > 1:
+                # Look for questions in any sentence
+                for sentence in sentences:
+                    for pattern in question_indicators:
+                        if re.search(pattern, sentence.lower()):
+                            has_question = True
+                            break
+                    if has_question:
+                        break
+                
+                if not has_question:
+                    return False, None, None  # Mixed content without clear questions
+        
         try:
             # First attempt: Standard GPT classification
             gpt_result = self._gpt_identity_classification(text)
@@ -205,8 +275,10 @@ Analyze this user input and determine if they are asking an identity question ab
 
 User input: "{text}"
 
-NOTE: YOU MAY SEE SOME MISTAKES IN THE EXAMPLES BELOW, PLEASE FOLLOW THE INTENT RATHER THAN THE EXACT TEXT.
-IMPORTANT: Pay attention to informal variations and common typos. AND USERS MAY MISTYPE THEIR QUESTIONS.
+CRITICAL: Distinguish between:
+1. User describing THEMSELVES (NOT identity questions)
+2. User asking about THE SYSTEM (identity questions)
+
 Identity question categories:
 1. who_are_you - asking about identity ("who are you", "tell me about yourself", "من أنت", "عرف بنفسك", etc.)
 2. what_is_begining - asking about the BEGINING project ("what is begining", "ما هو بيجينينغ", "ما هو مشروع بيجينينغ", etc.)
@@ -219,47 +291,40 @@ Identity question categories:
 9. objectives - asking about goals ("what are your objectives", "ما أهدافك", "ما غاياتك", etc.)
 
 Respond with ONLY ONE of these formats:
-- If it's an identity question: "IDENTITY:category_name"
-- If it's NOT an identity question: "NOT_IDENTITY"
+- If it's an identity question about the SYSTEM: "IDENTITY:category_name"
+- If it's NOT an identity question (user describing themselves, personality input, etc.): "NOT_IDENTITY"
 
-Examples (English - Formal):
+Examples (Identity questions about THE SYSTEM):
 "who are you" -> "IDENTITY:who_are_you"
 "who is your developer" -> "IDENTITY:developer"  
 "what is begining" -> "IDENTITY:what_is_begining"
 "what is your purpose" -> "IDENTITY:purpose"
 "what do you do" -> "IDENTITY:role"
-
-Examples (English - Informal):
 "who r u" -> "IDENTITY:who_are_you"
-"who u" -> "IDENTITY:who_are_you"
-"ur identity" -> "IDENTITY:who_are_you"
-"who ur developer" -> "IDENTITY:developer"
 "ur developer" -> "IDENTITY:developer"
-"ur creator" -> "IDENTITY:developer"
 "what ur purpose" -> "IDENTITY:purpose"
-"ur purpose" -> "IDENTITY:purpose"
-"why u here" -> "IDENTITY:purpose"
-"ur goal" -> "IDENTITY:purpose"
-"ur mission" -> "IDENTITY:purpose"
-"what u do" -> "IDENTITY:role"
-"ur job" -> "IDENTITY:role"
-"ur role" -> "IDENTITY:role"
-"ur team" -> "IDENTITY:team"
-
-Examples (Arabic):
 "من أنت" -> "IDENTITY:who_are_you"
 "من مطورك" -> "IDENTITY:developer"
-"مطورك" -> "IDENTITY:developer"
-"ما هو مشروع بيجينينغ" -> "IDENTITY:what_is_begining"
 "ما هو دورك" -> "IDENTITY:role"
-"دورك" -> "IDENTITY:role"
-"هدفك" -> "IDENTITY:purpose"
 
-Examples (Non-identity):
+Examples (NOT identity - user describing themselves or personality input):
 "I am happy today" -> "NOT_IDENTITY"
+"I am a developer" -> "NOT_IDENTITY"
+"I am a developer who enjoys creating applications" -> "NOT_IDENTITY"
+"I'm a creative developer" -> "NOT_IDENTITY"
+"My job is programming" -> "NOT_IDENTITY"
+"My role involves building websites" -> "NOT_IDENTITY"
+"My purpose in life is to help others" -> "NOT_IDENTITY"
+"I work as a programmer" -> "NOT_IDENTITY"
+"I develop mobile applications" -> "NOT_IDENTITY"
+"I create software solutions" -> "NOT_IDENTITY"
+"أنا مطور برمجيات" -> "NOT_IDENTITY"
+"وظيفتي في شركة تقنية" -> "NOT_IDENTITY"
+"عملي هو تطوير التطبيقات" -> "NOT_IDENTITY"
+"دوري في الفريق" -> "NOT_IDENTITY"
+"أطور مواقع الويب" -> "NOT_IDENTITY"
 "how do you feel" -> "NOT_IDENTITY"
 "I like programming" -> "NOT_IDENTITY"
-"أنا سعيد اليوم" -> "NOT_IDENTITY"
 "أنا سعيد اليوم" -> "NOT_IDENTITY"
 """
 
@@ -299,59 +364,83 @@ Examples (Non-identity):
         """
         Check if text is similar to identity keywords even if not exact match.
         Returns the likely category if similar, None otherwise.
+        IMPROVED: Context-aware to avoid false positives from self-descriptions.
         """
         text_lower = text.lower().strip()
         text_lower = unicodedata.normalize("NFKD", text_lower)
         
-        # Define similarity patterns for each category
+        # FIRST: Check if it's a self-description (should NOT be identity)
+        self_description_indicators = [
+            # English self-descriptions
+            "i am", "i'm", "my job", "my work", "my role", "my purpose in life",
+            "i work", "i develop", "i create", "i build", "i design", "i study",
+            "my friend", "we are", "everyone has", "imagine i", "if i am",
+            "i am a better", "i play a role",
+            
+            # Arabic self-descriptions (expanded)
+            "أنا", "انا", "وظيفتي", "عملي", "دوري", "أطور", "اطور",
+            "انا مهندس", "أنا مهندس", "انا طبيب", "أنا طبيب"
+        ]
+        
+        for indicator in self_description_indicators:
+            if indicator in text_lower:
+                return None  # Don't trigger identity detection for self-descriptions
+        
+        # SECOND: Check for statements about the system (not questions)
+        statement_indicators = [
+            "you are a chatbot", "you are what you are", "your purpose is clearer",
+            "suppose your purpose", "your team", "with your team"
+        ]
+        
+        for indicator in statement_indicators:
+            if indicator in text_lower:
+                return None  # Don't trigger identity detection for statements
+        
+        # THIRD: Check for third-party questions (should be off-topic)
+        third_party_indicators = [
+            ("who", "president"), ("who", "created facebook"), ("who", "made google"),
+            ("what", "google do"), ("what", "capital"), ("what", "machine learning"),
+            ("what", "quantum physics"), ("explain", "artificial intelligence"),
+            ("tell me about", "history"), ("how", "photosynthesis")
+        ]
+        
+        for pattern1, pattern2 in third_party_indicators:
+            if pattern1 in text_lower and pattern2 in text_lower:
+                return None  # Don't trigger identity detection for third-party questions
+        
+        # Define similarity patterns for QUESTIONS about the system only
         similarity_patterns = {
             "developer": [
-                # Arabic roots and variations
-                "طور", "طوّر", "صنع", "بنى", "أنشأ", "صمم", "عمل",
-                # Question words
-                "من", "مين", "منو", "who",
-                # English roots
-                "develop", "create", "make", "build", "design"
+                # Must have question words + developer context
+                ("who", "developer"), ("who", "made"), ("who", "built"), ("who", "created"),
+                ("من", "مطور"), ("مين", "مطور"), ("منو", "مطور"),
+                ("من", "صنع"), ("من", "بنى"), ("من", "أنشأ")
             ],
             "purpose": [
-                # Arabic roots
-                "هدف", "غاي", "مهم", "قصد", "غرض",
-                # Question words
-                "لماذا", "ليش", "ليه", "ما", "ايش", "شو", "وش", "why", "what",
-                # English roots
-                "purpose", "goal", "mission", "why", "reason"
+                # Must have question words + purpose context
+                ("what", "purpose"), ("why", "created"), ("why", "here"),
+                ("ما", "هدف"), ("ايش", "هدف"), ("شو", "هدف"), ("وش", "هدف"),
+                ("لماذا", "إنشاؤك"), ("ليش", "هنا")
             ],
             "role": [
-                # Arabic roots
-                "دور", "وظيف", "عمل", "شغل", "مهم",
-                # Question words
-                "ما", "ايش", "شو", "وش", "what",
-                # English roots
-                "role", "job", "function", "work", "do"
+                # Must have question words + role context  
+                ("what", "do"), ("what", "role"), ("what", "function"),
+                ("ما", "دور"), ("ايش", "دور"), ("شو", "دور"), ("وش", "دور"),
+                ("ما", "وظيف")
             ],
             "who_are_you": [
-                # Arabic
-                "أنت", "انت", "نفس", "هوي",
-                # Question words
-                "من", "مين", "منو", "who",
-                # English
-                "you", "identity", "yourself"
+                # Must have question words + identity context
+                ("who", "you"), ("who", "are"), ("tell", "about"),
+                ("من", "أنت"), ("مين", "أنت"), ("منو", "أنت"),
+                ("عرف", "نفس")
             ]
         }
         
-        # Count matches for each category
-        category_scores = {}
-        for category, patterns in similarity_patterns.items():
-            score = 0
-            for pattern in patterns:
-                if pattern in text_lower:
-                    score += 1
-            category_scores[category] = score
-        
-        # Return category with highest score (if > 1)
-        best_category = max(category_scores, key=category_scores.get)
-        if category_scores[best_category] >= 2:  # At least 2 pattern matches
-            return best_category
+        # Check for pattern pairs (must have both elements)
+        for category, pattern_pairs in similarity_patterns.items():
+            for pattern1, pattern2 in pattern_pairs:
+                if pattern1 in text_lower and pattern2 in text_lower:
+                    return category
         
         return None
     
@@ -411,161 +500,201 @@ Focus on INTENT over exact wording.
     
     def _fallback_identity_detection(self, text: str) -> tuple:
         """
-        Enhanced fallback method using flexible keyword matching if GPT detection fails.
-        Handles variations like 'ur purpose', 'what ur role', etc.
+        Context-aware fallback method that distinguishes between:
+        1. User self-descriptions: "I am a developer" -> NOT identity
+        2. Questions about the system: "Who is your developer" -> IS identity
         """
         if not text:
             return False, None, None
             
-        # Normalize Arabic text to handle diacritics
+        # Normalize text
         text_lower = text.lower().strip()
         text_lower = unicodedata.normalize("NFKD", text_lower)
         
-        # Enhanced keyword-based fallback with more variations and flexibility
-        identity_keywords = {
+        # FIRST: Check for self-description patterns (should NOT be identity)
+        self_description_patterns = [
+            # English self-descriptions
+            r'\bi am (a |an )?developer\b',
+            r'\bi\'m (a |an )?developer\b', 
+            r'\bmy (job|work|role|profession) is\b',
+            r'\bi work as (a |an )?\w+',
+            r'\bi work with\b',
+            r'\bi develop\b',
+            r'\bi create\b',
+            r'\bmy purpose in life\b',
+            r'\bmy role involves\b',
+            r'\bi study\b',
+            r'\bmy friend is\b',
+            r'\bwe are\b',
+            r'\beveryone has\b',
+            r'\bimagine i\b',
+            r'\bif i am\b',
+            r'\bi am a better\b',
+            r'\bi play a role\b',
+            
+            # Arabic self-descriptions (expanded)
+            r'\bأنا مطور\b',
+            r'\bانا مطور\b',
+            r'\bانا مهندس\b',
+            r'\bأنا مهندس\b',
+            r'\bوظيفتي\b',
+            r'\bعملي هو\b',
+            r'\bدوري في\b',
+            r'\bأطور\b',
+            r'\bاطور\b'
+        ]
+        
+        # SECOND: Check for statements about the system (should NOT be identity)
+        statement_patterns = [
+            r'\byou are a chatbot\b',
+            r'\byou are what you are\b',
+            r'\byour purpose is clearer\b',
+            r'\bsuppose your purpose\b'
+        ]
+        
+        # THIRD: Check for third-party/off-topic patterns (should NOT be identity)
+        third_party_patterns = [
+            r'\bwho (is )?the president\b',
+            r'\bwho created facebook\b',
+            r'\bwho made google\b',
+            r'\bwhat does google do\b',
+            r'\bwhat (is )?the capital\b',
+            r'\bwhat (is )?machine learning\b',
+            r'\bwhat (is )?quantum physics\b',
+            r'\bexplain artificial intelligence\b',
+            r'\btell me about history\b',
+            r'\bhow does photosynthesis\b'
+        ]
+        
+        # Check all non-identity patterns first
+        all_non_identity_patterns = self_description_patterns + statement_patterns + third_party_patterns
+        for pattern in all_non_identity_patterns:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                return False, None, None
+        
+        # SECOND: Check for ACTUAL identity questions about the system
+        identity_patterns = {
             "developer": [
-                "developer", "made you", "built you", "created you", "creator", "ur developer", 
-                "your developer", "who developed", "who built", "who created", "ur creator",
-                "your creator", "who made", "developed by", "created by", "who ur developer",
-                # Arabic variations - including مين (who) variants
-                "من مطورك", "مين مطورك", "منو مطورك", "من طورك", "مين طورك", "منو طورك",
-                "من صنعك", "مين صنعك", "منو صنعك", "من أنشأك", "مين أنشأك", "منو أنشأك",
-                "من بناك", "مين بناك", "منو بناك", "من صممك", "مين صممك", "منو صممك",
-                "مطور", "مطورك", "طورك", "صانعك", "منشئك", "بانيك", "مصممك"
+                # Specific questions about the system's developer
+                r'\bwho (is |are )?your developer\b',
+                r'\bwho developed you\b',
+                r'\bwho (built|created|made) you\b',
+                r'\bwho\'s your (developer|creator|maker)\b',
+                r'\bur developer\b',
+                
+                # Arabic - questions about the system
+                r'\bمن مطورك\b',
+                r'\bمين مطورك\b', 
+                r'\bمنو مطورك\b',
+                r'\bمن طورك\b',
+                r'\bمن (صنعك|بناك|أنشأك)\b'
             ],
             "purpose": [
-                "purpose", "why were you created", "why are you here", "ur purpose", "your purpose",
-                "what ur purpose", "what is ur purpose", "what's ur purpose", "why u here",
-                "why you here", "what for", "ur goal", "your goal", "ur mission", "your mission",
-                # Arabic variations - including ايش/شو/وش (what) variants
-                "ما هو هدفك", "ايش هدفك", "شو هدفك", "وش هدفك", "إيش هدفك",
-                "لماذا تم إنشاؤك", "ليش تم إنشاؤك", "ليه تم إنشاؤك", "لايش تم إنشاؤك",
-                "هدفك", "غايتك", "مهمتك", "مقصدك", "غرضك",
-                "لماذا أنت هنا", "ليش أنت هنا", "ليه أنت هنا", "لايش أنت هنا"
+                # Questions about the system's purpose
+                r'\bwhat (is |are )?your purpose\b',
+                r'\bwhy (were you|are you) (created|made|built)\b',
+                r'\bwhat\'s your (purpose|goal|mission)\b',
+                r'\bur purpose\b',
+                
+                # Arabic - questions about the system
+                r'\bما (هو )?هدفك\b',
+                r'\b(ايش|شو|وش) هدفك\b',
+                r'\bلماذا (تم إنشاؤك|أنت هنا)\b'
             ],
             "role": [
-                "what do you do", "your role", "your function", "ur role", "ur function",
-                "what ur role", "what is ur role", "what's ur role", "what u do", "ur job",
-                "your job", "ur work", "your work", "ur task", "your task",
-                # Arabic variations
-                "ما هو دورك", "ايش دورك", "شو دورك", "وش دورك", "إيش دورك",
-                "ما وظيفتك", "ايش وظيفتك", "شو وظيفتك", "وش وظيفتك", "إيش وظيفتك",
-                "دورك", "وظيفتك", "عملك", "مهامك", "شغلك", "وظيفك"
+                # Questions about what the system does
+                r'\bwhat do you do\b',
+                r'\bwhat (is |are )?your (role|function|job)\b',
+                r'\bwhat\'s your (role|function|job)\b',
+                r'\bur (role|function|job)\b',
+                
+                # Arabic - questions about the system
+                r'\bما (هو )?دورك\b',
+                r'\b(ايش|شو|وش) (دورك|وظيفتك)\b'
             ],
             "who_are_you": [
-                "who are you", "who r u", "who ru", "who u", "tell me about you", "introduce yourself",
-                "about you", "who is this", "ur identity", "your identity",
-                # Arabic variations - including all "who" variants
-                "من أنت", "مين أنت", "منو أنت", "من انت", "مين انت", "منو انت",
-                "عرف بنفسك", "عرفني بنفسك", "قل لي من أنت", "قول لي من أنت",
-                "هويتك", "هويك", "شخصيتك"
+                # Direct questions about system identity
+                r'\bwho are you\b',
+                r'\bwho r u\b',
+                r'\btell me about (you|yourself)\b',
+                r'\bintroduce yourself\b',
+                
+                # Arabic
+                r'\bمن أنت\b',
+                r'\bمين أنت\b',
+                r'\bعرف بنفسك\b'
             ],
             "what_is_begining": [
-                "what is begining", "begining", "explain begining", "about begining",
-                "begining project", "what begining", "tell me about begining",
-                # Arabic variations
-                "ما هو بيجينينغ", "ايش بيجينينغ", "شو بيجينينغ", "وش بيجينينغ", "إيش بيجينينغ",
-                "ما هو مشروع بيجينينغ", "ايش مشروع بيجينينغ", "شو مشروع بيجينينغ",
-                "بيجينينغ", "مشروع بيجينينغ", "برنامج بيجينينغ"
+                # Questions about the Begining project
+                r'\bwhat (is |are )?begining\b',
+                r'\bexplain begining\b',
+                r'\babout begining\b',
+                
+                # Arabic
+                r'\bما (هو )?بيجينينغ\b',
+                r'\b(ايش|شو|وش) بيجينينغ\b'
             ],
             "team": [
-                "your team", "who's behind you", "who's working with you", "ur team",
-                "who behind you", "ur colleagues", "your colleagues", "who with you",
-                # Arabic variations
-                "من فريقك", "مين فريقك", "منو فريقك", "من وراءك", "مين وراءك", "منو وراءك",
-                "فريقك", "زملاؤك", "زملائك", "من معك", "مين معك", "منو معك",
-                "فريق العمل", "الفريق", "زملاء العمل"
+                # Questions about the team behind the system
+                r'\bwho\'s (behind you|your team)\b',
+                r'\byour team\b',
+                r'\bwho (built|developed|created) this\b',
+                
+                # Arabic
+                r'\bمن فريقك\b',
+                r'\bمين (وراءك|فريقك)\b'
             ],
             "understand_personality": [
-                "can you understand", "do you understand", "understand me", "analyze me",
-                "can u understand", "do u understand", "ur understanding", "your understanding",
-                # Arabic variations
-                "هل تفهمني", "تفهمني", "تفهم شخصيتي", "هل يمكنك فهمي",
-                "هل تقدر تفهمني", "تقدر تفهمني", "ممكن تفهمني",
-                "تحليلي", "تحلل شخصيتي", "تحلل طباعي"
+                # Questions about the system's capabilities
+                r'\bcan you understand (me|personality)\b',
+                r'\bdo you understand\b',
+                r'\byour understanding\b',
+                
+                # Arabic
+                r'\bهل تفهمني\b',
+                r'\bتقدر تفهمني\b'
             ],
             "how_analyze": [
-                "how do you work", "how do you analyze", "how u work", "how u analyze",
-                "ur method", "your method", "how you function", "how u function",
-                # Arabic variations
-                "كيف تعمل", "كيف تشتغل", "كيف تحلل", "كيف تشتغل",
-                "طريقتك", "طريقة عملك", "آلية عملك", "منهجك",
-                "كيف تحلل الشخصية", "كيف تحلل الطباع"
+                # Questions about how the system works
+                r'\bhow do you (work|analyze|function)\b',
+                r'\byour method\b',
+                r'\bhow you analyze\b',
+                
+                # Arabic
+                r'\bكيف (تعمل|تحلل|تشتغل)\b',
+                r'\bطريقتك\b'
             ],
             "objectives": [
-                "your objectives", "ur objectives", "your goals", "ur goals", "objectives",
-                "what ur objectives", "what are ur objectives", "ur aims", "your aims",
-                # Arabic variations
-                "ما أهدافك", "ايش أهدافك", "شو أهدافك", "وش أهدافك", "إيش أهدافك",
-                "ما غاياتك", "ايش غاياتك", "شو غاياتك", "وش غاياتك",
-                "أهدافك", "غاياتك", "مقاصدك", "طموحاتك"
+                # Questions about system objectives
+                r'\byour (objectives|goals|aims)\b',
+                r'\bwhat (are |is )?your (objectives|goals)\b',
+                r'\bwhat are your top \d+ objectives\b',
+                r'\btop \d+ objectives\b',
+                
+                # Arabic
+                r'\bما أهدافك\b',
+                r'\b(ايش|شو|وش) أهدافك\b'
+            ],
+            "purpose": [
+                # Questions about the system's purpose (expanded)
+                r'\bwhat (is |are )?your purpose\b',
+                r'\bwhy (were you|are you) (created|made|built)\b',
+                r'\bwhat\'s your (purpose|goal|mission)\b',
+                r'\bur purpose\b',
+                r'\bsuppose your purpose\b',
+                r'\byour purpose (is|was|would be)\b',
+                
+                # Arabic - questions about the system
+                r'\bما (هو )?هدفك\b',
+                r'\b(ايش|شو|وش) هدفك\b',
+                r'\bلماذا (تم إنشاؤك|أنت هنا)\b'
             ]
         }
         
-        # Arabic word roots for flexible matching
-        arabic_root_patterns = {
-            "developer": {
-                "roots": ["طور", "طوّر", "بنى", "صنع", "صمم", "أنشأ", "عمل"],
-                "question_words": ["من", "مين", "منو"],
-                "suffixes": ["ك", "نك", "اك"]
-            },
-            "purpose": {
-                "roots": ["هدف", "غاي", "مهم", "قصد", "غرض"],
-                "question_words": ["ما", "ايش", "شو", "وش", "إيش", "لماذا", "ليش", "ليه", "لايش"],
-                "suffixes": ["ك", "تك", ""]
-            },
-            "role": {
-                "roots": ["دور", "وظيف", "عمل", "شغل", "مهم"],
-                "question_words": ["ما", "ايش", "شو", "وش", "إيش"],
-                "suffixes": ["ك", "تك", ""]
-            }
-        }
-        
-        # Use flexible matching - check if any keyword appears in the text
-        for category, keywords in identity_keywords.items():
-            for keyword in keywords:
-                if keyword in text_lower:
-                    if category in self.IDENTITY_RESPONSES:
-                        return True, category, self.IDENTITY_RESPONSES[category]
-        
-        # Advanced Arabic root-based matching for variations like "مين مطورك"
-        for category, pattern_info in arabic_root_patterns.items():
-            roots = pattern_info["roots"]
-            question_words = pattern_info["question_words"]
-            suffixes = pattern_info["suffixes"]
-            
-            # Check for question word + root + suffix combinations
-            for question_word in question_words:
-                for root in roots:
-                    for suffix in suffixes:
-                        # Generate possible combinations
-                        combinations = [
-                            f"{question_word} {root}{suffix}",  # "مين طورك"
-                            f"{question_word}{root}{suffix}",   # "مينطورك" (no space)
-                            f"{question_word} م{root}{suffix}", # "مين مطورك"
-                            f"{question_word}م{root}{suffix}",  # "مينمطورك"
-                        ]
-                        
-                        for combination in combinations:
-                            if combination in text_lower:
-                                if category in self.IDENTITY_RESPONSES:
-                                    return True, category, self.IDENTITY_RESPONSES[category]
-        
-        # Additional pattern-based matching for even more flexibility
-        # Handle patterns like "what's ur [X]", "ur [X]", etc.
-        flexible_patterns = {
-            "purpose": ["purpose", "goal", "mission", "هدف", "غاية", "مهمة"],
-            "role": ["role", "job", "work", "function", "task", "دور", "وظيفة", "عمل", "مهمة"],
-            "developer": ["developer", "creator", "maker", "مطور", "صانع", "منشئ"],
-            "team": ["team", "colleagues", "group", "فريق", "زملاء", "مجموعة"]
-        }
-        
-        for category, pattern_words in flexible_patterns.items():
-            for word in pattern_words:
-                # Check patterns like "ur [word]", "your [word]", "what's ur [word]", etc.
-                if (f"ur {word}" in text_lower or f"your {word}" in text_lower or 
-                    f"what ur {word}" in text_lower or f"what's ur {word}" in text_lower or
-                    f"what is ur {word}" in text_lower or f"what's your {word}" in text_lower):
+        # Check for identity question patterns
+        for category, patterns in identity_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, text_lower, re.IGNORECASE):
                     if category in self.IDENTITY_RESPONSES:
                         return True, category, self.IDENTITY_RESPONSES[category]
         
@@ -578,6 +707,157 @@ Focus on INTENT over exact wording.
         """
         if not response_data:
             return ""
+        
+        # Determine language preference
+        if "ar" in languages or "arabic" in languages.lower():
+            return response_data.get("arabic", response_data.get("english", ""))
+        else:
+            return response_data.get("english", "")
+
+    def detect_off_topic_question(self, text: str, languages: str) -> tuple:
+        """
+        Detect if the user is asking off-topic questions (not related to personality or identity).
+        Returns a tuple: (is_off_topic: bool, response_type: str, response_text: str)
+        """
+        if not text:
+            return False, None, None
+        
+        # Clean and normalize text
+        text_lower = text.lower().strip()
+        text_lower = unicodedata.normalize("NFKD", text_lower)
+        
+        # Check for gibberish/random characters
+        # If more than 60% of characters are non-standard, consider it gibberish
+        total_chars = len(text_lower.replace(" ", ""))
+        if total_chars > 0:
+            # Count standard characters (letters, numbers, basic punctuation)
+            standard_chars = len(re.findall(r'[a-zA-Z0-9\u0600-\u06FF\s.,!?:;"\'-]', text_lower))
+            if standard_chars / total_chars < 0.4:  # Less than 40% standard characters
+                response_text = self._get_off_topic_response("gibberish", languages)
+                return True, "gibberish", response_text
+        
+        # Patterns for common off-topic questions
+        off_topic_patterns = {
+            "factual_questions": [
+                # Weather and nature
+                r"(what|how|why|when|where).*(?:color|colour).*sky",
+                r"(what|how|why|when|where).*weather",
+                r"(what|how|why|when|where).*rain",
+                r"(what|how|why|when|where).*sun",
+                r"(what|how|why|when|where).*moon",
+                r"(what|how|why|when|where).*star",
+                
+                # Science and facts
+                r"(what|how|why|when|where).*gravity",
+                r"(what|how|why|when|where).*earth",
+                r"(what|how|why|when|where).*planet",
+                r"(what|how|why|when|where).*science",
+                r"(what|how|why|when|where).*mathematics?",
+                r"(what|how|why|when|where).*history",
+                r"(what|how|why|when|where).*photosynthesis",
+                r"(what|how|why|when|where).*quantum physics",
+                r"(what|how|why|when|where).*capital.*france",
+                
+                # Geography and places
+                r"(what|how|why|when|where).*(capital|city|country)",
+                r"who (is )?the president",
+                r"who created (facebook|google|microsoft)",
+                r"what does (google|facebook|microsoft) do",
+                
+                # Current events and news
+                r"(what|how|why|when|where).*news",
+                r"(what|how|why|when|where).*today",
+                r"(what|how|why|when|where).*happened",
+                r"(what|how|why|when|where).*time",
+                r"(what|how|why|when|where).*date",
+                
+                # Arabic equivalents
+                r"(ما|كيف|لماذا|متى|أين).*لون.*السماء",
+                r"(ما|كيف|لماذا|متى|أين).*الطقس",
+                r"(ما|كيف|لماذا|متى|أين).*المطر",
+                r"(ما|كيف|لماذا|متى|أين).*الشمس",
+                r"(ما|كيف|لماذا|متى|أين).*القمر",
+                r"(ما|كيف|لماذا|متى|أين).*العلم",
+                r"(ما|كيف|لماذا|متى|أين).*التاريخ",
+                r"(ما|كيف|لماذا|متى|أين).*الأخبار",
+                r"أخبرني عن التاريخ",
+                r"tell me about history",
+            ],
+            "technical_questions": [
+                # Programming and technology
+                r"(what|how|why|when|where).*python",
+                r"(what|how|why|when|where).*javascript",
+                r"(what|how|why|when|where).*programming",
+                r"(what|how|why|when|where).*code",
+                r"(what|how|why|when|where).*computer",
+                r"(what|how|why|when|where).*software",
+                r"(what|how|why|when|where).*internet",
+                r"(what|how|why|when|where).*algorithm",
+                r"(what|how|why|when|where).*machine learning",
+                r"(what|how|why|when|where).*artificial intelligence",
+                r"explain artificial intelligence",
+                r"how to write better code",
+                r"how do i learn python",
+                
+                # Arabic equivalents
+                r"(ما|كيف|لماذا|متى|أين).*البرمجة",
+                r"(ما|كيف|لماذا|متى|أين).*الكمبيوتر",
+                r"(ما|كيف|لماذا|متى|أين).*البرنامج",
+                r"(ما|كيف|لماذا|متى|أين).*التقنية",
+                r"(ما|كيف|لماذا|متى|أين).*الإنترنت",
+                r"كيف أتعلم البرمجة",
+            ]
+        }
+        
+        # Check for personality-related content first (avoid false positives)
+        personality_indicators = [
+            # English personality words
+            "feel", "emotion", "personality", "behavior", "social", "think", "cognitive",
+            "trait", "character", "myself", "yourself", "how you", "how i", "when i",
+            "i am", "i like", "i prefer", "i usually", "i tend", "i often",
+            
+            # English job/self-description words
+            "i work", "my job", "my role", "my profession", "i study", "my friend",
+            "developer", "engineer", "teacher", "programmer", "designer",
+
+            # Arabic personality words  
+            "أشعر", "شعور", "شخصية", "سلوك", "اجتماعي", "أفكر", "معرفي",
+            "صفة", "طبع", "نفسي", "نفسك", "كيف أنت", "كيف أنا", "عندما أكون",
+            "أنا", "أحب", "أفضل", "عادة", "أميل", "غالباً",
+            
+            # Arabic job/self-description words (expanded)
+            "انا مهندس", "أنا مهندس", "انا طبيب", "أنا طبيب", "انا مطور", "أنا مطور",
+            "انا مدرس", "أنا مدرس", "انا مصمم", "أنا مصمم", "وظيفتي", "عملي",
+            "مهندس", "طبيب", "مدرس", "مصمم"
+        ]
+        
+        # If text contains personality indicators, it's likely not off-topic
+        for indicator in personality_indicators:
+            if indicator in text_lower:
+                return False, None, None
+        
+        # Check for off-topic patterns
+        for category, patterns in off_topic_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, text_lower):
+                    response_text = self._get_off_topic_response(category, languages)
+                    return True, category, response_text
+        
+        # Check for very short or unclear responses
+        words = text_lower.split()
+        if len(words) <= 2 and not any(word in text_lower for word in ["yes", "no", "نعم", "لا", "ok", "حسناً"]):
+            # Very short unclear response
+            response_text = self._get_off_topic_response("general_unrelated", languages)
+            return True, "general_unrelated", response_text
+        
+        return False, None, None
+    
+    def _get_off_topic_response(self, response_type: str, languages: str) -> str:
+        """Get appropriate off-topic response based on type and language."""
+        if response_type not in self.OFF_TOPIC_RESPONSES:
+            response_type = "general_unrelated"
+        
+        response_data = self.OFF_TOPIC_RESPONSES[response_type]
         
         # Determine language preference
         if "ar" in languages or "arabic" in languages.lower():
@@ -711,13 +991,15 @@ Status Types
 - "complete": All four personality traits are sufficiently covered
 - "incomplete": Some traits are missing and need clarification
 - "identity": When user asks identity questions about the system (handled separately)
+- "off_topic": When user asks unrelated questions not about personality or identity (handled separately)
 
 Output Format
 id (integer)
-status ("complete", "incomplete", or "identity")
+status ("complete", "incomplete", "identity", or "off_topic")
 description_english (concise personality description)
 description_arabic (concise personality description in Arabic if possible)
 description_identity (only for identity status - IDENTITY_RESPONSES)
+description_off_topic (only for off_topic status - OFF_TOPIC_RESPONSES)
 missing_traits (array or null)
 clarification_questions (array)
 input_tokens (integer)
@@ -984,7 +1266,49 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "total_tokens": 0
             }
         
-        # If not an identity question, proceed with normal personality analysis
+        # Check for off-topic questions (after identity detection but before personality analysis)
+        input_to_check = ""
+        if new_input:
+            # Check the last answer for off-topic content
+            last_qa = new_input[-1]
+            input_to_check = last_qa.get("answer", "").strip()
+        else:
+            # Check initial user input
+            input_to_check = user_input
+        
+        is_off_topic, off_topic_type, off_topic_response = self.detect_off_topic_question(input_to_check, languages)
+        if is_off_topic:
+            # Analyze what personality traits are still missing (to continue conversation)
+            missing_traits = self.analyze_missing_traits(user_input, new_input)
+            
+            # Extract previously asked questions to avoid repetition
+            asked_questions = []
+            for qa in new_input:
+                question = qa.get("question", "").strip()
+                if question:
+                    asked_questions.append(question)
+            
+            # Generate clarification questions to guide back to personality topics
+            clarification_questions = self.generate_clarification_questions(
+                missing_traits, languages, max_questions=1, asked_questions=asked_questions
+            )
+            
+            return {
+                "content": json.dumps({
+                    "id": id,
+                    "status": "off_topic",
+                    "description_off_topic": off_topic_response,
+                    "description_english": "",
+                    "description_arabic": "",
+                    "missing_traits": missing_traits,
+                    "clarification_questions": clarification_questions
+                }),
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0
+            }
+        
+        # If not an identity or off-topic question, proceed with normal personality analysis
         input_data = {
             "id": id,
             "user_input": user_input,

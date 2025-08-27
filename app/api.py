@@ -10,7 +10,13 @@ from app.input_processor import format_for_analysis
 # Get the directory of the current file
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-app = FastAPI()
+app = FastAPI(
+    title="BEGINING Personality Analysis API",
+    description="API for personality trait analysis and classification using the BEGINING system",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 predictor = PersonalityPredictor(num_labels=120, top_k=3)
 analyzer = PersonalityAnalyzer()
@@ -64,9 +70,10 @@ class TraitResponse(BaseModel):
     status: str
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
-    description_identity: Optional[str] = ""  # New field for identity responses
-    missing_traits: Optional[List[str]] = ""
-    clarification_questions: Optional[List[str]] = [""]
+    description_identity: Optional[str] = ""  # Field for identity responses
+    description_off_topic: Optional[str] = ""  # Field for off-topic responses
+    missing_traits: Optional[List[str]] = []
+    clarification_questions: Optional[List[str]] = []
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
@@ -77,6 +84,41 @@ def load_user_memory(user_id: int):
 
 def save_user_memory(user_id: int, user_input: str, new_input: str):
     _user_memory_store[user_id] = {"user_input": user_input, "new_input": new_input}
+
+@app.get("/")
+async def root():
+    """Root endpoint providing API information"""
+    return {
+        "message": "BEGINING Personality Analysis API",
+        "version": "1.0.0",
+        "endpoints": {
+            "predict": "/predict",
+            "analyze_personality": "/analyze-personality",
+            "health": "/health",
+            "docs": "/docs"
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    try:
+        # Test if analyzer and predictor are loaded
+        test_result = analyzer.detect_language("test")
+        return {
+            "status": "healthy",
+            "timestamp": time.time(),
+            "services": {
+                "analyzer": "loaded",
+                "predictor": "loaded"
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "timestamp": time.time(),
+            "error": str(e)
+        }
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(request: PredictionRequest):
@@ -112,7 +154,7 @@ async def analyze_personality(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Request error: {str(e)}")
 
-    # update memory (optional, keep if needed)
+    # Update memory (optional, keep if needed)
     memory = load_user_memory(req.id)
     memory["user_input"] = (memory.get("user_input", "") + " " + req.user_input.strip()).strip()
     memory["new_input"] = (memory.get("new_input", "") + " " + req.get_combined_new_input().strip()).strip()
@@ -123,137 +165,80 @@ async def analyze_personality(request: Request):
     print(f"User input (length: {len(req.user_input)}): {req.user_input[:100]}...")
     print(f"New input items: {len(req.new_input)}")
     print(f"Languages: {req.languages}")
-    
-    # Check if input is too minimal
-    # if len(req.user_input.strip().split()) < 10 and not req.new_input:
-    #     print("WARNING: Input is too minimal for proper analysis")
-    #     return {
-    #         "id": req.id,
-    #         "status": "minimal_input",
-    #         "description_english": "",
-    #         "description_arabic": "",
-    #         "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-    #         "clarification_questions": [
-    #             "Could you tell me more about yourself, your interests, and your typical behaviors?",
-    #             "How would you describe your personality to someone who doesn't know you?",
-    #             "What are some of your strengths and challenges in your daily life?",
-    #             "How do you typically interact with others in social or work settings?"
-    #         ]
-    #     }
-        
-    # Check if input is likely sufficient for analysis (contains trait indicators)
-    # has_trait_indicators = False
-    
-    # # Simple check for trait-related content
-    # trait_keywords = [
-    #     # Emotional traits
-    #     "feel", "emotion", "happy", "sad", "angry", "anxious", "calm", "stress", 
-    #     # Social traits
-    #     "people", "friend", "social", "interact", "talk", "communicate", "relationship",
-    #     # Cognitive traits
-    #     "think", "decision", "problem", "solve", "creative", "analytical", "logical",
-    #     # Behavioral traits
-    #     "habit", "routine", "organized", "spontaneous", "plan", "schedule", "activity"
-    # ]
-    
-    # input_lower = req.user_input.lower()
-    # for keyword in trait_keywords:
-    #     if keyword in input_lower:
-    #         has_trait_indicators = True
-    #         break
-    
-    # if not has_trait_indicators and len(req.user_input.strip().split()) < 30:
-    #     print("WARNING: Input lacks personality trait indicators")
-    #     return {
-    #         "id": req.id,
-    #         "status": "insufficient_traits",
-    #         "description_english": "",
-    #         "description_arabic": "",
-    #         "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-    #         "clarification_questions": [
-    #             "How would you describe your typical emotional responses to situations?",
-    #             "How do you typically interact with others in social settings?",
-    #             "What is your approach to problem-solving and decision-making?",
-    #             "What are some of your regular habits or routines?"
-    #         ]
-    #     }
             
     # Prepare input for analyzer
-    # try:
-    gpt_json = analyzer.analyze(
-        id=req.id,
-        user_input=req.user_input,
-        new_input=req.new_input,
-        languages=req.languages
-    )
-    #     print(f"Analyzer returned response with keys: {list(gpt_json.keys())}")
-    # except Exception as e:
-    #     print(f"ANALYZER ERROR: {str(e)}")
-    #     import traceback
-    #     print(traceback.format_exc())
-    #     # Return a user-friendly response instead of an error
-    #     return {
-    #         "id": req.id,
-    #         "status": "analyzer_error",
-    #         "description_english": "",
-    #         "description_arabic": "",
-    #         "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-    #         "clarification_questions": [
-    #             "Could you provide more specific details about your personality?",
-    #             "How would you describe your typical emotional responses?",
-    #             "What are your typical behaviors in different situations?",
-    #             "How do you interact with others in social settings?"
-    #         ]
-    #     }
+    try:
+        gpt_json = analyzer.analyze(
+            id=req.id,
+            user_input=req.user_input,
+            new_input=req.new_input,
+            languages=req.languages
+        )
+        print(f"Analyzer returned response with keys: {list(gpt_json.keys())}")
+    except Exception as e:
+        print(f"ANALYZER ERROR: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        # Return a user-friendly response instead of an error
+        return TraitResponse(
+            id=req.id,
+            status="incomplete",
+            description_english="",
+            description_arabic="",
+            description_identity="",
+            description_off_topic="",
+            missing_traits=["emotional", "social", "cognitive", "behavioral"],
+            clarification_questions=[
+                "Could you provide more specific details about your personality?",
+                "How would you describe your typical emotional responses?",
+                "What are your typical behaviors in different situations?",
+                "How do you interact with others in social settings?"
+            ]
+        )
 
-    # The model's output is in gpt_json['content'] as a JSON string; parse it
-    # import json
-    # try:
-    #     # Debug log the raw response
-    #     print(f"Raw GPT response: {gpt_json}")
-        
-    #     if "content" not in gpt_json:
-    #         print("ERROR: 'content' key missing from analyzer response")
-    #         # Try to provide a fallback response if missing
-    #         dummy_response = {
-    #             "id": req.id,
-    #             "status": "error",
-    #             "description_english": "",
-    #             "description_arabic": "",
-    #             "missing_traits": [],
-    #             "clarification_questions": ["Could you provide more information about yourself?"]
-    #         }
-    #         return dummy_response
-            
-    #     if not gpt_json["content"]:
-    #         print("ERROR: Empty 'content' in analyzer response")
-    #         raise ValueError("Empty response content")
-            
-    #     print(f"Parsing content (length: {len(gpt_json['content'])}): {gpt_json['content'][:100]}...")
-    #     model_output = json.loads(gpt_json["content"])
-    #     print("Successfully parsed JSON content")
-        
-    # except json.JSONDecodeError as je:
-        # print(f"JSON DECODE ERROR: {str(je)}")
-        # Instead of error, provide a meaningful fallback response
+    # Parse the model output from gpt_json["content"]
     import json
-    # Try to parse the model output from gpt_json["content"], fallback if parsing fails
     try:
         if "content" not in gpt_json or not gpt_json["content"]:
             raise ValueError("No content in analyzer response")
+        
+        print(f"Parsing content (length: {len(gpt_json['content'])}): {gpt_json['content'][:100]}...")
         model_output = json.loads(gpt_json["content"])
-    except Exception:
+        print("Successfully parsed JSON content")
+        
+    except json.JSONDecodeError as je:
+        print(f"JSON DECODE ERROR: {str(je)}")
+        # Provide a meaningful fallback response
         model_output = {
             "id": req.id,
             "status": "incomplete",
             "description_english": "",
             "description_arabic": "",
+            "description_identity": "",
+            "description_off_topic": "",
             "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
             "clarification_questions": [
-                "Could you tell me more about yourself beyond taking breaks?",
+                "Could you tell me more about yourself?",
                 "How would you describe your typical interactions with others?",
                 "What kind of activities or work do you enjoy most?",
                 "How do you typically handle challenging situations?"
+            ]
+        }
+    except Exception as e:
+        print(f"PARSING ERROR: {str(e)}")
+        model_output = {
+            "id": req.id,
+            "status": "incomplete",
+            "description_english": "",
+            "description_arabic": "",
+            "description_identity": "",
+            "description_off_topic": "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "clarification_questions": [
+                "Could you provide more information about yourself?",
+                "How do you feel in different situations?",
+                "How do you interact with others?",
+                "What are your typical behaviors and habits?"
             ]
         }
 
@@ -271,6 +256,14 @@ async def analyze_personality(request: Request):
     except Exception:
         model_output["id"] = req.id
 
+    # Ensure all required fields exist with defaults
+    model_output.setdefault("description_english", "")
+    model_output.setdefault("description_arabic", "")
+    model_output.setdefault("description_identity", "")
+    model_output.setdefault("description_off_topic", "")
+    model_output.setdefault("missing_traits", [])
+    model_output.setdefault("clarification_questions", [])
+
     # Enforce language output: only fill in requested language(s)
     requested_langs = req.languages
     if isinstance(requested_langs, str):
@@ -281,4 +274,35 @@ async def analyze_personality(request: Request):
     if not ("ar" in requested_langs or "arabic" in requested_langs):
         model_output["description_arabic"] = ""
 
-    return model_output
+    processing_time = time.time() - t0
+    print(f"Request processed in {processing_time:.2f} seconds")
+
+    return TraitResponse(**model_output)
+
+@app.get("/user/{user_id}/memory")
+async def get_user_memory(user_id: int):
+    """Get stored conversation memory for a user"""
+    memory = load_user_memory(user_id)
+    return {
+        "user_id": user_id,
+        "memory": memory,
+        "timestamp": time.time()
+    }
+
+@app.delete("/user/{user_id}/memory")
+async def clear_user_memory(user_id: int):
+    """Clear stored conversation memory for a user"""
+    if user_id in _user_memory_store:
+        del _user_memory_store[user_id]
+        return {"message": f"Memory cleared for user {user_id}"}
+    else:
+        return {"message": f"No memory found for user {user_id}"}
+
+@app.get("/stats")
+async def get_stats():
+    """Get basic API usage statistics"""
+    return {
+        "active_users": len(_user_memory_store),
+        "total_users_served": len(_user_memory_store),
+        "timestamp": time.time()
+    }
