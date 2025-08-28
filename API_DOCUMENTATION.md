@@ -293,3 +293,6 @@ curl -X POST "http://localhost:8000/analyze-personality" \
 - **500**: Internal Server Error
 
 The API is now complete and fully functional with comprehensive error handling, multilingual support, and intelligent question detection!
+
+
+**Signature:** ENG Ahmed Almalki AI Engineer

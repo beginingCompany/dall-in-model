@@ -158,3 +158,5 @@ Inventor of the BEGINING Scale (2004)
 The BEGINING Scale is the intellectual property of Dr. Ibrahim Mohamed Ahmed Hussain
 
 Use of the system or data requires written permission from the respective authors.
+
+**Signature:** ENG Ahmed Almalki AI Engineer

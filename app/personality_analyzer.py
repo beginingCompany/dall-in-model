@@ -14,11 +14,64 @@ class PersonalityAnalyzer:
     @staticmethod
     def detect_language(text: str) -> str:
         """
-        Auto-detect language from text content.
-        Returns 'arabic' if Arabic characters are found, otherwise 'english'.
+        Enhanced auto-detect language from text content with mixed language support.
+        Analyzes the dominant language in mixed content.
+        Returns 'arabic' if Arabic is dominant, otherwise 'english'.
         """
-        if re.search(r'[\u0600-\u06FF]', text):
+        if not text or not text.strip():
+            return "english"
+        
+        # Clean text and remove extra spaces
+        text = text.strip()
+        
+        # Count Arabic characters (including Arabic numbers and punctuation)
+        arabic_chars = len(re.findall(r'[\u0600-\u06FF\u0660-\u0669\u06F0-\u06F9]', text))
+        
+        # Count English/Latin characters (letters and numbers)
+        english_chars = len(re.findall(r'[a-zA-Z0-9]', text))
+        
+        # Count total meaningful characters (excluding spaces and common punctuation)
+        total_meaningful_chars = len(re.findall(r'[\u0600-\u06FF\u0660-\u0669\u06F0-\u06F9a-zA-Z0-9]', text))
+        
+        # If no meaningful characters, default to English
+        if total_meaningful_chars == 0:
+            return "english"
+        
+        # Calculate percentages
+        arabic_percentage = (arabic_chars / total_meaningful_chars) * 100
+        english_percentage = (english_chars / total_meaningful_chars) * 100
+        
+        # Debug logging for mixed language detection
+        if arabic_chars > 0 and english_chars > 0:
+            print(f"Mixed language detected - Arabic: {arabic_percentage:.1f}%, English: {english_percentage:.1f}% in text: '{text}'")
+        
+        # Decision logic for mixed content:
+        # 1. If Arabic > 30%, consider it Arabic dominant
+        # 2. If Arabic > English, choose Arabic
+        # 3. Special case: if text has Arabic names/words, lean toward Arabic
+        
+        if arabic_percentage > 30:
             return "arabic"
+        elif arabic_chars > english_chars:
+            return "arabic"
+        elif arabic_chars > 0:
+            # Check for Arabic names or important Arabic words
+            arabic_name_patterns = [
+                r'\b(أحمد|محمد|علي|فاطمة|عائشة|خديجة|مريم|يوسف|إبراهيم|عبد)\b',
+                r'\b(مهندس|مطور|طبيب|مدرس|استاذ|دكتور)\b',
+                r'\b(أنا|انا|اسمي|وظيفتي|عملي)\b'
+            ]
+            
+            for pattern in arabic_name_patterns:
+                if re.search(pattern, text):
+                    print(f"Arabic context detected with pattern: {pattern} in text: '{text}'")
+                    return "arabic"
+            
+            # If Arabic chars exist but no special patterns, use percentage rule
+            if arabic_percentage >= 15:  # Lower threshold for mixed content
+                return "arabic"
+        
+        # Default to English
         return "english"
     
     @staticmethod
@@ -34,110 +87,229 @@ class PersonalityAnalyzer:
                 context += f"\nQ: {q}\nA: {a}"
         return context
 
-    @staticmethod
-    def detect_personal_introduction(text: str) -> tuple:
+    def detect_personal_introduction(self, text: str) -> tuple:
         """
-        Detect if user is introducing themselves with name or job title.
+        Use GPT to intelligently detect if user is introducing themselves with name or job title.
         Returns a tuple: (has_introduction: bool, name: str, job_title: str, greeting_message: str)
+        """
+        if not text or not text.strip():
+            return False, "", "", ""
+        
+        # Debug logging
+        print(f"Personal introduction detection for text: '{text}'")
+        
+        try:
+            # Use GPT to detect personal introductions
+            introduction_prompt = f"""
+Analyze this user input and determine if they are introducing themselves personally.
+
+User input: "{text}"
+
+Look for:
+1. Name introductions (any name in any language)
+2. Job/profession introductions (any profession in any language)
+3. Personal self-descriptions
+
+Extract:
+- Name (if mentioned)
+- Job/Profession (if mentioned)
+- Whether this is a personal introduction
+
+Respond with ONLY this JSON format:
+{{"is_introduction": true/false, "name": "extracted_name_or_empty", "job": "extracted_job_or_empty", "language": "arabic_or_english"}}
+
+Examples:
+"I am Ahmed" -> {{"is_introduction": true, "name": "Ahmed", "job": "", "language": "english"}}
+"انا مهندس" -> {{"is_introduction": true, "name": "", "job": "مهندس", "language": "arabic"}}
+"انا المهندس احمد" -> {{"is_introduction": true, "name": "احمد", "job": "مهندس", "language": "arabic"}}
+"My name is John and I work as a developer" -> {{"is_introduction": true, "name": "John", "job": "developer", "language": "english"}}
+"I like programming" -> {{"is_introduction": false, "name": "", "job": "", "language": "english"}}
+"What is the weather?" -> {{"is_introduction": false, "name": "", "job": "", "language": "english"}}
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert at detecting personal introductions and extracting names and professions from text in any language."},
+                {"role": "user", "content": introduction_prompt}
+            ]
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=100,
+            )
+            
+            result = response.choices[0].message.content.strip()
+            print(f"GPT response for personal introduction: {result}")
+            
+            # Parse the JSON response
+            import json
+            try:
+                data = json.loads(result)
+                is_intro = data.get("is_introduction", False)
+                name = data.get("name", "").strip()
+                job = data.get("job", "").strip()
+                detected_language = data.get("language", "english").strip()
+                
+                print(f"Parsed: is_intro={is_intro}, name='{name}', job='{job}', lang='{detected_language}'")
+                
+                if is_intro:
+                    # Generate varied, friendly greeting
+                    greeting = self.generate_varied_greeting(name, job, detected_language)
+                    print(f"Generated greeting: '{greeting}'")
+                    return True, name, job, greeting
+                
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error: {e}")
+                # Fallback: Enhanced regex detection for common cases
+                return self._fallback_introduction_detection(text)
+                    
+        except Exception as e:
+            print(f"Error in GPT personal introduction detection: {e}")
+            # Fallback to enhanced regex detection
+            return self._fallback_introduction_detection(text)
+        
+        print("No personal introduction detected")
+        return False, "", "", ""
+
+    def normalize_job_title(self, job: str) -> str:
+        """Normalize common job abbreviations and variations to full forms"""
+        if not job:
+            return job
+        
+        job_lower = job.lower().strip()
+        
+        # Common abbreviations and variations
+        job_mappings = {
+            "eng": "engineer",
+            "dev": "developer", 
+            "prog": "programmer",
+            "mgr": "manager",
+            "admin": "administrator",
+            "tech": "technician",
+            "analyst": "data analyst",
+            "designer": "graphic designer",
+            "consultant": "business consultant",
+            "specialist": "specialist",
+            "coordinator": "project coordinator",
+            "assistant": "assistant",
+            "supervisor": "supervisor",
+            "director": "director"
+        }
+        
+        # Check exact matches first
+        if job_lower in job_mappings:
+            return job_mappings[job_lower]
+        
+        # Check partial matches for compound jobs
+        for abbrev, full_form in job_mappings.items():
+            if abbrev in job_lower and len(job_lower) <= len(abbrev) + 3:
+                return full_form
+        
+        return job
+
+    def generate_varied_greeting(self, name: str, job: str, language: str) -> str:
+        """Generate varied, friendly greetings with personality"""
+        import random
+        
+        # Normalize job title
+        job = self.normalize_job_title(job)
+        
+        if language == "arabic":
+            if name and job:
+                greetings = [
+                    f"أهلاً وسهلاً {name}! سعيد بلقائك. {job} - مهنة رائعة!",
+                    f"مرحباً {name}! أهلاً بك معنا. أرى أنك تعمل كـ{job}، هذا مثير للاهتمام!",
+                    f"أهلاً {name}! تشرفنا بوجودك هنا. عمل {job} يتطلب مهارات مميزة!",
+                    f"مرحبا {name}! سعيد بالتعرف عليك. أحب أن أتعلم أكثر عن عملك كـ{job}!"
+                ]
+            elif name:
+                greetings = [
+                    f"أهلاً وسهلاً {name}! سعيد بلقائك!",
+                    f"مرحباً {name}! أهلاً بك معنا!",
+                    f"أهلاً {name}! تشرفنا بوجودك هنا!",
+                    f"مرحبا {name}! سعيد بالتعرف عليك!"
+                ]
+            elif job:
+                greetings = [
+                    f"أهلاً! أرى أنك تعمل كـ{job}، مهنة رائعة!",
+                    f"مرحباً! {job} - عمل مثير للاهتمام!",
+                    f"أهلاً بك! عمل {job} يتطلب مهارات مميزة!",
+                    f"مرحبا! أحب أن أتعلم أكثر عن عملك كـ{job}!"
+                ]
+            else:
+                greetings = ["أهلاً بك!", "مرحباً!", "أهلاً وسهلاً!", "سعيد بلقائك!"]
+        else:  # English
+            if name and job:
+                greetings = [
+                    f"Hey {name}! Nice to meet you! Working as a {job} must be exciting!",
+                    f"Hi {name}! Welcome! I'd love to learn more about your work as a {job}!",
+                    f"Hello {name}! Great to have you here! Being a {job} requires some amazing skills!",
+                    f"Hi there {name}! Pleasure to meet you! {job.title()} work sounds fascinating!",
+                    f"Hey {name}! How's it going? I'm curious about your experience as a {job}!"
+                ]
+            elif name:
+                greetings = [
+                    f"Hey {name}! Nice to meet you!",
+                    f"Hi {name}! Welcome!",
+                    f"Hello {name}! Great to have you here!",
+                    f"Hi there {name}! Pleasure to meet you!",
+                    f"Hey {name}! How's it going?"
+                ]
+            elif job:
+                greetings = [
+                    f"Hey there! Working as a {job} must be exciting!",
+                    f"Hi! I'd love to learn more about your work as a {job}!",
+                    f"Hello! Being a {job} requires some amazing skills!",
+                    f"Hi there! {job.title()} work sounds fascinating!",
+                    f"Hey! I'm curious about your experience as a {job}!"
+                ]
+            else:
+                greetings = ["Hey there!", "Hi!", "Hello!", "Nice to meet you!", "How's it going?"]
+        
+        return random.choice(greetings)
+    
+    def _fallback_introduction_detection(self, text: str) -> tuple:
+        """
+        Fallback regex-based detection for when GPT fails.
+        Enhanced to handle more cases including Arabic with definite articles.
         """
         if not text:
             return False, "", "", ""
         
-        text_lower = text.lower().strip()
-        name = ""
-        job_title = ""
+        text_clean = text.strip()
+        is_arabic = bool(re.search(r'[\u0600-\u06FF]', text))
         
-        # Patterns for name introduction
-        name_patterns = [
-            # English patterns
-            r'\bi am ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\bmy name is ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\bi\'m ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\bcall me ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            
+        # Simple but effective patterns
+        if is_arabic:
             # Arabic patterns
-            r'\bاسمي ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
-            r'\bأنا ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
-            r'\bانا ([أ-ي]+(?:\s+[أ-ي]+)*)\b',
-            r'\bادعني ([أ-ي]+(?:\s+[أ-ي]+)*)\b'
-        ]
-        
-        # Patterns for job title introduction
-        job_patterns = [
+            if re.search(r'\b(?:أنا|انا)\s+(?:ال)?مهندس\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?مهندس\s+([أ-ي]+)', text)
+                name = match.group(1)
+                greeting = self.generate_varied_greeting(name, "مهندس", "arabic")
+                return True, name, "مهندس", greeting
+            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text)
+                job = match.group(1)
+                greeting = self.generate_varied_greeting("", job, "arabic")
+                return True, "", job, greeting
+            elif re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text)
+                name = match.group(1)
+                greeting = self.generate_varied_greeting(name, "", "arabic")
+                return True, name, "", greeting
+        else:
             # English patterns
-            r'\bi am (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator|student|intern)\b',
-            r'\bi\'m (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator|student|intern)\b',
-            r'\bi work as (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator)\b',
-            r'\bmy job is (?:a |an )?(developer|engineer|programmer|designer|teacher|doctor|manager|analyst|consultant|architect|specialist|technician|admin|administrator)\b',
-            
-            # Short forms
-            r'\bi am (?:a )?(dev|eng|prog|admin|mgr)\b',
-            r'\bi\'m (?:a )?(dev|eng|prog|admin|mgr)\b',
-            
-            # Arabic patterns
-            r'\bأنا (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني|طالب|متدرب)\b',
-            r'\bانا (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني|طالب|متدرب)\b',
-            r'\bوظيفتي (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني)\b',
-            r'\bعملي (مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير|محلل|مستشار|معماري|أخصائي|تقني)\b'
-        ]
-        
-        # Combined patterns (name + job)
-        combined_patterns = [
-            # English: "I am eng Ahmed", "I'm dev John"
-            r'\bi am (?:a )?(dev|eng|prog|admin|mgr|developer|engineer|programmer|designer|manager)\s+([A-Z][a-z]+)\b',
-            r'\bi\'m (?:a )?(dev|eng|prog|admin|mgr|developer|engineer|programmer|designer|manager)\s+([A-Z][a-z]+)\b',
-            
-            # Arabic: "انا مهندس أحمد"
-            r'\b(?:أنا|انا)\s+(مهندس|مطور|مبرمج|مصمم|مدرس|طبيب|مدير)\s+([أ-ي]+)\b'
-        ]
-        
-        # Check for name patterns
-        for pattern in name_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                name = match.group(1).strip()
-                break
-        
-        # Check for job patterns
-        for pattern in job_patterns:
-            match = re.search(pattern, text_lower)
-            if match:
-                job_title = match.group(1).strip()
-                break
-        
-        # Check for combined patterns
-        for pattern in combined_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                job_title = match.group(1).strip()
-                name = match.group(2).strip()
-                break
-        
-        # Generate greeting message if introduction detected
-        if name or job_title:
-            # Determine language (Arabic if contains Arabic characters)
-            is_arabic = bool(re.search(r'[\u0600-\u06FF]', text))
-            
-            if is_arabic:
-                if name and job_title:
-                    greeting = f"أهلاً وسهلاً {name}! تشرفنا بلقائك. أرى أنك {job_title}، هذا رائع!"
-                elif name:
-                    greeting = f"أهلاً وسهلاً {name}! تشرفنا بلقائك."
-                elif job_title:
-                    greeting = f"أهلاً! أرى أنك {job_title}، هذا رائع!"
-                else:
-                    greeting = "أهلاً بك!"
-            else:
-                if name and job_title:
-                    greeting = f"Hi {name}! Great to meet you. I see you're a {job_title}, that's awesome!"
-                elif name:
-                    greeting = f"Hi {name}! Great to meet you."
-                elif job_title:
-                    greeting = f"Hi there! I see you're a {job_title}, that's awesome!"
-                else:
-                    greeting = "Hi there!"
-            
-            return True, name, job_title, greeting
+            if re.search(r'\bi am\s+([A-Z][a-z]+)', text, re.IGNORECASE):
+                match = re.search(r'\bi am\s+([A-Z][a-z]+)', text, re.IGNORECASE)
+                name = match.group(1)
+                greeting = self.generate_varied_greeting(name, "", "english")
+                return True, name, "", greeting
+            elif re.search(r'\bi am\s+(?:a\s+)?(developer|engineer|programmer)', text, re.IGNORECASE):
+                match = re.search(r'\bi am\s+(?:a\s+)?(developer|engineer|programmer)', text, re.IGNORECASE)
+                job = match.group(1)
+                greeting = self.generate_varied_greeting("", job, "english")
+                return True, "", job, greeting
         
         return False, "", "", ""
 
@@ -932,10 +1104,13 @@ Focus on INTENT over exact wording.
             "صفة", "طبع", "نفسي", "نفسك", "كيف أنت", "كيف أنا", "عندما أكون",
             "أنا", "أحب", "أفضل", "عادة", "أميل", "غالباً",
             
-            # Arabic job/self-description words (expanded)
+            # Arabic job/self-description words (expanded with more professions)
             "انا مهندس", "أنا مهندس", "انا طبيب", "أنا طبيب", "انا مطور", "أنا مطور",
-            "انا مدرس", "أنا مدرس", "انا مصمم", "أنا مصمم", "وظيفتي", "عملي",
-            "مهندس", "طبيب", "مدرس", "مصمم"
+            "انا مبرمج", "أنا مبرمج", "انا مدرس", "أنا مدرس", "انا مصمم", "أنا مصمم",
+            "انا محاسب", "أنا محاسب", "انا محامي", "أنا محامي", "انا ممرض", "أنا ممرض",
+            "انا طالب", "أنا طالب", "انا استاذ", "أنا استاذ", "انا دكتور", "أنا دكتور",
+            "وظيفتي", "عملي", "مهنتي", "تخصصي",
+            "مهندس", "طبيب", "مدرس", "مصمم", "مبرمج", "مطور", "محاسب", "محامي", "ممرض", "استاذ", "دكتور"
         ]
         
         # If text contains personality indicators, it's likely not off-topic
@@ -980,6 +1155,7 @@ Focus on INTENT over exact wording.
         # Combine all input text (excluding identity questions)
         all_text = user_input.lower()
         personality_answers = []
+        total_conversation_length = len(user_input.split())
         
         for qa in new_input:
             answer = qa.get("answer", "").lower()
@@ -988,13 +1164,19 @@ Focus on INTENT over exact wording.
             if not is_identity:
                 all_text += " " + answer
                 personality_answers.append(answer)
+                total_conversation_length += len(answer.split())
+        
+        # Progressive conversation flow: require less as conversation grows
+        min_answers_needed = max(1, 3 - len(new_input) // 2)  # Reduce requirement over time
+        min_words_needed = max(15, 40 - len(new_input) * 3)   # Reduce word requirement over time
         
         # If we have very little personality data, return all traits as missing
-        if len(personality_answers) < 2 or len(all_text.split()) < 30:
+        if len(personality_answers) < min_answers_needed or total_conversation_length < min_words_needed:
             return ["emotional", "social", "cognitive", "behavioral"]
         
-        # Check for detailed coverage of each trait
+        # Check for detailed coverage of each trait with improved scoring
         traits_needing_clarification = []
+        trait_scores = {}
         
         for trait, pattern in PersonalityAnalyzer.TRAIT_PATTERNS.items():
             matches = re.findall(pattern, all_text)
@@ -1003,27 +1185,45 @@ Focus on INTENT over exact wording.
             trait_answers = [answer for answer in personality_answers 
                            if re.search(pattern, answer)]
             
-            # Check if we need more clarification based on:
-            # 1. Number of matches (< 2)
-            # 2. Length of answers (< 10 words average)
-            # 3. Variety of trait expressions
-            avg_length = sum(len(answer.split()) for answer in trait_answers) / max(len(trait_answers), 1)
+            # Calculate trait coverage score (0-100)
+            match_score = min(len(matches) * 15, 60)  # Up to 60 points for matches
+            depth_score = 0
+            variety_score = 0
             
-            if (len(matches) < 2 or 
-                avg_length < 10 or 
-                len(trait_answers) == 0):
+            if trait_answers:
+                # Depth: average length of trait-related answers
+                avg_length = sum(len(answer.split()) for answer in trait_answers) / len(trait_answers)
+                depth_score = min(avg_length * 2, 30)  # Up to 30 points for depth
+                
+                # Variety: different types of expressions
+                unique_words = set()
+                for answer in trait_answers:
+                    unique_words.update(answer.split())
+                variety_score = min(len(unique_words), 10)  # Up to 10 points for variety
+            
+            total_score = match_score + depth_score + variety_score
+            trait_scores[trait] = total_score
+            
+            # Progressive thresholds: require less coverage as conversation progresses
+            conversation_turns = len(new_input)
+            required_score = max(25, 50 - conversation_turns * 5)  # Lower threshold over time
+            
+            if total_score < required_score:
                 traits_needing_clarification.append(trait)
         
-        # Always return at least some traits to keep conversation going
-        # unless we have very comprehensive data
-        if not traits_needing_clarification and len(personality_answers) < 4:
-            # Return 1-2 random traits to get more detail
-            import random
-            all_traits = ["emotional", "social", "cognitive", "behavioral"]
-            random.shuffle(all_traits)
-            return all_traits[:1]
+        # Smart conversation management
+        if not traits_needing_clarification:
+            # If all traits seem covered, but conversation is short, ask for one more detail
+            if len(personality_answers) < 3:
+                # Find the trait with lowest score for follow-up
+                if trait_scores:
+                    lowest_trait = min(trait_scores.keys(), key=lambda k: trait_scores[k])
+                    return [lowest_trait]
+            return []  # No more traits needed
         
-        return traits_needing_clarification
+        # Prioritize traits by score (lowest first) and limit to 2-3 traits max
+        traits_needing_clarification.sort(key=lambda t: trait_scores.get(t, 0))
+        return traits_needing_clarification[:3]
 
     @staticmethod
     def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 1, asked_questions: list = None) -> list:
@@ -1091,13 +1291,40 @@ Always use the id to maintain continuity and prevent mixing up responses between
 
 Process
 
+Personal Greeting
+CRITICAL: Always use the EXACT value from the input data's personal_greeting field, regardless of conversation context.
+If the input data contains a personal_greeting field with a value, you MUST include that exact value in your response.
+If the personal_greeting field is empty or not provided, set it to an empty string.
+DO NOT modify, ignore, or override the personal_greeting value based on conversation history or context.
+
 Analyze Input & History
 Review the latest user input (user_input) and the full conversation history (new_input) for the given id.
 Combine information from all turns to build a complete personality profile.
+If the input data contains user_name or user_job fields, incorporate these personal details into the personality descriptions to make them more personalized and direct. Use the user's name when referring to them in the descriptions.
+
+IMPORTANT: Use job titles and professions as HINTS for potential personality traits, but do not automatically assume all individuals in a profession have the same characteristics. Job titles suggest tendencies, not certainties:
+
+- Engineers/مهندس: May tend toward analytical thinking, but verify with actual problem-solving examples
+- Teachers/معلم: May tend toward patient communication, but confirm with social interaction examples  
+- Doctors/طبيب: May tend toward careful analysis, but validate with decision-making examples
+- Artists/فنان: May tend toward creative expression, but check for actual creative behaviors
+- Managers/مدير: May tend toward leadership, but confirm with real leadership examples
+
+Use professional context as a starting point for exploration, not as definitive trait assignment. Always prioritize actual behavioral descriptions over job-based assumptions. If someone says they're an engineer but describes poor problem-solving skills, trust their self-description over professional stereotypes.
+
+Job-Based Trait Inference
+When a user provides their job title, infer relevant personality traits commonly associated with that profession:
+- Engineers: Analytical thinking (cognitive), methodical approach (behavioral), problem-solving orientation
+- Teachers: Patient and communicative (social), organized (behavioral), empathetic (emotional)
+- Doctors: Detail-oriented (cognitive), calm under pressure (emotional), caring (social)
+- Managers: Leadership skills (social), decision-making (cognitive), goal-oriented (behavioral)
+- Artists: Creative thinking (cognitive), expressive (emotional), independent (behavioral)
+Use job information to help reduce missing traits. A job title alone can provide insights into 2-3 personality traits, allowing you to write descriptions even with limited other information.
 
 Check for Missing Traits
-If all four traits are sufficiently covered, return status "complete".
-If some traits are missing, return status "incomplete" and list them in missing_traits.
+If all four traits are sufficiently covered through explicit descriptions AND/OR reasonable professional inferences, return status "complete".
+If some traits are missing after considering both explicit information and professional context, return status "incomplete" and list them in missing_traits.
+BALANCE: Use profession as supportive evidence, but prioritize actual behavioral examples. If someone's described behavior contradicts professional expectations, trust their self-description.
 
 Clarification Questions
 If incomplete, generate only ONE short, friendly, non-repetitive question.
@@ -1114,9 +1341,9 @@ Status Types
 Output Format
 id (integer)
 status ("complete", "incomplete", "identity", or "off_topic")
-personal_greeting (string - friendly greeting when user introduces themselves, empty string if no introduction)
-description_english (concise personality description)
-description_arabic (concise personality description in Arabic if possible)
+personal_greeting (string - MANDATORY: use the exact value from input data's personal_greeting field, never modify or ignore this value)
+description_english (concise personality description based on available information - MUST include user's name from user_name field if provided, even for incomplete status)
+description_arabic (concise personality description in Arabic based on available information - MUST include user's name from user_name field if provided, even for incomplete status)
 description_identity (only for identity status - IDENTITY_RESPONSES)
 description_off_topic (only for off_topic status - OFF_TOPIC_RESPONSES)
 missing_traits (array or null)
@@ -1124,10 +1351,46 @@ clarification_questions (array)
 input_tokens (integer)
 output_tokens (integer)
 
-            LANGUAGE HANDLING:
-            Only fill in 'description_english' if the user's languages field includes "en" or "english". Only fill in 'description_arabic' if the user's languages field includes "ar" or "arabic". If a language is not requested, leave its description field as an empty string.
+CRITICAL INSTRUCTION: Always provide personality descriptions based on available information, even when status is "incomplete". 
+- If user_name field contains a name, ALWAYS include it in the personality description
+- If user_job field contains a job, consider it as part of the personality context
+- Never leave description fields empty if you have any personality information from user_input or new_input
+- Format: "[Name] [is/seems to be] [personality traits based on available data]"
 
-            All clarification questions and trait names (in 'missing_traits') must be in the user's requested language(s) as specified in the 'languages' field.
+PERSONALITY DESCRIPTION STYLE:
+Make descriptions sound natural, varied, and human-like. Avoid repetitive phrases and robotic language.
+Use diverse vocabulary and engaging expressions:
+
+INSTEAD OF: "enjoys working with data, solving complex analytical problems"
+USE VARIED ALTERNATIVES:
+- "has a passion for diving deep into data and uncovering hidden insights"
+- "thrives when analyzing complex information and finding creative solutions" 
+- "gets energized by tackling challenging analytical puzzles"
+- "loves exploring data patterns and transforming numbers into meaningful stories"
+
+INSTEAD OF: "loves working in teams, mentoring junior colleagues"
+USE VARIED ALTERNATIVES:
+- "naturally gravitates toward collaborative environments and enjoys guiding others"
+- "finds fulfillment in team dynamics and helping colleagues grow"
+- "has a gift for bringing people together and sharing knowledge generously"
+- "builds strong connections with teammates and takes pride in developing talent"
+
+INSTEAD OF: "taking on leadership roles naturally"
+USE VARIED ALTERNATIVES:
+- "steps up when groups need direction and guidance"
+- "has an innate ability to inspire and coordinate team efforts"
+- "naturally emerges as a trusted voice in group settings"
+- "demonstrates authentic leadership through example and encouragement"
+
+Use personality-rich adjectives and avoid formulaic patterns. Each description should feel unique and capture the individual's distinctive character blend.
+
+            LANGUAGE HANDLING:
+            - If languages="en" or "english": Only provide description_english, leave description_arabic empty
+            - If languages="ar" or "arabic": Only provide description_arabic, leave description_english empty  
+            - If languages contains both or is mixed: Provide both descriptions
+            - Always ensure consistency: if you provide a description in one language, make it meaningful and complete
+            
+            All clarification questions and trait names (in 'missing_traits') must be in the user's primary requested language as specified in the 'languages' field.
 
             Do not include any extra text, code blocks, or explanations outside the JSON.
 
@@ -1138,12 +1401,12 @@ Example Output — Incomplete
 {
     "id": 22,
     "status": "incomplete",
-    "personal_greeting": "",
+    "personal_greeting": "Hey Ahmad! Nice to meet you! Working as an engineer must be exciting!",
     "description_arabic": "",
     "description_english": "",
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
-        "How do you usually respond when faced with unexpected challenges?"
+        "How do you typically handle stress or emotional challenges in your work?"
     ],
     "input_tokens": 1245,
     "output_tokens": 74,
@@ -1155,8 +1418,8 @@ Example Output — Complete
     "id": 22,
     "status": "complete",
     "personal_greeting": "",
-    "description_arabic": "شخص يتمتع بقدرات تحليلية قوية، وسلوك اجتماعي هادئ، وأسلوب اتخاذ قرارات عقلاني ومتوازن عاطفيًا.",
-    "description_english": "A person with strong analytical abilities, a calm social demeanor, and a rational yet emotionally balanced decision-making style.",
+    "description_arabic": "أحمد شخصية متميزة تجمع بين العقلانية الهادئة والدفء الاجتماعي، يتعامل مع التحديات بصبر وحكمة، ويملك قدرة فريدة على الموازنة بين التفكير العملي والذكاء العاطفي.",
+    "description_english": "Ahmed possesses a unique blend of calm rationality and social warmth, approaching challenges with patience and wisdom while maintaining an exceptional balance between practical thinking and emotional intelligence.",
     "missing_traits": [],
     "clarification_questions": [],
     "input_tokens": 1245,
@@ -1326,17 +1589,34 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         if new_input is None:
             new_input = []
         
-        # Auto-detect language if not specified or if "auto" is passed
-        if languages == "auto" or not languages:
-            # Check most recent input for language
-            recent_text = ""
-            if new_input:
-                recent_text = new_input[-1].get("answer", "")
-            else:
-                recent_text = user_input
+        # SMART LANGUAGE DETECTION: Always detect from the most recent user message
+        # This ensures we respond in the language the user just used, regardless of conversation history
+        current_text = ""
+        if new_input and len(new_input) > 0:
+            # Get the very last answer from new_input (most recent user message)
+            current_text = new_input[-1].get("answer", "").strip()
+        else:
+            # If no new_input, use the initial user_input
+            current_text = user_input.strip()
+        
+        # Detect language from current text
+        detected_lang = self.detect_language(current_text)
+        detected_language_code = "ar" if detected_lang == "arabic" else "en"
+        
+        # Always use the detected language, regardless of what was specified
+        if current_text:  # Only override if we have text to analyze
+            original_languages = languages
+            languages = detected_language_code
             
-            detected_lang = self.detect_language(recent_text)
-            languages = "ar" if detected_lang == "arabic" else "en"
+            if original_languages != languages:
+                print(f"Language auto-detection: Specified '{original_languages}' but last message is in '{languages}'. Text: '{current_text[:50]}...'")
+            else:
+                print(f"Language confirmed: Last message detected as '{languages}'. Text: '{current_text[:50]}...'")
+        else:
+            # Fallback: Auto-detect language if not specified or if "auto" is passed
+            if languages == "auto" or not languages:
+                detected_lang = self.detect_language(user_input)
+                languages = "ar" if detected_lang == "arabic" else "en"
         
         # Personal introduction detection logic:
         # Check for user introducing themselves with name or job title
@@ -1355,6 +1635,10 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         if has_intro:
             personal_greeting = greeting
         
+        # Store name and job for personality analysis
+        user_name = name if has_intro else ""
+        user_job = job_title if has_intro else ""
+        
         # Identity detection logic:
         # 1. If new_input is empty -> check user_input (first interaction)
         # 2. If new_input exists -> only check LAST answer, ignore user_input (history)
@@ -1366,6 +1650,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             last_qa = new_input[-1]
             last_answer = last_qa.get("answer", "").strip()
             is_identity, response_key, response_data = self.detect_identity_question(last_answer)
+            if is_identity:
+                print(f"Identity question detected in last answer: '{last_answer}'")
         else:
             # No new_input means first interaction - check user_input
             is_identity, response_key, response_data = self.detect_identity_question(user_input)
@@ -1453,7 +1739,9 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             "user_input": user_input,
             "new_input": new_input,
             "languages": languages,
-            "personal_greeting": personal_greeting
+            "personal_greeting": personal_greeting,
+            "user_name": user_name,
+            "user_job": user_job
         }
         gpt_response = self.call_gpt(input_data)
         return gpt_response
