@@ -1351,11 +1351,12 @@ clarification_questions (array)
 input_tokens (integer)
 output_tokens (integer)
 
-CRITICAL INSTRUCTION: Always provide personality descriptions based on available information, even when status is "incomplete". 
-- If user_name field contains a name, ALWAYS include it in the personality description
-- If user_job field contains a job, consider it as part of the personality context
-- Never leave description fields empty if you have any personality information from user_input or new_input
-- Format: "[Name] [is/seems to be] [personality traits based on available data]"
+CRITICAL INSTRUCTION: Only provide personality descriptions when status is "complete". 
+- When status is "incomplete", leave description_english and description_arabic fields empty ("")
+- When status is "complete", provide detailed personality descriptions based on all available information
+- If user_name field contains a name, include it in the personality description when status is complete
+- If user_job field contains a job, consider it as part of the personality context when status is complete
+- Format for complete status: "[Name] [is/seems to be] [personality traits based on available data]"
 
 PERSONALITY DESCRIPTION STYLE:
 Make descriptions sound natural, varied, and human-like. Avoid repetitive phrases and robotic language.
@@ -1474,7 +1475,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
 
         # If no valid JSON found, create a meaningful default JSON
         if not text:
-            return '{"status": "incomplete", "clarification_questions": ["Could you provide more information about yourself?"]}'
+            return '{"status": "incomplete", "description_english": "", "description_arabic": "", "clarification_questions": ["Could you provide more information about yourself?"]}'
         
         # Create a default response with status complete for cases with enough information
         if "developer" in text.lower() and ("team" in text.lower() or "professional" in text.lower()):
@@ -1485,7 +1486,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             })
             
         # Return a JSON structure with the original text as a question
-        return '{"status": "incomplete", "clarification_questions": ["Could you tell me more about how you interact with others in your professional environment?"]}'
+        return '{"status": "incomplete", "description_english": "", "description_arabic": "", "clarification_questions": ["Could you tell me more about how you interact with others in your professional environment?"]}'
     
     @staticmethod
     def create_json_from_text(text: str, id: int, languages: List[str]) -> dict:
@@ -1519,8 +1520,8 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         return {
             "id": id,
             "status": "incomplete" if questions else "complete",
-            "description_english": english_desc if "english" in languages or "en" in languages else "",
-            "description_arabic": arabic_desc if "arabic" in languages or "ar" in languages else "",
+            "description_english": english_desc if (not questions and ("english" in languages or "en" in languages)) else "",
+            "description_arabic": arabic_desc if (not questions and ("arabic" in languages or "ar" in languages)) else "",
             "missing_traits": ["emotional", "social", "cognitive", "behavioral"] if questions else [],
             "clarification_questions": questions if questions else []
         }
