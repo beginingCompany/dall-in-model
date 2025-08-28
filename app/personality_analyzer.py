@@ -107,8 +107,9 @@ User input: "{text}"
 
 Look for:
 1. Name introductions (any name in any language)
-2. Job/profession introductions (any profession in any language)
+2. Job/profession introductions (any profession in any language)  
 3. Personal self-descriptions
+4. Greetings combined with personal information
 
 Extract:
 - Name (if mentioned)
@@ -122,9 +123,11 @@ Examples:
 "I am Ahmed" -> {{"is_introduction": true, "name": "Ahmed", "job": "", "language": "english"}}
 "انا مهندس" -> {{"is_introduction": true, "name": "", "job": "مهندس", "language": "arabic"}}
 "انا المهندس احمد" -> {{"is_introduction": true, "name": "احمد", "job": "مهندس", "language": "arabic"}}
+"مرحبا انا وليد مهندس بيوميجات" -> {{"is_introduction": true, "name": "وليد", "job": "مهندس", "language": "arabic"}}
 "My name is John and I work as a developer" -> {{"is_introduction": true, "name": "John", "job": "developer", "language": "english"}}
 "I like programming" -> {{"is_introduction": false, "name": "", "job": "", "language": "english"}}
 "What is the weather?" -> {{"is_introduction": false, "name": "", "job": "", "language": "english"}}
+"من أنت" -> {{"is_introduction": false, "name": "", "job": "", "language": "arabic"}}
 """
 
             messages = [
@@ -153,7 +156,7 @@ Examples:
                 
                 print(f"Parsed: is_intro={is_intro}, name='{name}', job='{job}', lang='{detected_language}'")
                 
-                if is_intro:
+                if is_intro and (name or job):  # Only consider it introduction if we have name OR job
                     # Generate varied, friendly greeting
                     greeting = self.generate_varied_greeting(name, job, detected_language)
                     print(f"Generated greeting: '{greeting}'")
@@ -282,34 +285,80 @@ Examples:
         
         # Simple but effective patterns
         if is_arabic:
-            # Arabic patterns
-            if re.search(r'\b(?:أنا|انا)\s+(?:ال)?مهندس\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?مهندس\s+([أ-ي]+)', text)
+            # Arabic patterns - Enhanced for better detection
+            # Pattern 1: "مرحبا انا وليد مهندس" - greeting + name + job
+            if re.search(r'\b(?:مرحبا|أهلا|السلام)\s+(?:أنا|انا)\s+([أ-ي]+)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text):
+                match = re.search(r'\b(?:مرحبا|أهلا|السلام)\s+(?:أنا|انا)\s+([أ-ي]+)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text)
                 name = match.group(1)
-                greeting = self.generate_varied_greeting(name, "مهندس", "arabic")
-                return True, name, "مهندس", greeting
-            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text)
-                job = match.group(1)
-                greeting = self.generate_varied_greeting("", job, "arabic")
-                return True, "", job, greeting
-            elif re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text)
+                job = match.group(2)
+                greeting = self.generate_varied_greeting(name, job, "arabic")
+                return True, name, job, greeting
+            # Pattern 2: "انا اسمي احمد" - name introduction
+            elif re.search(r'\b(?:أنا|انا)\s+(?:اسمي|اسم)\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:اسمي|اسم)\s+([أ-ي]+)', text)
                 name = match.group(1)
                 greeting = self.generate_varied_greeting(name, "", "arabic")
                 return True, name, "", greeting
-        else:
-            # English patterns
-            if re.search(r'\bi am\s+([A-Z][a-z]+)', text, re.IGNORECASE):
-                match = re.search(r'\bi am\s+([A-Z][a-z]+)', text, re.IGNORECASE)
+            # Pattern 3: "انا مهندس احمد" - profession + name
+            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text)
+                job = match.group(1)
+                name = match.group(2)
+                greeting = self.generate_varied_greeting(name, job, "arabic")
+                return True, name, job, greeting
+            # Pattern 4: "انا المهندس احمد" - profession with definite article + name
+            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text)
+                job = match.group(1)
+                name = match.group(2)
+                greeting = self.generate_varied_greeting(name, job, "arabic")
+                return True, name, job, greeting
+            # Pattern 5: "انا مهندس" - profession only
+            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس|معلم|دكتور|فني|محاسب|مصمم|كاتب)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس|معلم|دكتور|فني|محاسب|مصمم|كاتب)', text)
+                job = match.group(1)
+                greeting = self.generate_varied_greeting("", job, "arabic")
+                return True, "", job, greeting
+            # Pattern 6: "انا احمد" - name only
+            elif re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text):
+                match = re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text)
                 name = match.group(1)
-                greeting = self.generate_varied_greeting(name, "", "english")
-                return True, name, "", greeting
-            elif re.search(r'\bi am\s+(?:a\s+)?(developer|engineer|programmer)', text, re.IGNORECASE):
-                match = re.search(r'\bi am\s+(?:a\s+)?(developer|engineer|programmer)', text, re.IGNORECASE)
+                # Verify it's actually a name and not a profession or other word
+                common_jobs = ['مهندس', 'طبيب', 'معلم', 'مدرس', 'محاسب', 'مطور', 'مبرمج']
+                if name not in common_jobs:
+                    greeting = self.generate_varied_greeting(name, "", "arabic")
+                    return True, name, "", greeting
+        else:
+            # English patterns - Enhanced
+            # Pattern 1: "Hi I am John, I'm an engineer"
+            if re.search(r'\b(?:hi|hello|hey).*\bi\s+am\s+([A-Za-z]+).*\b(?:i\'m|i\s+am)\s+(?:an?)\s*(engineer|developer|programmer|doctor|teacher)', text, re.IGNORECASE):
+                name_match = re.search(r'\bi\s+am\s+([A-Za-z]+)', text, re.IGNORECASE)
+                job_match = re.search(r'\b(?:i\'m|i\s+am)\s+(?:an?)\s*(engineer|developer|programmer|doctor|teacher)', text, re.IGNORECASE)
+                name = name_match.group(1) if name_match else ""
+                job = job_match.group(1) if job_match else ""
+                greeting = self.generate_varied_greeting(name, job, "english")
+                return True, name, job, greeting
+            # Pattern 2: "I am John" - name only
+            elif re.search(r'\bi\s+am\s+([A-Z][a-z]+)', text, re.IGNORECASE):
+                match = re.search(r'\bi\s+am\s+([A-Z][a-z]+)', text, re.IGNORECASE)
+                name = match.group(1)
+                # Verify it's a name, not a profession
+                common_jobs = ['engineer', 'developer', 'programmer', 'doctor', 'teacher', 'manager']
+                if name.lower() not in common_jobs:
+                    greeting = self.generate_varied_greeting(name, "", "english")
+                    return True, name, "", greeting
+            # Pattern 3: "I am a developer" - profession only
+            elif re.search(r'\bi\s+am\s+(?:an?)\s*(developer|engineer|programmer|doctor|teacher|manager|designer)', text, re.IGNORECASE):
+                match = re.search(r'\bi\s+am\s+(?:an?)\s*(developer|engineer|programmer|doctor|teacher|manager|designer)', text, re.IGNORECASE)
                 job = match.group(1)
                 greeting = self.generate_varied_greeting("", job, "english")
                 return True, "", job, greeting
+            # Pattern 4: "My name is John"
+            elif re.search(r'\bmy\s+name\s+is\s+([A-Za-z]+)', text, re.IGNORECASE):
+                match = re.search(r'\bmy\s+name\s+is\s+([A-Za-z]+)', text, re.IGNORECASE)
+                name = match.group(1)
+                greeting = self.generate_varied_greeting(name, "", "english")
+                return True, name, "", greeting
         
         return False, "", "", ""
 
@@ -1273,6 +1322,175 @@ Focus on INTENT over exact wording.
                 questions.append(random.choice(templates[first_trait]))
         
         return questions
+
+    def generate_personalized_greeting_with_question(self, name: str, job: str, missing_traits: list, language: str, asked_questions: list = None) -> str:
+        """
+        Generate a combined greeting and personalized clarification question.
+        This creates a natural conversation flow by connecting the greeting with a relevant question.
+        """
+        import random
+        
+        if asked_questions is None:
+            asked_questions = []
+            
+        # Generate base greeting
+        base_greeting = self.generate_varied_greeting(name, job, language)
+        
+        # If no missing traits, just return the greeting
+        if not missing_traits:
+            return base_greeting
+            
+        # Determine language preference
+        is_arabic = language == "arabic"
+        
+        # Generate job-specific personalized questions
+        job_specific_questions = self._generate_job_specific_questions(job, missing_traits, is_arabic)
+        
+        # If we have job-specific questions, use them; otherwise use general questions
+        if job_specific_questions:
+            available_questions = [q for q in job_specific_questions if q not in asked_questions]
+            if available_questions:
+                personalized_question = random.choice(available_questions)
+            else:
+                personalized_question = random.choice(job_specific_questions)
+        else:
+            # Fallback to general clarification questions
+            general_questions = self.generate_clarification_questions(missing_traits, language, 1, asked_questions)
+            personalized_question = general_questions[0] if general_questions else ""
+        
+        # Combine greeting with question naturally
+        if personalized_question:
+            if is_arabic:
+                # Arabic connectors
+                connectors = [
+                    f"{base_greeting} أود أن أتعرف عليك أكثر - {personalized_question}",
+                    f"{base_greeting} دعني أسألك - {personalized_question}",
+                    f"{base_greeting} لأفهم شخصيتك أكثر - {personalized_question}",
+                    f"{base_greeting} أتساءل - {personalized_question}"
+                ]
+            else:
+                # English connectors
+                connectors = [
+                    f"{base_greeting} I'd love to learn more about you - {personalized_question}",
+                    f"{base_greeting} Let me ask you - {personalized_question}",
+                    f"{base_greeting} To better understand your personality - {personalized_question}",
+                    f"{base_greeting} I'm curious - {personalized_question}"
+                ]
+            
+            return random.choice(connectors)
+        else:
+            return base_greeting
+
+    def _generate_job_specific_questions(self, job: str, missing_traits: list, is_arabic: bool) -> list:
+        """
+        Generate job-specific personality questions based on profession and missing traits.
+        """
+        if not job:
+            return []
+            
+        job_lower = job.lower()
+        questions = []
+        
+        if is_arabic:
+            # Arabic job-specific questions
+            if any(word in job_lower for word in ['مهندس', 'engineer']):
+                if 'cognitive' in missing_traits:
+                    questions.extend([
+                        "كيف تتعامل مع المشاكل التقنية المعقدة في عملك الهندسي؟",
+                        "هل تفضل التحليل المنطقي أم الحلول الإبداعية في المشاريع الهندسية؟",
+                        "كيف تقوم بتحليل وحل التحديات الهندسية؟"
+                    ])
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "كيف تتفاعل مع فريق العمل في المشاريع الهندسية؟",
+                        "هل تفضل القيادة أم المشاركة في الفرق الهندسية؟",
+                        "كيف تتعامل مع العملاء والزملاء في المشاريع؟"
+                    ])
+                if 'behavioral' in missing_traits:
+                    questions.extend([
+                        "هل تتبع منهجية محددة في عملك الهندسي أم تتكيف حسب المشروع؟",
+                        "كيف تنظم وقتك ومهامك في المشاريع الهندسية؟"
+                    ])
+                if 'emotional' in missing_traits:
+                    questions.extend([
+                        "كيف تشعر عندما تواجه تحديات تقنية صعبة؟",
+                        "كيف تتعامل مع ضغوط المواعيد النهائية في المشاريع؟"
+                    ])
+                    
+            elif any(word in job_lower for word in ['مطور', 'مبرمج', 'developer', 'programmer']):
+                if 'cognitive' in missing_traits:
+                    questions.extend([
+                        "كيف تتعامل مع مشاكل البرمجة المعقدة؟",
+                        "هل تفضل التفكير المنطقي أم الإبداعي في كتابة الكود؟",
+                        "كيف تحلل المتطلبات وتحولها إلى حلول برمجية؟"
+                    ])
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "هل تفضل البرمجة الفردية أم العمل في فريق التطوير؟",
+                        "كيف تتفاعل مع المطورين الآخرين في مراجعة الكود؟"
+                    ])
+                if 'behavioral' in missing_traits:
+                    questions.extend([
+                        "هل تتبع منهجيات تطوير محددة أم تتكيف حسب المشروع؟",
+                        "كيف تنظم كودك ومشاريعك البرمجية؟"
+                    ])
+                    
+            elif any(word in job_lower for word in ['معلم', 'مدرس', 'teacher']):
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "كيف تتفاعل مع الطلاب في بيئة التعلم؟",
+                        "هل تفضل التدريس التفاعلي أم المحاضرات التقليدية؟",
+                        "كيف تتعامل مع الطلاب ذوي الاحتياجات المختلفة؟"
+                    ])
+                if 'emotional' in missing_traits:
+                    questions.extend([
+                        "كيف تشعر عندما ترى تقدم طلابك؟",
+                        "كيف تتعامل مع التحديات السلوكية في الفصل؟"
+                    ])
+        else:
+            # English job-specific questions
+            if any(word in job_lower for word in ['engineer', 'engineering']):
+                if 'cognitive' in missing_traits:
+                    questions.extend([
+                        "How do you approach complex technical problems in your engineering work?",
+                        "Do you prefer analytical or creative solutions in engineering projects?",
+                        "How do you analyze and solve engineering challenges?"
+                    ])
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "How do you interact with your engineering team on projects?",
+                        "Do you prefer leading or collaborating in engineering teams?",
+                        "How do you work with clients and colleagues on projects?"
+                    ])
+                    
+            elif any(word in job_lower for word in ['developer', 'programmer', 'programming']):
+                if 'cognitive' in missing_traits:
+                    questions.extend([
+                        "How do you tackle complex coding problems?",
+                        "Do you prefer logical or creative thinking when writing code?",
+                        "How do you analyze requirements and turn them into code solutions?"
+                    ])
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "Do you prefer coding alone or working with a development team?",
+                        "How do you interact with other developers during code reviews?"
+                    ])
+                    
+            elif any(word in job_lower for word in ['teacher', 'teaching', 'educator']):
+                if 'social' in missing_traits:
+                    questions.extend([
+                        "How do you interact with students in the learning environment?",
+                        "Do you prefer interactive teaching or traditional lectures?",
+                        "How do you handle students with different learning needs?"
+                    ])
+                if 'emotional' in missing_traits:
+                    questions.extend([
+                        "How do you feel when you see your students making progress?",
+                        "How do you handle challenging behaviors in the classroom?"
+                    ])
+        
+        return questions
+
     SYSTEM_PROMPT = """
 You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
 
@@ -1296,6 +1514,10 @@ CRITICAL: Always use the EXACT value from the input data's personal_greeting fie
 If the input data contains a personal_greeting field with a value, you MUST include that exact value in your response.
 If the personal_greeting field is empty or not provided, set it to an empty string.
 DO NOT modify, ignore, or override the personal_greeting value based on conversation history or context.
+IMPORTANT: The personal_greeting may now contain both greeting and clarification question combined in one natural response.
+- When personal_greeting contains a combined greeting+question, use it as-is and set clarification_questions to empty array
+- When personal_greeting is just a greeting, you may generate separate clarification_questions
+- This creates more natural conversation flow by connecting greetings with relevant questions
 
 Analyze Input & History
 Review the latest user input (user_input) and the full conversation history (new_input) for the given id.
@@ -1351,12 +1573,16 @@ clarification_questions (array)
 input_tokens (integer)
 output_tokens (integer)
 
-CRITICAL INSTRUCTION: Only provide personality descriptions when status is "complete". 
-- When status is "incomplete", leave description_english and description_arabic fields empty ("")
-- When status is "complete", provide detailed personality descriptions based on all available information
+CRITICAL INSTRUCTION: Always include personal_greeting when provided, and handle combined greeting+question responses.
+- When personal_greeting contains both greeting and question (e.g., "Hello John! Nice to meet you. I'm curious - how do you handle challenges?"), use it as the main response and set clarification_questions to empty array [""]
+- When has_combined_greeting_question is true in input data, do NOT generate separate clarification_questions - the greeting already contains the question
+- When personal_greeting is just a greeting without question, include it AND generate separate clarification_questions  
+- When status is "incomplete", leave description_english and description_arabic fields empty ("") BUT still include personal_greeting if provided
+- When status is "complete", provide detailed personality descriptions based on all available information AND include personal_greeting if provided  
 - If user_name field contains a name, include it in the personality description when status is complete
-- If user_job field contains a job, consider it as part of the personality context when status is complete
+- If user_job field contains a job, consider it as part of the personality context when status is complete  
 - Format for complete status: "[Name] [is/seems to be] [personality traits based on available data]"
+- Personal greetings should appear regardless of personality analysis completeness
 
 PERSONALITY DESCRIPTION STYLE:
 Make descriptions sound natural, varied, and human-like. Avoid repetitive phrases and robotic language.
@@ -1623,22 +1849,63 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
         # Check for user introducing themselves with name or job title
         personal_greeting = ""
         introduction_text = ""
+        user_name = ""
+        user_job = ""
         
+        # Check for introduction in the current message
         if new_input:
             # Check the LAST answer for personal introduction
             last_qa = new_input[-1]
             introduction_text = last_qa.get("answer", "").strip()
         else:
-            # Check initial user_input for personal introduction
+            # Check initial user_input for personal introduction  
             introduction_text = user_input
         
-        has_intro, name, job_title, greeting = self.detect_personal_introduction(introduction_text)
-        if has_intro:
-            personal_greeting = greeting
+        # Always check for personal introduction in current message
+        has_intro, name, job_title, simple_greeting = self.detect_personal_introduction(introduction_text)
+        if has_intro and simple_greeting:
+            user_name = name
+            user_job = job_title
+            print(f"Personal introduction detected: name='{name}', job='{job_title}', greeting='{simple_greeting}'")
+            
+            # For new introductions, generate combined greeting with personalized question
+            # First analyze missing traits to know what questions to ask
+            missing_traits = self.analyze_missing_traits(user_input, new_input)
+            
+            # Extract previously asked questions
+            asked_questions = []
+            for qa in new_input:
+                question = qa.get("question", "").strip()
+                if question:
+                    asked_questions.append(question)
+            
+            # Generate combined personalized greeting with question
+            combined_response = self.generate_personalized_greeting_with_question(
+                name, job_title, missing_traits, detected_lang, asked_questions
+            )
+            personal_greeting = combined_response
+            print(f"Generated combined greeting+question: '{combined_response}'")
+        else:
+            personal_greeting = ""
         
-        # Store name and job for personality analysis
-        user_name = name if has_intro else ""
-        user_job = job_title if has_intro else ""
+        # Check if we had previous introduction data stored (for conversation continuity)
+        previous_name = ""
+        previous_job = ""
+        if new_input:
+            # Look through conversation history for name/job mentioned previously
+            for qa in new_input:
+                answer = qa.get("answer", "").strip()
+                if answer:
+                    prev_has_intro, prev_name, prev_job, _ = self.detect_personal_introduction(answer)
+                    if prev_has_intro:
+                        if prev_name and not previous_name:
+                            previous_name = prev_name
+                        if prev_job and not previous_job:
+                            previous_job = prev_job
+        
+        # Use current introduction data if available, otherwise fall back to previous
+        final_user_name = user_name if user_name else previous_name
+        final_user_job = user_job if user_job else previous_job
         
         # Identity detection logic:
         # 1. If new_input is empty -> check user_input (first interaction)
@@ -1669,9 +1936,12 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                     asked_questions.append(question)
             
             # Generate clarification questions to continue the conversation
-            clarification_questions = self.generate_clarification_questions(
-                missing_traits, languages, max_questions=1, asked_questions=asked_questions
-            )
+            # But only if personal_greeting doesn't already contain a question
+            clarification_questions = []
+            if not personal_greeting or ("?" not in personal_greeting and "؟" not in personal_greeting):
+                clarification_questions = self.generate_clarification_questions(
+                    missing_traits, languages, max_questions=1, asked_questions=asked_questions
+                )
             
             # Return identity response with clarification questions to continue conversation
             identity_text = self.get_identity_response(response_data, languages)
@@ -1714,9 +1984,12 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                     asked_questions.append(question)
             
             # Generate clarification questions to guide back to personality topics
-            clarification_questions = self.generate_clarification_questions(
-                missing_traits, languages, max_questions=1, asked_questions=asked_questions
-            )
+            # But only if personal_greeting doesn't already contain a question
+            clarification_questions = []
+            if not personal_greeting or ("?" not in personal_greeting and "؟" not in personal_greeting):
+                clarification_questions = self.generate_clarification_questions(
+                    missing_traits, languages, max_questions=1, asked_questions=asked_questions
+                )
             
             return {
                 "content": json.dumps({
@@ -1735,14 +2008,18 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             }
         
         # If not an identity or off-topic question, proceed with normal personality analysis
+        # Check if personal_greeting contains a question to inform GPT
+        has_combined_question = bool(personal_greeting and ("?" in personal_greeting or "؟" in personal_greeting))
+        
         input_data = {
             "id": id,
             "user_input": user_input,
             "new_input": new_input,
             "languages": languages,
             "personal_greeting": personal_greeting,
-            "user_name": user_name,
-            "user_job": user_job
+            "user_name": final_user_name,
+            "user_job": final_user_job,
+            "has_combined_greeting_question": has_combined_question
         }
         gpt_response = self.call_gpt(input_data)
         return gpt_response
