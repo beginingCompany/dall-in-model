@@ -1,51 +1,70 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from app.personality_analyzer import PersonalityAnalyzer
-import json
+import re
 
-analyzer = PersonalityAnalyzer()
+def debug_arabic_pattern():
+    """Debug why 'مين الي مطورك' is not matching"""
+    
+    test_input = "مين الي مطورك"
+    print(f"Testing: '{test_input}'")
+    print(f"Length: {len(test_input)}")
+    print(f"Characters: {[c for c in test_input]}")
+    
+    # Check if it has Arabic characters
+    has_arabic = re.search(r'[\u0600-\u06FF]', test_input)
+    print(f"Has Arabic characters: {bool(has_arabic)}")
+    
+    # Test direct method
+    response = PersonalityAnalyzer.get_identity_response(test_input, "ar")
+    print(f"Direct response: {response}")
+    
+    # Check against each developer pattern
+    text = test_input.lower().strip()
+    print(f"Normalized text: '{text}'")
+    
+    developer_patterns = [
+        r"who\s+(made|built|created|developed)\s+you", 
+        r"who\s+is\s+your\s+developer",
+        r"your\s+(maker|creator|developer)", 
+        r"who\s+designed\s+you", 
+        r"who\s+programmed\s+you",
+        r"من\s+(صنعك|بناك|طورك|صممك)", 
+        r"من\s+هو\s+مطورك", 
+        r"مين\s+عملك"
+    ]
+    
+    print("\nTesting against enhanced patterns:")
+    for i, pattern in enumerate(developer_patterns):
+        match = re.search(pattern, text)
+        print(f"  Pattern {i+1}: {pattern} -> {'✅' if match else '❌'}")
+    
+    # Test against original triggers
+    original_triggers = ["who is your developer", "who made you", "who built you", "من هو مطورك", "من صنعك", "من بناك"]
+    print(f"\nTesting against original triggers:")
+    for trigger in original_triggers:
+        if trigger.lower() in text:
+            print(f"  '{trigger}' -> ✅ Found")
+        else:
+            print(f"  '{trigger}' -> ❌ Not found")
+    
+    # Test some variations
+    variations = [
+        "مين مطورك",
+        "مين اللي مطورك", 
+        "مين الي مطورك",
+        "من مطورك",
+        "من هو مطورك"
+    ]
+    
+    print(f"\nTesting variations:")
+    for var in variations:
+        resp = PersonalityAnalyzer.get_identity_response(var, "ar")
+        print(f"  '{var}' -> {'✅' if resp else '❌'}")
 
-print("=== Debugging Arabic Language Issue ===")
-
-# Test the exact scenario you mentioned
-result = analyzer.analyze(
-    225985882206,
-    "مرحبًا! أنا شخص يستمتع حقًا بالعمل مع البيانات وحل المشكلات التحليلية المعقدة. أجد متعة كبيرة في اكتشاف الأنماط واستخلاص الرؤى.",
-    [
-        {
-            "question": "كيف تتفاعل عادةً مع الآخرين في المواقف الاجتماعية؟",
-            "answer": "أحب العمل ضمن فرق وغالبًا ما أجد نفسي أتولى أدوارًا قيادية بشكل طبيعي. أستمتع بتوجيه الزملاء الجدد وتيسير النقاشات الجماعية."
-        },
-        {
-            "question": "كيف تتعامل عادةً مع عواطفك في المواقف الصعبة؟",
-            "answer": "من أنت"
-        }
-    ],
-    languages="ar"
-)
-
-print("Result:")
-print(json.dumps(result, indent=2, ensure_ascii=False))
-
-print("\n=== Checking language detection ===")
-user_input = "مرحبًا! أنا شخص يستمتع حقًا بالعمل مع البيانات وحل المشكلات التحليلية المعقدة. أجد متعة كبيرة في اكتشاف الأنماط واستخلاص الرؤى."
-has_arabic = any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input)
-print(f"User input has Arabic characters: {has_arabic}")
-print(f"Requested languages: ar")
-
-print("\n=== Testing clarification question generation directly ===")
-missing_traits = ["emotional"]
-questions = analyzer.generate_clarification_questions(missing_traits, "ar")
-print(f"Generated questions for Arabic: {questions}")
-
-questions_en = analyzer.generate_clarification_questions(missing_traits, "en")
-print(f"Generated questions for English: {questions_en}")
-
-print("\n=== Analysis ===")
-clarification_questions = result.get('clarification_questions', [])
-if clarification_questions:
-    question = clarification_questions[0]
-    has_arabic_chars = any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in question)
-    print(f"Clarification question: '{question}'")
-    print(f"Contains Arabic characters: {has_arabic_chars}")
-    print(f"Expected: Arabic, Got: {'Arabic' if has_arabic_chars else 'English'}")
-else:
-    print("No clarification questions found")
+if __name__ == "__main__":
+    debug_arabic_pattern()
