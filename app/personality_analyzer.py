@@ -11,11 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class PersonalityAnalyzer:
-    @staticmethod
-    def detect_language(text: str) -> str:
+    def detect_language(self, text: str) -> str:
         """
-        Enhanced auto-detect language from text content with mixed language support.
-        Analyzes the dominant language in mixed content.
+        GPT-powered language detection that analyzes the dominant language in text.
         Returns 'arabic' if Arabic is dominant, otherwise 'english'.
         """
         if not text or not text.strip():
@@ -24,55 +22,58 @@ class PersonalityAnalyzer:
         # Clean text and remove extra spaces
         text = text.strip()
         
-        # Count Arabic characters (including Arabic numbers and punctuation)
-        arabic_chars = len(re.findall(r'[\u0600-\u06FF\u0660-\u0669\u06F0-\u06F9]', text))
-        
-        # Count English/Latin characters (letters and numbers)
-        english_chars = len(re.findall(r'[a-zA-Z0-9]', text))
-        
-        # Count total meaningful characters (excluding spaces and common punctuation)
-        total_meaningful_chars = len(re.findall(r'[\u0600-\u06FF\u0660-\u0669\u06F0-\u06F9a-zA-Z0-9]', text))
-        
-        # If no meaningful characters, default to English
-        if total_meaningful_chars == 0:
-            return "english"
-        
-        # Calculate percentages
-        arabic_percentage = (arabic_chars / total_meaningful_chars) * 100
-        english_percentage = (english_chars / total_meaningful_chars) * 100
-        
-        # Debug logging for mixed language detection
-        if arabic_chars > 0 and english_chars > 0:
-            print(f"Mixed language detected - Arabic: {arabic_percentage:.1f}%, English: {english_percentage:.1f}% in text: '{text}'")
-        
-        # Decision logic for mixed content:
-        # 1. If Arabic > 30%, consider it Arabic dominant
-        # 2. If Arabic > English, choose Arabic
-        # 3. Special case: if text has Arabic names/words, lean toward Arabic
-        
-        if arabic_percentage > 30:
-            return "arabic"
-        elif arabic_chars > english_chars:
-            return "arabic"
-        elif arabic_chars > 0:
-            # Check for Arabic names or important Arabic words
-            arabic_name_patterns = [
-                r'\b(أحمد|محمد|علي|فاطمة|عائشة|خديجة|مريم|يوسف|إبراهيم|عبد)\b',
-                r'\b(مهندس|مطور|طبيب|مدرس|استاذ|دكتور)\b',
-                r'\b(أنا|انا|اسمي|وظيفتي|عملي)\b'
+        try:
+            language_prompt = f"""
+Analyze this text and determine the dominant language. Consider:
+1. The primary language being used
+2. Mixed language content - which language is more prominent
+3. Context clues like names, job titles, greetings
+
+Text: "{text}"
+
+Respond with ONLY one word:
+- "arabic" if Arabic is the dominant language
+- "english" if English is the dominant language
+
+Even if the text contains both languages, choose the one that is more prominent or contextually important.
+
+Examples:
+"مرحبا انا وليد developer" -> "arabic" (Arabic greeting and name are primary)
+"Hi I'm Ahmed مهندس" -> "english" (English structure is primary)
+"أنا مطور software" -> "arabic" (Arabic personal introduction is primary)
+"I work as مهندس" -> "english" (English sentence structure is primary)
+"Hello my name is وليد" -> "english" (English sentence structure)
+"مرحبا اسمي John" -> "arabic" (Arabic greeting pattern)
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert at detecting the dominant language in text, even with mixed languages."},
+                {"role": "user", "content": language_prompt}
             ]
             
-            for pattern in arabic_name_patterns:
-                if re.search(pattern, text):
-                    print(f"Arabic context detected with pattern: {pattern} in text: '{text}'")
-                    return "arabic"
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=10,
+            )
             
-            # If Arabic chars exist but no special patterns, use percentage rule
-            if arabic_percentage >= 15:  # Lower threshold for mixed content
+            result = response.choices[0].message.content.strip().lower()
+            
+            if "arabic" in result:
+                print(f"GPT detected Arabic language in text: '{text}'")
                 return "arabic"
-        
-        # Default to English
-        return "english"
+            else:
+                print(f"GPT detected English language in text: '{text}'")
+                return "english"
+                
+        except Exception as e:
+            print(f"Error in GPT language detection: {e}")
+            # Simple fallback - check for any Arabic characters
+            arabic_chars = sum(1 for char in text if '\u0600' <= char <= '\u06FF')
+            if arabic_chars > 0:
+                return "arabic"
+            return "english"
     
     @staticmethod
     def build_full_context(user_input: str, new_input: list) -> str:
@@ -164,13 +165,13 @@ Examples:
                 
             except json.JSONDecodeError as e:
                 print(f"JSON decode error: {e}")
-                # Fallback: Enhanced regex detection for common cases
-                return self._fallback_introduction_detection(text)
+                # Fallback: Enhanced GPT detection for common cases
+                return self._enhanced_introduction_detection(text)
                     
         except Exception as e:
             print(f"Error in GPT personal introduction detection: {e}")
-            # Fallback to enhanced regex detection
-            return self._fallback_introduction_detection(text)
+            # Fallback to enhanced GPT detection
+            return self._enhanced_introduction_detection(text)
         
         print("No personal introduction detected")
         return False, "", "", ""
@@ -272,103 +273,90 @@ Examples:
         
         return random.choice(greetings)
     
-    def _fallback_introduction_detection(self, text: str) -> tuple:
+    def _enhanced_introduction_detection(self, text: str) -> tuple:
         """
-        Fallback regex-based detection for when GPT fails.
-        Enhanced to handle more cases including Arabic with definite articles.
+        GPT-powered enhanced introduction detection for when the main GPT fails.
+        Returns a tuple: (has_introduction: bool, name: str, job_title: str, greeting_message: str)
         """
         if not text:
             return False, "", "", ""
         
         text_clean = text.strip()
-        is_arabic = bool(re.search(r'[\u0600-\u06FF]', text))
         
-        # Simple but effective patterns
-        if is_arabic:
-            # Arabic patterns - Enhanced for better detection
-            # Pattern 1: "مرحبا انا وليد مهندس" - greeting + name + job
-            if re.search(r'\b(?:مرحبا|أهلا|السلام)\s+(?:أنا|انا)\s+([أ-ي]+)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text):
-                match = re.search(r'\b(?:مرحبا|أهلا|السلام)\s+(?:أنا|انا)\s+([أ-ي]+)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)', text)
-                name = match.group(1)
-                job = match.group(2)
-                greeting = self.generate_varied_greeting(name, job, "arabic")
-                return True, name, job, greeting
-            # Pattern 2: "انا اسمي احمد" - name introduction
-            elif re.search(r'\b(?:أنا|انا)\s+(?:اسمي|اسم)\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:اسمي|اسم)\s+([أ-ي]+)', text)
-                name = match.group(1)
-                greeting = self.generate_varied_greeting(name, "", "arabic")
-                return True, name, "", greeting
-            # Pattern 3: "انا مهندس احمد" - profession + name
-            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text)
-                job = match.group(1)
-                name = match.group(2)
-                greeting = self.generate_varied_greeting(name, job, "arabic")
-                return True, name, job, greeting
-            # Pattern 4: "انا المهندس احمد" - profession with definite article + name
-            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)(مهندس|مطور|مبرمج|طبيب|مدرس)\s+([أ-ي]+)', text)
-                job = match.group(1)
-                name = match.group(2)
-                greeting = self.generate_varied_greeting(name, job, "arabic")
-                return True, name, job, greeting
-            # Pattern 5: "انا مهندس" - profession only
-            elif re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس|معلم|دكتور|فني|محاسب|مصمم|كاتب)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+(?:ال)?(مهندس|مطور|مبرمج|طبيب|مدرس|معلم|دكتور|فني|محاسب|مصمم|كاتب)', text)
-                job = match.group(1)
-                greeting = self.generate_varied_greeting("", job, "arabic")
-                return True, "", job, greeting
-            # Pattern 6: "انا احمد" - name only
-            elif re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text):
-                match = re.search(r'\b(?:أنا|انا)\s+([أ-ي]+)', text)
-                name = match.group(1)
-                # Verify it's actually a name and not a profession or other word
-                common_jobs = ['مهندس', 'طبيب', 'معلم', 'مدرس', 'محاسب', 'مطور', 'مبرمج']
-                if name not in common_jobs:
-                    greeting = self.generate_varied_greeting(name, "", "arabic")
-                    return True, name, "", greeting
-        else:
-            # English patterns - Enhanced
-            # Pattern 1: "Hi I am John, I'm an engineer"
-            if re.search(r'\b(?:hi|hello|hey).*\bi\s+am\s+([A-Za-z]+).*\b(?:i\'m|i\s+am)\s+(?:an?)\s*(engineer|developer|programmer|doctor|teacher)', text, re.IGNORECASE):
-                name_match = re.search(r'\bi\s+am\s+([A-Za-z]+)', text, re.IGNORECASE)
-                job_match = re.search(r'\b(?:i\'m|i\s+am)\s+(?:an?)\s*(engineer|developer|programmer|doctor|teacher)', text, re.IGNORECASE)
-                name = name_match.group(1) if name_match else ""
-                job = job_match.group(1) if job_match else ""
-                greeting = self.generate_varied_greeting(name, job, "english")
-                return True, name, job, greeting
-            # Pattern 2: "I am John" - name only
-            elif re.search(r'\bi\s+am\s+([A-Z][a-z]+)', text, re.IGNORECASE):
-                match = re.search(r'\bi\s+am\s+([A-Z][a-z]+)', text, re.IGNORECASE)
-                name = match.group(1)
-                # Verify it's a name, not a profession
-                common_jobs = ['engineer', 'developer', 'programmer', 'doctor', 'teacher', 'manager']
-                if name.lower() not in common_jobs:
-                    greeting = self.generate_varied_greeting(name, "", "english")
-                    return True, name, "", greeting
-            # Pattern 3: "I am a developer" - profession only
-            elif re.search(r'\bi\s+am\s+(?:an?)\s*(developer|engineer|programmer|doctor|teacher|manager|designer)', text, re.IGNORECASE):
-                match = re.search(r'\bi\s+am\s+(?:an?)\s*(developer|engineer|programmer|doctor|teacher|manager|designer)', text, re.IGNORECASE)
-                job = match.group(1)
-                greeting = self.generate_varied_greeting("", job, "english")
-                return True, "", job, greeting
-            # Pattern 4: "My name is John"
-            elif re.search(r'\bmy\s+name\s+is\s+([A-Za-z]+)', text, re.IGNORECASE):
-                match = re.search(r'\bmy\s+name\s+is\s+([A-Za-z]+)', text, re.IGNORECASE)
-                name = match.group(1)
-                greeting = self.generate_varied_greeting(name, "", "english")
-                return True, name, "", greeting
-        
+        try:
+            enhanced_prompt = f"""
+Analyze this text and extract personal introduction information.
+
+Text: "{text_clean}"
+
+Look for:
+1. Personal names (both Arabic and English)
+2. Job titles or professions
+3. Self-introduction patterns like "I am", "My name is", "انا", "اسمي"
+
+Instructions:
+- Extract the person's name if mentioned
+- Extract their job/profession if mentioned  
+- Be flexible with variations and informal language
+- Handle both Arabic and English text
+- Look for patterns like:
+  * "Hi I'm John, I work as developer"
+  * "مرحبا انا وليد مهندس"
+  * "My name is Sarah and I'm a teacher"
+  * "انا اسمي احمد وانا طبيب"
+
+Respond with ONLY a JSON object in this exact format:
+{{
+    "has_introduction": true/false,
+    "name": "extracted name or empty string",
+    "job": "extracted job or empty string"
+}}
+
+Examples:
+"مرحبا انا وليد مهندس" -> {{"has_introduction": true, "name": "وليد", "job": "مهندس"}}
+"Hi I'm John" -> {{"has_introduction": true, "name": "John", "job": ""}}
+"I am a developer" -> {{"has_introduction": true, "name": "", "job": "developer"}}
+"How are you today?" -> {{"has_introduction": false, "name": "", "job": ""}}
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert at extracting personal introduction information from text."},
+                {"role": "user", "content": enhanced_prompt}
+            ]
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=100,
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            # Parse JSON response
+            import json
+            try:
+                data = json.loads(result)
+                has_intro = data.get("has_introduction", False)
+                name = data.get("name", "").strip()
+                job = data.get("job", "").strip()
+                
+                if has_intro and (name or job):
+                    # Detect language for greeting generation
+                    language = self.detect_language(text_clean)
+                    greeting = self.generate_varied_greeting(name, job, language)
+                    print(f"GPT enhanced detection found: name='{name}', job='{job}', language='{language}'")
+                    return True, name, job, greeting
+                    
+            except json.JSONDecodeError:
+                print(f"Failed to parse GPT JSON response: {result}")
+                
+        except Exception as e:
+            print(f"Error in GPT enhanced introduction detection: {e}")
+            
         return False, "", "", ""
 
-    # Define trait patterns and templates as class variables
-    TRAIT_PATTERNS = {
-        "emotional": r"enthusiastic|happy|sad|calm|feel(s)?|emotion|stress|excited|passion|motivat(ed|ion)|anxiety|angry|nervous|worried|content|optimistic|pessimistic|joyful|frustrated|relaxed|overwhelmed|mood|temper|patient|sensitive|expressive|reserved|emotional intelligence|cope|satisfaction|proud|embarrassed|guilty|inspired",
-        "social": r"collaborative|team|help|assist|shy|introvert|extrovert|interact|polite|friendly|people|others|social|network|connection|relationship|communicate|listen|leadership|followership|assertive|passive|aggressive|empathy|sympathy|understand|socialize|negotiate|persuade|influence|charm|crowd|isolation|community|group|belong|inclusion|exclusion|trust|distrust|approachable|distant|boundary|conflict",
-        "cognitive": r"think|critical|logical|analytical|understand|reason|solve|strateg(y|ic)|intuitive|creative|innovative|practical|abstract|concrete|detail-oriented|big picture|conceptual|perspective|mental|intellectual|curious|learning|knowledge|information|decision|judgment|bias|objective|subjective|rational|irrational|memory|attention|focus|concentrate|distracted|multi-task|prioritize|plan|reflect|comprehend|insight|wisdom|intelligence",
-        "behavioral": r"organized|spontaneous|routine|habit|act|impulsive|disciplined|methodical|child(ish)?|consistent|reliable|flexible|rigid|adaptable|predictable|unpredictable|responsible|irresponsible|cautious|risk-taking|procrastinate|proactive|reactive|efficient|systematic|messy|neat|punctual|late|deadline|priority|goal|achievement|motivation|ambition|lazy|industrious|perseverance|persistence|give up|determined|stubborn|exercise|diet|sleep|activity|energetic|sedentary"
-    }
+    # Define clarification templates as class variables
 
     CLARIFICATION_TEMPLATES = {
         "emotional": [
@@ -582,19 +570,19 @@ Examples:
             
             # Second attempt: Check if text is similar to identity keywords
             # This handles cases like "من طورك" which might not be in examples
-            is_similar = self._is_similar_to_identity_keywords(text)
+            is_similar = self._gpt_identity_similarity_check(text)
             if is_similar:
                 # Re-process with GPT using enhanced prompt with keyword context
                 enhanced_result = self._gpt_identity_classification_with_context(text, is_similar)
                 if enhanced_result[0]:
                     return enhanced_result
             
-            # Third attempt: Direct keyword fallback
-            return self._fallback_identity_detection(text)
+            # Third attempt: GPT fallback for edge cases
+            return self._gpt_fallback_identity_detection(text)
             
         except Exception as e:
             self.logger.error(f"Error in identity detection: {e}")
-            return self._fallback_identity_detection(text)
+            return self._gpt_fallback_identity_detection(text)
     
     def _gpt_identity_classification(self, text: str) -> tuple:
         """Standard GPT classification for identity questions."""
@@ -688,89 +676,82 @@ Examples (NOT identity - user describing themselves or personality input):
         
         return False, None, None
     
-    def _is_similar_to_identity_keywords(self, text: str) -> str:
+    def _gpt_identity_similarity_check(self, text: str) -> str:
         """
-        Check if text is similar to identity keywords even if not exact match.
+        Use GPT to check if text is similar to identity keywords even if not exact match.
         Returns the likely category if similar, None otherwise.
-        IMPROVED: Context-aware to avoid false positives from self-descriptions.
+        Enhanced to avoid false positives from self-descriptions.
         """
-        text_lower = text.lower().strip()
-        text_lower = unicodedata.normalize("NFKD", text_lower)
-        
-        # FIRST: Check if it's a self-description (should NOT be identity)
-        self_description_indicators = [
-            # English self-descriptions
-            "i am", "i'm", "my job", "my work", "my role", "my purpose in life",
-            "i work", "i develop", "i create", "i build", "i design", "i study",
-            "my friend", "we are", "everyone has", "imagine i", "if i am",
-            "i am a better", "i play a role",
+        if not text:
+            return None
             
-            # Arabic self-descriptions (expanded)
-            "أنا", "انا", "وظيفتي", "عملي", "دوري", "أطور", "اطور",
-            "انا مهندس", "أنا مهندس", "انا طبيب", "أنا طبيب"
-        ]
-        
-        for indicator in self_description_indicators:
-            if indicator in text_lower:
-                return None  # Don't trigger identity detection for self-descriptions
-        
-        # SECOND: Check for statements about the system (not questions)
-        statement_indicators = [
-            "you are a chatbot", "you are what you are", "your purpose is clearer",
-            "suppose your purpose", "your team", "with your team"
-        ]
-        
-        for indicator in statement_indicators:
-            if indicator in text_lower:
-                return None  # Don't trigger identity detection for statements
-        
-        # THIRD: Check for third-party questions (should be off-topic)
-        third_party_indicators = [
-            ("who", "president"), ("who", "created facebook"), ("who", "made google"),
-            ("what", "google do"), ("what", "capital"), ("what", "machine learning"),
-            ("what", "quantum physics"), ("explain", "artificial intelligence"),
-            ("tell me about", "history"), ("how", "photosynthesis")
-        ]
-        
-        for pattern1, pattern2 in third_party_indicators:
-            if pattern1 in text_lower and pattern2 in text_lower:
-                return None  # Don't trigger identity detection for third-party questions
-        
-        # Define similarity patterns for QUESTIONS about the system only
-        similarity_patterns = {
-            "developer": [
-                # Must have question words + developer context
-                ("who", "developer"), ("who", "made"), ("who", "built"), ("who", "created"),
-                ("من", "مطور"), ("مين", "مطور"), ("منو", "مطور"),
-                ("من", "صنع"), ("من", "بنى"), ("من", "أنشأ")
-            ],
-            "purpose": [
-                # Must have question words + purpose context
-                ("what", "purpose"), ("why", "created"), ("why", "here"),
-                ("ما", "هدف"), ("ايش", "هدف"), ("شو", "هدف"), ("وش", "هدف"),
-                ("لماذا", "إنشاؤك"), ("ليش", "هنا")
-            ],
-            "role": [
-                # Must have question words + role context  
-                ("what", "do"), ("what", "role"), ("what", "function"),
-                ("ما", "دور"), ("ايش", "دور"), ("شو", "دور"), ("وش", "دور"),
-                ("ما", "وظيف")
-            ],
-            "who_are_you": [
-                # Must have question words + identity context
-                ("who", "you"), ("who", "are"), ("tell", "about"),
-                ("من", "أنت"), ("مين", "أنت"), ("منو", "أنت"),
-                ("عرف", "نفس")
+        try:
+            similarity_prompt = f"""
+Analyze this text to determine if it's asking about the AI system's identity, even with informal language or typos.
+
+Text: "{text}"
+
+IMPORTANT: Distinguish between:
+1. User describing THEMSELVES (NOT identity questions) - examples:
+   - "I am a developer" (user's job)
+   - "My work involves programming" (user's work)
+   - "انا مهندس" (user introducing themselves)
+   
+2. User asking about THE SYSTEM (identity questions) - examples:
+   - "Who is your developer?" (asking about system's creator)
+   - "What is your purpose?" (asking about system's goal)
+   - "من مطورك" (asking about system's developer)
+
+Categories for identity questions about THE SYSTEM:
+- developer: asking about creators, who made/built/developed the system
+- purpose: asking about goals, mission, why the system exists  
+- role: asking about function, job, what the system does
+- who_are_you: asking about identity, who/what the system is
+
+Look for question intent even with:
+- Typos or informal language
+- Arabic dialect variations
+- Missing words or different structure
+
+Respond with ONLY:
+- "developer" if asking about system's creators
+- "purpose" if asking about system's goals/mission
+- "role" if asking about system's function
+- "who_are_you" if asking about system's identity
+- "none" if NOT an identity question about the system
+
+Examples:
+"who made you" -> "developer"
+"what do u do" -> "role"  
+"ur purpose" -> "purpose"
+"من مطورك" -> "developer"
+"I am a developer" -> "none" (user describing themselves)
+"My purpose in life" -> "none" (user describing themselves)
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert at identifying identity questions about AI systems while avoiding false positives from user self-descriptions."},
+                {"role": "user", "content": similarity_prompt}
             ]
-        }
-        
-        # Check for pattern pairs (must have both elements)
-        for category, pattern_pairs in similarity_patterns.items():
-            for pattern1, pattern2 in pattern_pairs:
-                if pattern1 in text_lower and pattern2 in text_lower:
-                    return category
-        
-        return None
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=20,
+            )
+            
+            result = response.choices[0].message.content.strip().lower()
+            
+            if result in ["developer", "purpose", "role", "who_are_you"]:
+                print(f"GPT identity similarity detected: {result} for text: '{text}'")
+                return result
+            else:
+                return None
+                
+        except Exception as e:
+            print(f"Error in GPT identity similarity check: {e}")
+            return None
     
     def _gpt_identity_classification_with_context(self, text: str, suggested_category: str) -> tuple:
         """
@@ -826,207 +807,85 @@ Focus on INTENT over exact wording.
         
         return False, None, None
     
-    def _fallback_identity_detection(self, text: str) -> tuple:
+    def _gpt_fallback_identity_detection(self, text: str) -> tuple:
         """
-        Context-aware fallback method that distinguishes between:
-        1. User self-descriptions: "I am a developer" -> NOT identity
-        2. Questions about the system: "Who is your developer" -> IS identity
+        GPT-powered fallback identity detection for edge cases.
+        Context-aware to distinguish between user self-descriptions and system questions.
         """
         if not text:
             return False, None, None
-            
-        # Normalize text
-        text_lower = text.lower().strip()
-        text_lower = unicodedata.normalize("NFKD", text_lower)
         
-        # FIRST: Check for self-description patterns (should NOT be identity)
-        self_description_patterns = [
-            # English self-descriptions
-            r'\bi am (a |an )?developer\b',
-            r'\bi\'m (a |an )?developer\b', 
-            r'\bmy (job|work|role|profession) is\b',
-            r'\bi work as (a |an )?\w+',
-            r'\bi work with\b',
-            r'\bi develop\b',
-            r'\bi create\b',
-            r'\bmy purpose in life\b',
-            r'\bmy role involves\b',
-            r'\bi study\b',
-            r'\bmy friend is\b',
-            r'\bwe are\b',
-            r'\beveryone has\b',
-            r'\bimagine i\b',
-            r'\bif i am\b',
-            r'\bi am a better\b',
-            r'\bi play a role\b',
-            
-            # Arabic self-descriptions (expanded)
-            r'\bأنا مطور\b',
-            r'\bانا مطور\b',
-            r'\bانا مهندس\b',
-            r'\bأنا مهندس\b',
-            r'\bوظيفتي\b',
-            r'\bعملي هو\b',
-            r'\bدوري في\b',
-            r'\bأطور\b',
-            r'\bاطور\b'
-        ]
-        
-        # SECOND: Check for statements about the system (should NOT be identity)
-        statement_patterns = [
-            r'\byou are a chatbot\b',
-            r'\byou are what you are\b',
-            r'\byour purpose is clearer\b',
-            r'\bsuppose your purpose\b'
-        ]
-        
-        # THIRD: Check for third-party/off-topic patterns (should NOT be identity)
-        third_party_patterns = [
-            r'\bwho (is )?the president\b',
-            r'\bwho created facebook\b',
-            r'\bwho made google\b',
-            r'\bwhat does google do\b',
-            r'\bwhat (is )?the capital\b',
-            r'\bwhat (is )?machine learning\b',
-            r'\bwhat (is )?quantum physics\b',
-            r'\bexplain artificial intelligence\b',
-            r'\btell me about history\b',
-            r'\bhow does photosynthesis\b'
-        ]
-        
-        # Check all non-identity patterns first
-        all_non_identity_patterns = self_description_patterns + statement_patterns + third_party_patterns
-        for pattern in all_non_identity_patterns:
-            if re.search(pattern, text_lower, re.IGNORECASE):
-                return False, None, None
-        
-        # SECOND: Check for ACTUAL identity questions about the system
-        identity_patterns = {
-            "developer": [
-                # Specific questions about the system's developer
-                r'\bwho (is |are )?your developer\b',
-                r'\bwho developed you\b',
-                r'\bwho (built|created|made) you\b',
-                r'\bwho\'s your (developer|creator|maker)\b',
-                r'\bur developer\b',
-                
-                # Arabic - questions about the system
-                r'\bمن مطورك\b',
-                r'\bمين مطورك\b', 
-                r'\bمنو مطورك\b',
-                r'\bمن طورك\b',
-                r'\bمن (صنعك|بناك|أنشأك)\b'
-            ],
-            "purpose": [
-                # Questions about the system's purpose
-                r'\bwhat (is |are )?your purpose\b',
-                r'\bwhy (were you|are you) (created|made|built)\b',
-                r'\bwhat\'s your (purpose|goal|mission)\b',
-                r'\bur purpose\b',
-                
-                # Arabic - questions about the system
-                r'\bما (هو )?هدفك\b',
-                r'\b(ايش|شو|وش) هدفك\b',
-                r'\bلماذا (تم إنشاؤك|أنت هنا)\b'
-            ],
-            "role": [
-                # Questions about what the system does
-                r'\bwhat do you do\b',
-                r'\bwhat (is |are )?your (role|function|job)\b',
-                r'\bwhat\'s your (role|function|job)\b',
-                r'\bur (role|function|job)\b',
-                
-                # Arabic - questions about the system
-                r'\bما (هو )?دورك\b',
-                r'\b(ايش|شو|وش) (دورك|وظيفتك)\b'
-            ],
-            "who_are_you": [
-                # Direct questions about system identity
-                r'\bwho are you\b',
-                r'\bwho r u\b',
-                r'\btell me about (you|yourself)\b',
-                r'\bintroduce yourself\b',
-                
-                # Arabic
-                r'\bمن أنت\b',
-                r'\bمين أنت\b',
-                r'\bعرف بنفسك\b'
-            ],
-            "what_is_begining": [
-                # Questions about the Begining project
-                r'\bwhat (is |are )?begining\b',
-                r'\bexplain begining\b',
-                r'\babout begining\b',
-                
-                # Arabic
-                r'\bما (هو )?بيجينينغ\b',
-                r'\b(ايش|شو|وش) بيجينينغ\b'
-            ],
-            "team": [
-                # Questions about the team behind the system
-                r'\bwho\'s (behind you|your team)\b',
-                r'\byour team\b',
-                r'\bwho (built|developed|created) this\b',
-                
-                # Arabic
-                r'\bمن فريقك\b',
-                r'\bمين (وراءك|فريقك)\b'
-            ],
-            "understand_personality": [
-                # Questions about the system's capabilities
-                r'\bcan you understand (me|personality)\b',
-                r'\bdo you understand\b',
-                r'\byour understanding\b',
-                
-                # Arabic
-                r'\bهل تفهمني\b',
-                r'\bتقدر تفهمني\b'
-            ],
-            "how_analyze": [
-                # Questions about how the system works
-                r'\bhow do you (work|analyze|function)\b',
-                r'\byour method\b',
-                r'\bhow you analyze\b',
-                
-                # Arabic
-                r'\bكيف (تعمل|تحلل|تشتغل)\b',
-                r'\bطريقتك\b'
-            ],
-            "objectives": [
-                # Questions about system objectives
-                r'\byour (objectives|goals|aims)\b',
-                r'\bwhat (are |is )?your (objectives|goals)\b',
-                r'\bwhat are your top \d+ objectives\b',
-                r'\btop \d+ objectives\b',
-                
-                # Arabic
-                r'\bما أهدافك\b',
-                r'\b(ايش|شو|وش) أهدافك\b'
-            ],
-            "purpose": [
-                # Questions about the system's purpose (expanded)
-                r'\bwhat (is |are )?your purpose\b',
-                r'\bwhy (were you|are you) (created|made|built)\b',
-                r'\bwhat\'s your (purpose|goal|mission)\b',
-                r'\bur purpose\b',
-                r'\bsuppose your purpose\b',
-                r'\byour purpose (is|was|would be)\b',
-                
-                # Arabic - questions about the system
-                r'\bما (هو )?هدفك\b',
-                r'\b(ايش|شو|وش) هدفك\b',
-                r'\bلماذا (تم إنشاؤك|أنت هنا)\b'
+        try:
+            fallback_prompt = f"""
+Analyze this text for identity questions about the AI system, with special attention to edge cases.
+
+Text: "{text}"
+
+CRITICAL DISTINCTION:
+1. User describing THEMSELVES → NOT identity questions
+   - "I am a developer" (user's profession)
+   - "My role is programming" (user's job)
+   - "انا مهندس" (user introducing themselves)
+   
+2. User asking about THE SYSTEM → Identity questions  
+   - "Who is your developer?" (system's creator)
+   - "What is your role?" (system's function)
+   - "من مطورك" (system's developer)
+
+Categories for system identity questions:
+- developer: asking about creators/makers of the system
+- purpose: asking about system's goals/mission
+- role: asking about system's function/job
+- who_are_you: asking about system's identity
+- what_is_begining: asking about the BEGINING project
+- team: asking about people behind the system
+- understand_personality: asking about system capabilities
+- how_analyze: asking about system methodology
+- objectives: asking about system goals
+
+Look for question intent even with:
+- Typos, informal language
+- Arabic dialect variations  
+- Partial phrases or unclear wording
+
+Respond with ONLY:
+- "IDENTITY:category_name" if asking about the system
+- "NOT_IDENTITY" if user describing themselves or other topics
+
+Examples:
+"who made u" → "IDENTITY:developer"
+"ur purpose" → "IDENTITY:purpose"  
+"I work as engineer" → "NOT_IDENTITY"
+"My purpose in life" → "NOT_IDENTITY"
+"من صنعك" → "IDENTITY:developer"
+"انا مطور" → "NOT_IDENTITY"
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert at identifying identity questions about AI systems, especially in edge cases with informal language."},
+                {"role": "user", "content": fallback_prompt}
             ]
-        }
-        
-        # Check for identity question patterns
-        for category, patterns in identity_patterns.items():
-            for pattern in patterns:
-                if re.search(pattern, text_lower, re.IGNORECASE):
-                    if category in self.IDENTITY_RESPONSES:
-                        return True, category, self.IDENTITY_RESPONSES[category]
-        
-        return False, None, None
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=50,
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            if "IDENTITY:" in result:
+                category = result.split("IDENTITY:")[1].strip()
+                if category in self.IDENTITY_RESPONSES:
+                    print(f"GPT fallback detected identity question: {category} for text: '{text}'")
+                    return True, category, self.IDENTITY_RESPONSES[category]
+            
+            return False, None, None
+            
+        except Exception as e:
+            print(f"Error in GPT fallback identity detection: {e}")
+            return False, None, None
 
     @staticmethod
     def get_identity_response(response_data: dict, languages: str) -> str:
@@ -1198,81 +1057,106 @@ Focus on INTENT over exact wording.
 
     def analyze_missing_traits(self, user_input: str, new_input: list) -> list:
         """
-        Analyze which personality traits need more detailed exploration.
+        Use GPT to analyze which personality traits need more detailed exploration.
         Returns a list of trait categories that need clarification questions.
         """
         # Combine all input text (excluding identity questions)
-        all_text = user_input.lower()
+        all_text = user_input
         personality_answers = []
-        total_conversation_length = len(user_input.split())
         
         for qa in new_input:
-            answer = qa.get("answer", "").lower()
+            answer = qa.get("answer", "")
             # Skip identity questions in trait analysis
             is_identity, _, _ = self.detect_identity_question(answer)
             if not is_identity:
                 all_text += " " + answer
                 personality_answers.append(answer)
-                total_conversation_length += len(answer.split())
         
-        # Progressive conversation flow: require less as conversation grows
-        min_answers_needed = max(1, 3 - len(new_input) // 2)  # Reduce requirement over time
-        min_words_needed = max(15, 40 - len(new_input) * 3)   # Reduce word requirement over time
-        
-        # If we have very little personality data, return all traits as missing
-        if len(personality_answers) < min_answers_needed or total_conversation_length < min_words_needed:
+        # If we have very little conversation, return all traits as missing
+        total_words = len(all_text.split())
+        if len(personality_answers) < 1 or total_words < 15:
             return ["emotional", "social", "cognitive", "behavioral"]
         
-        # Check for detailed coverage of each trait with improved scoring
-        traits_needing_clarification = []
-        trait_scores = {}
-        
-        for trait, pattern in PersonalityAnalyzer.TRAIT_PATTERNS.items():
-            matches = re.findall(pattern, all_text)
+        try:
+            trait_analysis_prompt = f"""
+Analyze this conversation text and determine which personality traits need more exploration.
+
+Conversation text: "{all_text}"
+
+The four main personality trait categories are:
+1. EMOTIONAL: feelings, emotions, mood, stress management, emotional reactions, happiness, sadness, anger, etc.
+2. SOCIAL: interactions with others, teamwork, leadership, communication style, relationships, introversion/extroversion, etc.
+3. COGNITIVE: thinking style, problem-solving approach, decision-making, learning preferences, analytical vs creative thinking, etc.
+4. BEHAVIORAL: habits, routines, organization, time management, spontaneity vs planning, actions and behaviors, etc.
+
+Instructions:
+- Review the conversation for coverage of each trait category
+- Consider both explicit mentions and implicit evidence
+- A trait is "covered" if there's meaningful information about that aspect of personality
+- A trait is "missing" if there's little or no information about it
+- Consider job context but don't assume traits without evidence
+
+Example analysis:
+- If someone says "I'm an engineer and I solve problems logically" → COGNITIVE is covered
+- If they say "I work well with my team" → SOCIAL is covered  
+- If they mention "I get stressed easily" → EMOTIONAL is covered
+- If they describe their daily routine → BEHAVIORAL is covered
+
+Respond with ONLY a JSON array of the missing traits:
+["trait1", "trait2", ...]
+
+If all traits are sufficiently covered, return: []
+If some traits need more exploration, list only those: ["emotional", "cognitive"]
+
+The goal is to identify which aspects of personality still need clarification questions.
+"""
+
+            messages = [
+                {"role": "system", "content": "You are an expert personality analyst who can identify which traits need more exploration in a conversation."},
+                {"role": "user", "content": trait_analysis_prompt}
+            ]
             
-            # Get all answers for this trait to check depth
-            trait_answers = [answer for answer in personality_answers 
-                           if re.search(pattern, answer)]
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.0,
+                max_tokens=100,
+            )
             
-            # Calculate trait coverage score (0-100)
-            match_score = min(len(matches) * 15, 60)  # Up to 60 points for matches
-            depth_score = 0
-            variety_score = 0
+            result = response.choices[0].message.content.strip()
             
-            if trait_answers:
-                # Depth: average length of trait-related answers
-                avg_length = sum(len(answer.split()) for answer in trait_answers) / len(trait_answers)
-                depth_score = min(avg_length * 2, 30)  # Up to 30 points for depth
+            # Parse JSON response
+            import json
+            try:
+                missing_traits = json.loads(result)
                 
-                # Variety: different types of expressions
-                unique_words = set()
-                for answer in trait_answers:
-                    unique_words.update(answer.split())
-                variety_score = min(len(unique_words), 10)  # Up to 10 points for variety
+                # Validate and clean the results
+                valid_traits = ["emotional", "social", "cognitive", "behavioral"]
+                missing_traits = [trait for trait in missing_traits if trait in valid_traits]
+                
+                # Progressive conversation management - limit traits over time
+                conversation_turns = len(new_input)
+                max_traits = max(1, 3 - conversation_turns // 2)
+                
+                if len(missing_traits) > max_traits:
+                    missing_traits = missing_traits[:max_traits]
+                
+                print(f"GPT trait analysis found missing traits: {missing_traits}")
+                return missing_traits
+                
+            except json.JSONDecodeError:
+                print(f"Failed to parse GPT trait analysis JSON: {result}")
+                
+        except Exception as e:
+            print(f"Error in GPT trait analysis: {e}")
             
-            total_score = match_score + depth_score + variety_score
-            trait_scores[trait] = total_score
-            
-            # Progressive thresholds: require less coverage as conversation progresses
-            conversation_turns = len(new_input)
-            required_score = max(25, 50 - conversation_turns * 5)  # Lower threshold over time
-            
-            if total_score < required_score:
-                traits_needing_clarification.append(trait)
-        
-        # Smart conversation management
-        if not traits_needing_clarification:
-            # If all traits seem covered, but conversation is short, ask for one more detail
-            if len(personality_answers) < 3:
-                # Find the trait with lowest score for follow-up
-                if trait_scores:
-                    lowest_trait = min(trait_scores.keys(), key=lambda k: trait_scores[k])
-                    return [lowest_trait]
-            return []  # No more traits needed
-        
-        # Prioritize traits by score (lowest first) and limit to 2-3 traits max
-        traits_needing_clarification.sort(key=lambda t: trait_scores.get(t, 0))
-        return traits_needing_clarification[:3]
+        # Fallback: If GPT fails, use simple logic based on conversation length
+        if len(personality_answers) < 2:
+            return ["emotional", "social"]
+        elif len(personality_answers) < 3:
+            return ["cognitive"]
+        else:
+            return []
 
     @staticmethod
     def generate_clarification_questions(missing_traits: list, languages: str, max_questions: int = 1, asked_questions: list = None) -> list:
