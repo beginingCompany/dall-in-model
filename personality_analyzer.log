@@ -163,3 +163,15 @@
 2025-08-31 20:02:33,088 INFO generate_clarification_questions_gpt: missing_traits=['behavioral', 'cognitive', 'emotional'], language=ar
 2025-08-31 20:02:33,922 INFO [EXIT] analyze (incomplete): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': '', 'missing_traits': ['behavioral', 'cognitive', 'emotional'], 'clarification_questions': ['هل تجد نفسك دائمًا تفكر وتحلل المعلومات بعمق؟'], 'input_tokens': 43, 'output_tokens': 0, 'total_tokens': 43}
 2025-08-31 20:02:33,923 INFO Step: Duration: 13.322s
+[LOG INIT] personality_analyzer log file created.
+2025-08-31 20:04:12,725 INFO Log file initialized at: C:\Programming\Programs\Python projects\dall-in-model\personality_analyzer.log
+2025-08-31 20:04:13,509 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبًا! أنا شخص يستمتع حقًا بالعمل مع البيانات وحل المشكلات التحليلية المعقدة. أجد متعة كبيرة في اكتشاف الأنماط واستخلاص الرؤى. أحب العمل ضمن فرق وغالبًا ما أجد نفسي أتولى أدوارًا قيادية بشكل طبيعي. أستمتع بتوجيه الزملاء الجدد وتيسير النقاشات الجماعية. ماهو الوقت الان, new_input=[{'question': 'كيف تتفاعل عادةً مع الآخرين في المواقف الاجتماعية؟', 'answer': 'أحب العمل ضمن فرق وغالبًا ما أجد نفسي أتولى أدوارًا قيادية بشكل طبيعي. أستمتع بتوجيه الزملاء الجدد وتيسير النقاشات الجماعية.'}, {'question': 'كيف تتعامل عادةً مع عواطفك في المواقف الصعبة؟', 'answer': 'ماهو الوقت الان'}], languages=ar)
+2025-08-31 20:04:13,510 INFO Step: Initializing analysis for user 225985882206
+2025-08-31 20:04:13,510 INFO Step: Raw user_input after strip: مرحبًا! أنا شخص يستمتع حقًا بالعمل مع البيانات وحل المشكلات التحليلية المعقدة. أجد متعة كبيرة في اكتشاف الأنماط واستخلاص الرؤى. أحب العمل ضمن فرق وغالبًا ما أجد نفسي أتولى أدوارًا قيادية بشكل طبيعي. أستمتع بتوجيه الزملاء الجدد وتيسير النقاشات الجماعية. ماهو الوقت الان
+2025-08-31 20:04:13,510 INFO Step: Language detected as ar
+2025-08-31 20:04:13,511 INFO Step: is_greeting_or_offtopic=False
+2025-08-31 20:04:13,511 INFO Step: Latest answer in new_input: ماهو الوقت الان
+2025-08-31 20:04:14,481 INFO Step: Identity response: 
+2025-08-31 20:04:14,481 INFO Step: is_latest_identity=False
+2025-08-31 20:04:14,481 INFO Step: Checking if answer is identity: أحب العمل ضمن فرق وغالبًا ما أجد نفسي أتولى أدوارًا قيادية بشكل طبيعي. أستمتع بتوجيه الزملاء الجدد وتيسير النقاشات الجماعية.
+2025-08-31 20:04:15,828 INFO Step: Checking if answer is identity: ماهو الوقت الان
