@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 #!/usr/bin/env python3
 """
 Test the enhanced identity response system with clarification questions
@@ -217,3 +219,4 @@ def test_clarification_generation():
 if __name__ == "__main__":
     test_identity_with_clarification()
     test_clarification_generation()
+>>>>>>> f912c397f4608be37933b416c471652681384d61

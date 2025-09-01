@@ -68,11 +68,10 @@ class UserRequest(BaseModel):
 class TraitResponse(BaseModel):
     id: int
     status: str
-    personal_greeting: Optional[str] = ""  # New field for friendly greetings
+    personal_greeting_and_off_topic: Optional[str] = ""  # Unified field for greetings and off-topic responses
     description_arabic: Optional[str] = ""
     description_english: Optional[str] = ""
     description_identity: Optional[str] = ""  # Field for identity responses
-    description_off_topic: Optional[str] = ""  # Field for off-topic responses
     missing_traits: Optional[List[str]] = []
     clarification_questions: Optional[List[str]] = []
     input_tokens: Optional[int] = None
@@ -184,65 +183,52 @@ async def analyze_personality(request: Request):
         return TraitResponse(
             id=req.id,
             status="incomplete",
-            personal_greeting="",
+            personal_greeting_and_off_topic="",
             description_english="",
             description_arabic="",
             description_identity="",
-            description_off_topic="",
-            missing_traits=["emotional", "social", "cognitive", "behavioral"],
+            missing_traits=["emotional"],
             clarification_questions=[
-                "Could you provide more specific details about your personality?",
-                "How would you describe your typical emotional responses?",
-                "What are your typical behaviors in different situations?",
-                "How do you interact with others in social settings?"
+                "Could you provide more specific details about your personality?"
             ]
         )
 
     # Parse the model output from gpt_json["content"]
     import json
     try:
-        if "content" not in gpt_json or not gpt_json["content"]:
+        # Accept valid JSON content even if descriptions are empty and status is incomplete
+        if not gpt_json or not isinstance(gpt_json, dict):
             raise ValueError("No content in analyzer response")
-        
-        print(f"Parsing content (length: {len(gpt_json['content'])}): {gpt_json['content'][:100]}...")
-        model_output = json.loads(gpt_json["content"])
-        print("Successfully parsed JSON content")
-        
+        model_output = gpt_json
+        print("Successfully received analyzer output")
     except json.JSONDecodeError as je:
         print(f"JSON DECODE ERROR: {str(je)}")
         # Provide a meaningful fallback response
         model_output = {
             "id": req.id,
             "status": "incomplete",
-            "personal_greeting": "",
+            "personal_greeting_and_off_topic": "",
             "description_english": "",
             "description_arabic": "",
             "description_identity": "",
-            "description_off_topic": "",
-            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "missing_traits": ["emotional"],
             "clarification_questions": [
-                "Could you tell me more about yourself?",
-                "How would you describe your typical interactions with others?",
-                "What kind of activities or work do you enjoy most?",
-                "How do you typically handle challenging situations?"
+                "Could you tell me more about yourself?"
             ]
         }
     except Exception as e:
         print(f"PARSING ERROR: {str(e)}")
+        # Accept valid incomplete responses with empty descriptions and clarification questions
         model_output = {
             "id": req.id,
             "status": "incomplete",
-            "personal_greeting": "",
+            "personal_greeting_and_off_topic": "",
             "description_english": "",
             "description_arabic": "",
             "description_identity": "",
-            "description_off_topic": "",
-            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+            "missing_traits": ["emotional"],
             "clarification_questions": [
-                "Could you provide more information about yourself?",
-                "How do you feel in different situations?",
-                "How do you interact with others?",
-                "What are your typical behaviors and habits?"
+                "Could you provide more information about yourself?"
             ]
         }
 
@@ -261,13 +247,26 @@ async def analyze_personality(request: Request):
         model_output["id"] = req.id
 
     # Ensure all required fields exist with defaults
-    model_output.setdefault("personal_greeting", "")
+    model_output.setdefault("personal_greeting_and_off_topic", "")
     model_output.setdefault("description_english", "")
     model_output.setdefault("description_arabic", "")
     model_output.setdefault("description_identity", "")
-    model_output.setdefault("description_off_topic", "")
     model_output.setdefault("missing_traits", [])
     model_output.setdefault("clarification_questions", [])
+
+    # Final output normalization for robustness
+    # If identity response is filled, trait descriptions must be empty and status is incomplete
+    if model_output.get("description_identity"):
+        model_output["description_english"] = ""
+        model_output["description_arabic"] = ""
+        model_output["personal_greeting_and_off_topic"] = ""
+        model_output["status"] = "incomplete"
+    # If greeting/off-topic is filled, all trait and identity descriptions must be empty and status is incomplete
+    if model_output.get("personal_greeting_and_off_topic"):
+        model_output["description_english"] = ""
+        model_output["description_arabic"] = ""
+        model_output["description_identity"] = None
+        model_output["status"] = "incomplete"
 
     # Enforce language output: only fill in requested language(s)
     requested_langs = req.languages
@@ -278,6 +277,20 @@ async def analyze_personality(request: Request):
         model_output["description_english"] = ""
     if not ("ar" in requested_langs or "arabic" in requested_langs):
         model_output["description_arabic"] = ""
+
+    # Always ensure all required fields are present and correct type
+    if "description_identity" not in model_output or model_output["description_identity"] == "":
+        model_output["description_identity"] = None
+    if "personal_greeting_and_off_topic" not in model_output:
+        model_output["personal_greeting_and_off_topic"] = ""
+    if "description_english" not in model_output:
+        model_output["description_english"] = ""
+    if "description_arabic" not in model_output:
+        model_output["description_arabic"] = ""
+    if "missing_traits" not in model_output:
+        model_output["missing_traits"] = []
+    if "clarification_questions" not in model_output:
+        model_output["clarification_questions"] = []
 
     processing_time = time.time() - t0
     print(f"Request processed in {processing_time:.2f} seconds")

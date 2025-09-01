@@ -1,0 +1,725 @@
+import os
+import re
+import json
+import logging
+from typing import List, Dict, Any
+from openai import OpenAI, OpenAIError
+import tiktoken
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class PersonalityAnalyzer:
+    @staticmethod
+    def build_full_context(user_input: str, new_input: list) -> str:
+        """
+        Combine the original user_input and all Q&A pairs from new_input into a single context string.
+        """
+        context = user_input.strip()
+        for qa in new_input:
+            q = qa.get("question", "").strip()
+            a = qa.get("answer", "").strip()
+            if q and a:
+                context += f"\nQ: {q}\nA: {a}"
+        return context
+
+    # Define trait patterns and templates as class variables
+    TRAIT_PATTERNS = {
+        "emotional": r"enthusiastic|happy|sad|calm|feel(s)?|emotion|stress|excited|passion|motivat(ed|ion)|anxiety|angry|nervous|worried|content|optimistic|pessimistic|joyful|frustrated|relaxed|overwhelmed|mood|temper|patient|sensitive|expressive|reserved|emotional intelligence|cope|satisfaction|proud|embarrassed|guilty|inspired",
+        "social": r"collaborative|team|help|assist|shy|introvert|extrovert|interact|polite|friendly|people|others|social|network|connection|relationship|communicate|listen|leadership|followership|assertive|passive|aggressive|empathy|sympathy|understand|socialize|negotiate|persuade|influence|charm|crowd|isolation|community|group|belong|inclusion|exclusion|trust|distrust|approachable|distant|boundary|conflict",
+        "cognitive": r"think|critical|logical|analytical|understand|reason|solve|strateg(y|ic)|intuitive|creative|innovative|practical|abstract|concrete|detail-oriented|big picture|conceptual|perspective|mental|intellectual|curious|learning|knowledge|information|decision|judgment|bias|objective|subjective|rational|irrational|memory|attention|focus|concentrate|distracted|multi-task|prioritize|plan|reflect|comprehend|insight|wisdom|intelligence",
+        "behavioral": r"organized|spontaneous|routine|habit|act|impulsive|disciplined|methodical|child(ish)?|consistent|reliable|flexible|rigid|adaptable|predictable|unpredictable|responsible|irresponsible|cautious|risk-taking|procrastinate|proactive|reactive|efficient|systematic|messy|neat|punctual|late|deadline|priority|goal|achievement|motivation|ambition|lazy|industrious|perseverance|persistence|give up|determined|stubborn|exercise|diet|sleep|activity|energetic|sedentary"
+    }
+
+    CLARIFICATION_TEMPLATES = {
+    "english": {
+        "emotional": [
+            "How do you usually feel in difficult or exciting situations? What emotions come up and how do you handle them?",
+            "Can you describe how you typically respond emotionally to stress or unexpected challenges?",
+            "What brings you the most joy or satisfaction in your life, and how do you express those feelings?",
+            "How would your close friends describe your emotional temperament or typical mood?",
+            "When you're facing a setback, what emotions typically arise and how do you manage them?"
+        ],
+        "social": [
+            "Can you describe how you typically interact with others—do you enjoy helping, leading, or prefer to work alone?",
+            "How do you typically behave in group settings versus one-on-one interactions?",
+            "What role do you usually take in team projects or collaborative work environments?",
+            "How would you describe your approach to building and maintaining relationships with others?",
+            "In social situations, do you tend to initiate conversations or prefer others to approach you first?"
+        ],
+        "cognitive": [
+            "What kind of thinking comes naturally to you? Are you analytical, imaginative, or more intuitive in decisions?",
+            "How do you typically approach complex problems or challenging decisions?",
+            "Do you prefer focusing on details or looking at the big picture when working on projects?",
+            "How do you gather and process new information when learning something unfamiliar?",
+            "When making important decisions, do you rely more on facts and logic or intuition and personal values?"
+        ],
+        "behavioral": [
+            "Tell me about your habits or actions—do you prefer routines, act on impulse, or stay flexible?",
+            "How organized are you in your daily life and work? Do you follow systems or adapt as you go?",
+            "What does your typical day look like in terms of structure and activities?",
+            "How do you approach deadlines and commitments? Are you typically early, on time, or last-minute?",
+            "Do you tend to plan activities in advance or prefer to be spontaneous with your time?"
+        ]
+    },
+    "arabic": {
+        "emotional": [
+            "كيف تشعر عادة في المواقف الصعبة أو المثيرة؟ ما المشاعر التي تظهر وكيف تتعامل معها؟",
+            "هل يمكنك وصف كيف تستجيب عاطفياً للضغط أو التحديات غير المتوقعة؟",
+            "ما الذي يجلب لك أكبر قدر من الفرح أو الرضا في حياتك، وكيف تعبر عن هذه المشاعر؟",
+            "كيف يصف أصدقاؤك المقربون مزاجك العاطفي أو حالتك المزاجية النموذجية؟",
+            "عندما تواجه نكسة، ما المشاعر التي تظهر عادة وكيف تتعامل معها؟"
+        ],
+        "social": [
+            "هل يمكنك وصف كيف تتفاعل عادة مع الآخرين - هل تستمتع بالمساعدة أو القيادة أو تفضل العمل بمفردك؟",
+            "كيف تتصرف عادة في الإعدادات الجماعية مقابل التفاعلات الفردية؟",
+            "ما الدور الذي تأخذه عادة في المشاريع الجماعية أو بيئات العمل التعاونية؟",
+            "كيف تصف نهجك في بناء والحفاظ على العلاقات مع الآخرين؟",
+            "في المواقف الاجتماعية، هل تميل إلى بدء المحادثات أم تفضل أن يقترب منك الآخرون أولاً؟"
+        ],
+        "cognitive": [
+            "ما نوع التفكير الذي يأتي لك بشكل طبيعي؟ هل أنت تحليلي أو متخيل أو أكثر حدسية في القرارات؟",
+            "كيف تتعامل عادة مع المشاكل المعقدة أو القرارات الصعبة؟",
+            "هل تفضل التركيز على التفاصيل أم النظر إلى الصورة الكبيرة عند العمل على المشاريع؟",
+            "كيف تجمع وتعالج المعلومات الجديدة عند تعلم شيء غير مألوف؟",
+            "عند اتخاذ قرارات مهمة، هل تعتمد أكثر على الحقائق والمنطق أم على الحدس والقيم الشخصية؟"
+        ],
+        "behavioral": [
+            "أخبرني عن عاداتك أو أعمالك - هل تفضل الروتين أم تتصرف بدافع أم تبقى مرناً؟",
+            "كم أنت منظم في حياتك اليومية وعملك؟ هل تتبع أنظمة أم تتكيف أثناء السير؟",
+            "كيف يبدو يومك النموذجي من ناحية الهيكل والأنشطة؟",
+            "كيف تتعامل مع المواعيد النهائية والالتزامات؟ هل أنت عادة مبكر أم في الوقت المحدد أم في اللحظة الأخيرة؟",
+            "هل تميل إلى تخطيط الأنشطة مسبقاً أم تفضل أن تكون عفوياً مع وقتك؟"
+        ]
+    }
+}
+    
+    # Identity question mapping - moved from prompt to save tokens
+    IDENTITY_RESPONSES = {
+        "who_are_you": {
+            "triggers": ["who are you", "tell me about you", "introduce yourself", "من أنت"],
+            "english": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential. Let's get started by discovering a bit about you.",
+            "arabic": "أنا ماينس زيرو، جزء من مشروع BEGINING، وهو نظام لقياس سمات الشخصية. أهدف لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ بالتعرف عليك قليلًا."
+        },
+        "what_is_begining": {
+            "triggers": ["what is begining", "explain begining", "ما هو BEGINING", "BEGINING يعني ايه"],
+            "english": "BEGINING is a symbolic analytical tool that explores the foundations of intellectual, behavioral, and societal excellence. It classifies individuals into 120 personality types, each representing specific traits, capabilities, and inclinations. To continue, let's explore your personality step by step.",
+            "arabic": "BEGINING هو أداة تحليلية رمزية تستكشف أسس التميز الفكري والسلوكي والاجتماعي. يصنف الأفراد إلى 120 نوعًا من الشخصيات، يمثل كل منها سمات وقدرات وميول محددة. لنستمر، دعنا نستكشف شخصيتك خطوة بخطوة."
+        },
+        "purpose": {
+            "triggers": ["purpose", "why were you created", "why are you here", "ما هو هدفك"],
+            "english": "My purpose is to guide you in discovering your strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you. Let's begin uncovering what makes you unique.",
+            "arabic": "هدفي هو إرشادك لاكتشاف نقاط قوتك وأنماطك وميولك، لتتمكن من فهم نفسك بشكل أفضل وطريقة تفاعلك مع العالم من حولك. لنبدأ باكتشاف ما يميزك."
+        },
+        "role": {
+            "triggers": ["what is your role", "what do you do", "your function", "ما هو دورك"],
+            "english": "My role is to explain the insights from the scale, connect them to your personal traits, and help you see how they relate to your goals and daily life. Now, let's take the first step in exploring your traits.",
+            "arabic": "دوري هو شرح النتائج المستخلصة من المقياس، وربطها بسماتك الشخصية، ومساعدتك على فهم علاقتها بأهدافك وحياتك اليومية. الآن، لنأخذ الخطوة الأولى لاستكشاف سماتك."
+        },
+        "developer": {
+            "triggers": ["who is your developer", "who made you", "who built you", "من هو مطورك", "من صنعك", "من بناك", "مين مطورك", "مين الي مطورك"],
+            "english": "I was developed by a team of researchers and engineers from Saudi Arabia, working on the BEGINING personality trait measurement project. Let's start this journey of self-discovery together.",
+            "arabic": "تم تطويري من قبل فريق من الباحثين والمهندسين السعوديين، العاملين على مشروع BEGINING لقياس سمات الشخصية. لنبدأ هذه الرحلة لاكتشاف الذات معًا."
+        },
+        "team": {
+            "triggers": ["who is your team", "who's behind you", "who's working with you", "من هو فريقك"],
+            "english": "My team includes Saudi experts in psychology, sociology, education, and artificial intelligence, all collaborating to build BEGINING. We're ready to learn more about you, starting now.",
+            "arabic": "يتكون فريقي من خبراء سعوديين في علم النفس، وعلم الاجتماع، والتعليم، والذكاء الاصطناعي، يتعاونون لبناء مشروع BEGINING. نحن جاهزون لمعرفة المزيد عنك، لنبدأ الآن."
+        },
+        "understand_personality": {
+            "triggers": ["can you really understand", "can you analyze me", "do you understand me", "هل يمكنك حقًا فهم شخصيتي"],
+            "english": "I don't replace professional psychology, but I can help highlight personality types and patterns that describe your unique profile. Let's begin by exploring your traits in detail.",
+            "arabic": "أنا لا أستبدل علم النفس المتخصص، لكن يمكنني أن أساعدك على اكتشاف أنماط وأنواع شخصية تصف ملفك الفريد. لنبدأ باستكشاف سماتك بالتفصيل."
+        },
+        "how_analyze": {
+            "triggers": ["how do you work", "how do you analyze", "كيف تحلل الشخصية"],
+            "english": "I analyze your personality using a structured scale that groups people into 120 personality types. Each type reflects a mix of capabilities, tendencies, and behaviors that show how you think, act, and grow. Let's take the first step in understanding your profile.",
+            "arabic": "أحلل شخصيتك باستخدام مقياس منظم يصنف الأفراد إلى 120 نوعًا من الشخصيات، حيث يعكس كل نوع مزيجًا من القدرات والميول والسلوكيات، مما يوضح كيف تفكر وتتصرّف وتنمو. لنأخذ الخطوة الأولى لفهم ملفك الشخصي."
+        },
+        "objectives": {
+            "triggers": ["what begining aims for", "ما هي أهداف BEGINING", "objectives of begining", "goals of begining"],
+            "english": "1. Educational and psychological guidance for students.\n2. Human resource development and career counseling.\n3. Academic research in behavior and productivity.\n4. Future integration into AI modeling and artificial consciousness design. Let's move forward by exploring your traits one step at a time.",
+            "arabic": "1. الإرشاد التربوي والنفسي للطلاب.\n2. تطوير الموارد البشرية والإرشاد المهني.\n3. البحث الأكاديمي في السلوك والإنتاجية.\n4. التكامل المستقبلي مع نماذج الذكاء الاصطناعي وتصميم الوعي الاصطناعي. لننتقل للأمام باستكشاف سماتك خطوة بخطوة."
+        }
+    }
+        
+    @staticmethod
+    def get_identity_response(user_input: str, language: str = "en", openai_client=None) -> str:
+        """
+        Get the appropriate identity response based on user input and language.
+        Uses GPT model to intelligently detect identity questions and map them to IDENTITY_RESPONSES.
+        Returns the response string or empty string if no match.
+        """
+        # Auto-detect language from input if not specified
+        detected_lang = language
+        if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):  # Arabic characters detected
+            detected_lang = "ar"
+        
+        # Use GPT to determine if this is an identity question and which category it belongs to
+        if openai_client:
+            try:
+                identity_detection_prompt = f"""
+Task: Determine if the user is asking about the AI system or describing themselves.
+
+CRITICAL: Users often describe their own traits for personality analysis.
+- "I am a developer" = User personality info → "none"
+- "I work with teams" = User personality info → "none"  
+- "I like helping people" = User personality info → "none"
+- "Who is your developer?" = Question about AI → "developer"
+- "What do you do?" = Question about AI → "role"
+
+AI Categories (only if asking ABOUT the AI):
+- who_are_you: Who/what is the AI
+- developer: Who created the AI  
+- role: AI's job/function
+- team: AI's team
+- how_analyze: How AI works
+- purpose: Why AI exists
+- what_is_begining: About BEGINING project
+- understand_personality: AI's abilities
+- objectives: BEGINING goals
+
+Input: "{user_input}"
+
+Decision process:
+1. Does it start with "I am/I like/I work/I have"? → Likely "none" (user info)
+2. Does it ask "who/what/how/why" about YOU/YOUR? → Likely AI question
+3. If unclear, default to "none" (personality analysis is primary function)
+
+Respond with category name or "none":"""
+
+                messages = [
+                    {"role": "user", "content": identity_detection_prompt}
+                ]
+
+                response = openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages,
+                    temperature=0.0,
+                    max_tokens=10,
+                )
+
+                detected_category = response.choices[0].message.content.strip().lower()
+                
+                # Check if the detected category exists in our IDENTITY_RESPONSES
+                if detected_category in PersonalityAnalyzer.IDENTITY_RESPONSES:
+                    response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[detected_category]
+                    if detected_lang.lower() in ["ar", "arabic"]:
+                        return response_data["arabic"]
+                    else:
+                        return response_data["english"]
+                        
+            except Exception as e:
+                # Fallback to basic keyword matching if GPT fails
+                pass
+        
+        # Fallback: Basic keyword matching for when GPT is not available
+        text = user_input.lower().strip()
+        
+        # Simplified keyword matching as fallback
+        basic_keywords = {
+            "who_are_you": ["who are you", "من أنت"],
+            "developer": ["developer", "مطورك", "who made you", "who built you"],
+            "team": ["team", "فريقك"],
+            "purpose": ["purpose", "هدفك"],
+            "role": ["role", "دورك", "what do you do"],
+            "what_is_begining": ["begining", "what is begining"],
+            "how_analyze": ["how do you work", "how do you analyze"],
+            "objectives": ["objectives", "goals"]
+        }
+        
+        for category, keywords in basic_keywords.items():
+            for keyword in keywords:
+                if keyword in text:
+                    response_data = PersonalityAnalyzer.IDENTITY_RESPONSES[category]
+                    if detected_lang.lower() in ["ar", "arabic"]:
+                        return response_data["arabic"]
+                    else:
+                        return response_data["english"]
+        
+        return ""
+    
+    @staticmethod
+    def generate_clarification_questions(missing_traits: list, language: str = "english") -> list:
+        """
+        Generate clarification questions for missing personality traits.
+        Returns a list of questions, one for each missing trait.
+        Args:
+            missing_traits: List of trait categories that need clarification
+            language: Language for questions ("english" or "arabic")
+        """
+        import random
+        
+        if not missing_traits:
+            return []
+        
+        # Determine language key for templates
+        lang_key = "arabic" if language.lower() in ["ar", "arabic"] else "english"
+        
+        clarification_questions = []
+        for trait in missing_traits:
+            if trait in PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key]:
+                question = random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[lang_key][trait])
+                clarification_questions.append(question)
+        
+        return clarification_questions
+    
+    @staticmethod
+    def generate_clarification_prompt(user_input: str) -> str:
+        """
+        Legacy method - generates a single string prompt.
+        Kept for backward compatibility.
+        """
+        import random
+        
+        text = user_input.lower()
+        present = []
+        for trait, pattern in PersonalityAnalyzer.TRAIT_PATTERNS.items():
+            if re.search(pattern, text):
+                present.append(trait)
+
+        missing = [trait for trait in PersonalityAnalyzer.TRAIT_PATTERNS if trait not in present]
+
+        if not missing:
+            return ""
+        elif len(missing) == 1:
+            # Get the question from the list for this trait
+            return random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[missing[0]])
+        else:
+            # For multiple missing traits, select one question from each category
+            selected_questions = [random.choice(PersonalityAnalyzer.CLARIFICATION_TEMPLATES[t]) for t in missing]
+            # Return 1-2 questions maximum to avoid overwhelming the user 
+            return " ".join(selected_questions[:])
+        
+    SYSTEM_PROMPT = """
+You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
+
+Identity & Redirection Handling
+
+- General Rule:
+  If the user asks identity-related questions about YOU/THE SYSTEM (even if phrased differently), respond with the mapped message in 'description_identity' field.  
+  Use intent-based matching, not exact string matching.
+  IMPORTANT: Still include clarification_questions for missing personality traits even when responding to identity questions.
+  
+- CRITICAL DISTINCTION: 
+  * "I am a developer" = User describing THEMSELVES (personality trait) → NO identity response
+  * "Who is your developer" = User asking about THE SYSTEM → identity response
+  * "I work in a team" = User describing THEMSELVES → NO identity response  
+  * "Who is your team" = User asking about THE SYSTEM → identity response
+
+- If the user drifts away from the task, includes irrelevant content, or asks off-topic questions (except relevant identity questions below), return JSON where 'description_english' or 'description_arabic' contains the reminder:
+
+- For on-topic but incomplete inputs, do not include this reminder message in 'description_english' or 'description_arabic'. Leave them empty until traits are complete.
+
+
+# -----------------------------
+# Question → Intent Mapping
+# -----------------------------
+
+Q: Who are you? / من أنت؟
+
+Q: What is BEGINING? / ما هو BEGINING؟
+
+Q: What is your purpose? / ما هو هدفك؟
+
+Q: What is your role? / ما هو دورك؟
+
+Q: Who is your developer? / من هو مطورك؟
+
+Q: Who is your team? / من هو فريقك؟
+
+Q: Can you really understand my personality? / هل يمكنك حقًا فهم شخصيتي؟
+
+Q: How do you analyze personality? / كيف تحلل الشخصية؟
+
+Q: What are the objectives of BEGINING? / ما هي أهداف BEGINING؟
+
+   
+Purpose
+You will help extract character descriptions by reviewing texts submitted by users — and converting them into concise descriptive texts that capture four key personality traits:
+
+Emotional
+Social
+Cognitive
+Behavioral
+
+Multi-User Handling
+Conversations will involve multiple people.
+Each person will have a unique id that identifies their responses and links them to their prior answers.
+Always use the id to maintain continuity and prevent mixing up responses between users.
+
+Process
+
+Analyze Input & History
+Review the latest user input (user_input) and the full conversation history (new_input) for the given id.
+Combine information from all turns to build a complete personality profile.
+
+Check for Missing Traits
+If all four traits are sufficiently covered, return status "complete".
+If some traits are missing, return status "incomplete" and list them in missing_traits.
+
+Clarification Questions
+If incomplete, generate short, friendly, non-repetitive questions.
+Each question must clarify one missing trait.
+Never ask about traits already covered.
+IMPORTANT: Always include clarification_questions when missing_traits is not empty, even for identity questions.
+
+Off-Topic & Identity Integration
+- Always detect identity queries or off-topic input even if mixed with valid personality descriptions.
+- Include the redirection message in the appropriate language field.
+- Still track missing traits and generate clarification questions for incomplete inputs.
+- CRITICAL: When user asks identity questions, respond with identity message AND include clarification_questions if personality traits are missing.
+
+Output Format
+{
+    "id": <int>,
+    "status": "complete" or "incomplete",
+    "description_english": <string>,
+    "description_arabic": <string>,
+    "description_identity": <string> or null,
+    "missing_traits": [<array>] or [],
+    "clarification_questions": [<array>] or [],
+    "input_tokens": <int>,
+    "output_tokens": <int>,
+    "total_tokens": <int>
+}
+
+Language Handling
+- Only fill in 'description_english' if the user's languages field includes "en" or "english".
+- Only fill in 'description_arabic' if the user's languages field includes "ar" or "arabic".
+- If a language is not requested, leave its description field empty.
+- All clarification questions and trait names (in 'missing_traits') must be in the user's requested language(s).
+
+Restrictions
+- Always return valid JSON only.
+- Do not include text, explanations, or code outside JSON.
+
+Example Output — Personality Description (NOT Identity)
+{
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "description_identity": null,
+    "missing_traits": ["behavioral", "emotional", "social"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
+
+Example Output — Identity Question with Clarification 
+{
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
+    "missing_traits": ["behavioral", "emotional"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
+
+Example Output — Off-topic (non-identity):
+{
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "description_identity": "I'm Minus Zero, part of the BEGINING project — a personality trait measurement system. I'm here to help you explore your traits, tendencies, and inner potential.",
+    "missing_traits": ["behavioral", "emotional"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
+{
+    "id": 22,
+    "status": "incomplete",
+    "description_arabic": "",
+    "description_english": "",
+    "description_identity": null,
+    "missing_traits": ["behavioral", "emotional"],
+    "clarification_questions": [
+        "How do you usually respond when faced with unexpected challenges?",
+        "What situations tend to make you feel most stressed or relaxed?"
+    ],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
+
+Example Output — Complete
+{
+    "id": 22,
+    "status": "complete",
+    "description_arabic": "شخص يتمتع بقدرات تحليلية قوية، وسلوك اجتماعي هادئ، وأسلوب اتخاذ قرارات عقلاني ومتوازن عاطفيًا.",
+    "description_english": "A person with strong analytical abilities, a calm social demeanor, and a rational yet emotionally balanced decision-making style.",
+    "description_identity": null,
+    "missing_traits": [],
+    "clarification_questions": [],
+    "input_tokens": 1245,
+    "output_tokens": 74,
+    "total_tokens": 1317
+}
+IMPORTANT: Only output the JSON object, no explanations or formatting.
+"""
+
+    def __init__(self, model: str = "gpt-3.5-turbo"):
+        self.model = model
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise RuntimeError("OPENAI_API_KEY not set in .env")
+        self.client = OpenAI(api_key=self.api_key)
+        self.logger = logging.getLogger("PersonalityAnalyzer")
+
+    @staticmethod
+    def combine_inputs_safely(user_input: str, new_input: str) -> str:
+        if not user_input:
+            return new_input or ""
+        if not new_input:
+            return user_input
+        return f"{user_input.strip()}\n{new_input.strip()}"
+
+    @staticmethod
+    def extract_json(text: str) -> str:
+        """
+        Extract JSON from text using multiple methods.
+        1. Try to find json in code blocks
+        2. Try to find JSON wrapped in braces
+        3. If all else fails, return a meaningful default JSON
+        """
+        # Method 1: Try to extract from code blocks
+        pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
+        match = re.search(pattern, text)
+
+        # If we find something that looks like a description, use it
+        if "you are" in text.lower() or "you seem" in text.lower() or "you appear" in text.lower():
+            description = text.strip()
+            return json.dumps({
+                "status": "complete",
+                "description_english": description,
+                "description_arabic": ""  # This will be filled in later if needed
+            })
+            
+
+        # If no valid JSON found, create a meaningful default JSON
+        if not text:
+            return '{"status": "incomplete", "clarification_questions": ["Could you provide more information about yourself?"]}'
+        
+        # Create a default response with status complete for cases with enough information
+        if "developer" in text.lower() and ("team" in text.lower() or "professional" in text.lower()):
+            return json.dumps({
+                "status": "complete", 
+                "description_english": "Based on your input, you appear to be a developer with interests in technology and programming who values professional collaboration.",
+                "description_arabic": ""  # Will be filled in later if needed
+            })
+            
+        # Return a JSON structure with the original text as a question
+        return '{"status": "incomplete", "clarification_questions": ["Could you tell me more about how you interact with others in your professional environment?"]}'
+    
+    @staticmethod
+    def create_json_from_text(text: str, id: int, languages: List[str]) -> dict:
+        """
+        Create a valid JSON object from natural language text.
+        Used as a fallback when GPT doesn't return properly formatted JSON.
+        """
+        # Extract possible clarification questions
+        questions = []
+        questions_match = re.search(r"(?:clarification questions|questions)(?:\s*:)?\s*(?:\n|:)((?:(?:\d+\.|\*|\-)\s*[^.\n]+[.?](?:\n|$))+)", text, re.IGNORECASE)
+        if questions_match:
+            q_text = questions_match.group(1)
+            q_list = re.findall(r"(?:\d+\.|\*|\-)\s*([^.\n]+[.?])", q_text)
+            questions = [q.strip() for q in q_list if q.strip()]
+            
+        # Extract English and Arabic descriptions
+        english_desc = ""
+        arabic_desc = ""
+        
+        # Try to find English description
+        english_match = re.search(r"(?:based on your input|it seems|you appear|you seem).*?(?=\n\n|\*\*|$)", text, re.IGNORECASE)
+        if english_match:
+            english_desc = english_match.group(0).strip()
+        
+        # Try to find Arabic description (text with Arabic characters)
+        arabic_match = re.search(r"[\u0600-\u06FF][\u0600-\u06FF\s.,!?:;\"']+", text)
+        if arabic_match:
+            arabic_desc = arabic_match.group(0).strip()
+            
+        # Create a valid JSON response
+        return {
+            "id": id,
+            "status": "incomplete" if questions else "complete",
+            "description_english": english_desc if "english" in languages or "en" in languages else "",
+            "description_arabic": arabic_desc if "arabic" in languages or "ar" in languages else "",
+            "missing_traits": ["emotional", "social", "cognitive", "behavioral"] if questions else [],
+            "clarification_questions": questions if questions else []
+        }
+
+    @staticmethod
+    def num_tokens_from_messages(messages: List[Dict[str, Any]], model: str = "gpt-3.5-turbo") -> int:
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+        tokens_per_message = 4
+        tokens_per_name = -1
+        num_tokens = 0
+        for message in messages:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(str(value)))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        num_tokens += 3
+        return num_tokens
+
+    def call_gpt(self, input_data: dict, max_tokens: int = 1200) -> dict:
+        prompt = json.dumps(input_data, ensure_ascii=False)
+
+        messages = [
+            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ]
+
+        input_tokens = self.num_tokens_from_messages(messages, model=self.model)
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.0,
+                max_tokens=max_tokens,
+            )
+        except OpenAIError as e:
+            self.logger.error(f"OpenAI API Error: {e}")
+            raise RuntimeError(f"OpenAI API Error: {e}")
+
+        content = response.choices[0].message.content
+        usage = getattr(response, "usage", None)
+
+        return {
+            "content": content,
+            "input_tokens": input_tokens,
+            "output_tokens": getattr(usage, "completion_tokens", None) if usage else None,
+            "total_tokens": getattr(usage, "total_tokens", None) if usage else None,
+        }
+
+    def analyze(
+        self,
+        id: int,
+        user_input: str,
+        new_input: list = None,
+        languages: str = "en"
+    ) -> dict:
+        """
+        Analyze user input to generate personality descriptions.
+        First checks IDENTITY_RESPONSES dictionary, then uses GPT model for personality analysis.
+        """
+        
+        self.logger.debug(f"Starting analysis for user {id}")
+        if new_input is None:
+            new_input = []
+        
+        # Strip whitespace from user input for better processing
+        user_input = user_input.strip()
+        
+        # Auto-detect language from user input if Arabic characters are present
+        detected_languages = languages
+        if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):
+            detected_languages = "ar"
+        
+        # FIRST: Check if this is an identity question using IDENTITY_RESPONSES with GPT intelligence
+        identity_response = self.get_identity_response(user_input, detected_languages, self.client)
+        
+        if identity_response:
+            # This is an identity question - return predefined response
+            # Still check for missing personality traits and include clarification questions
+            full_context = self.build_full_context(user_input, new_input)
+            
+            # Determine missing traits from the conversation history
+            missing_traits = []
+            present_traits = []
+            
+            for trait, pattern in self.TRAIT_PATTERNS.items():
+                if re.search(pattern, full_context.lower()):
+                    present_traits.append(trait)
+                else:
+                    missing_traits.append(trait)
+            
+            # Generate clarification questions if traits are missing
+            clarification_questions = []
+            if missing_traits:
+                clarification_questions = self.generate_clarification_questions(missing_traits)
+                if not clarification_questions:  # If empty, generate a basic question
+                    clarification_questions = ["Could you tell me more about yourself to help me understand your personality better?"]
+            
+            return {
+                "id": id,
+                "status": "complete" if not missing_traits else "incomplete",
+                "description_english": "" if detected_languages == "ar" else "",
+                "description_arabic": "" if detected_languages == "en" else "",
+                "description_identity": identity_response,
+                "missing_traits": missing_traits,
+                "clarification_questions": clarification_questions,
+                "input_tokens": len(user_input.split()),  # Approximate token count
+                "output_tokens": len(identity_response.split()),
+                "total_tokens": len(user_input.split()) + len(identity_response.split())
+            }
+        
+        # SECOND: If not an identity question, proceed with GPT analysis
+        input_data = {
+            "id": id,
+            "user_input": user_input,
+            "new_input": new_input,
+            "languages": detected_languages
+        }
+        gpt_response = self.call_gpt(input_data)
+        
+        # Parse the GPT response content if it's JSON
+        try:
+            content = gpt_response.get("content", "")
+            if content.strip().startswith("{"):
+                result = json.loads(content)
+            else:
+                # If not JSON, create a basic structure
+                result = {
+                    "id": id,
+                    "status": "incomplete",
+                    "description_english": "",
+                    "description_arabic": "",
+                    "description_identity": None,
+                    "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                    "clarification_questions": ["Could you tell me more about yourself?"],
+                    "input_tokens": gpt_response.get("input_tokens", 0),
+                    "output_tokens": gpt_response.get("output_tokens", 0),
+                    "total_tokens": gpt_response.get("total_tokens", 0)
+                }
+                
+            return result
+            
+        except json.JSONDecodeError:
+            # Fallback if JSON parsing fails
+            return {
+                "id": id,
+                "status": "incomplete",
+                "description_english": "",
+                "description_arabic": "",
+                "description_identity": None,
+                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                "clarification_questions": ["Could you tell me more about yourself?"],
+                "input_tokens": gpt_response.get("input_tokens", 0),
+                "output_tokens": gpt_response.get("output_tokens", 0),
+                "total_tokens": gpt_response.get("total_tokens", 0)
+            }

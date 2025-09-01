@@ -10,6 +10,57 @@
 ---
 
 ## 🔍 Overview
+                ┌───────────────┐
+                │   User Input   │
+                └───────┬───────┘
+                        │
+            ┌───────────┴───────────┐
+            │ Greeting / Off-topic? │
+            └───────┬───────┬───────┘
+                    │Yes    │No
+                    ▼       │
+        ┌───────────────────┐
+        │ Fill personal_    │
+        │ greeting_and_off  │
+        │ Status = incomplete
+        │ Missing = all     │
+        │ Ask 1 clarification│
+        └───────────────────┘
+                            ▼
+                ┌───────────┴────────────┐
+                │ Identity Question?     │
+                └───────┬───────┬────────┘
+                        │Yes    │No
+                        ▼       │
+        ┌───────────────────────┐
+        │ Fill description_     │
+        │ identity              │
+        │ Status = incomplete   │
+        │ Missing = all         │
+        │ Ask 1 clarification   │
+        └───────────────────────┘
+                                ▼
+                  ┌─────────────┴──────────────┐
+                  │ Personality Answer?        │
+                  └───────────┬────────────────┘
+                              │Yes
+                              ▼
+                ┌──────────────────────────────┐
+                │ Extract traits: emotional,    │
+                │ social, cognitive, behavioral │
+                └───────────┬──────────────────┘
+                            ▼
+                 ┌──────────┴───────────┐
+                 │ All traits complete? │
+                 └───────┬───────┬──────┘
+                         │Yes    │No
+                         ▼       ▼
+        ┌───────────────────┐   ┌───────────────────┐
+        │ Status = complete  │   │ Status = incomplete│
+        │ Descriptions filled│   │ List missing traits│
+        │ No missing traits  │   │ Ask 1 clarification│
+        │ No clarification   │   └───────────────────┘
+        └───────────────────┘
 
 **DALL IN** is a symbolic AI chatbot designed to interpret personality input and return structured profiles. It uses the **BEGINING Scale**, a symbolic framework that represents psychological dimensions through a 3-letter code.
 

@@ -1,66 +1,70 @@
 #!/usr/bin/env python3
-"""
-Debug why "مين أنت" is not being detected.
-"""
 
+import sys
 import os
-import unicodedata
-from app.personality_analyzer import PersonalityAnalyzer
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def debug_text_processing():
-    """Debug how the text is being processed."""
-    print("🔍 Debugging Text Processing:")
+from app.personality_analyzer import PersonalityAnalyzer
+import re
+
+def debug_arabic_pattern():
+    """Debug why 'مين الي مطورك' is not matching"""
     
-    test_text = "مين أنت"
-    print(f"  Original text: '{test_text}'")
+    test_input = "مين الي مطورك"
+    print(f"Testing: '{test_input}'")
+    print(f"Length: {len(test_input)}")
+    print(f"Characters: {[c for c in test_input]}")
     
-    # Show each processing step
-    text_lower = test_text.lower().strip()
-    print(f"  After lower(): '{text_lower}'")
+    # Check if it has Arabic characters
+    has_arabic = re.search(r'[\u0600-\u06FF]', test_input)
+    print(f"Has Arabic characters: {bool(has_arabic)}")
     
-    text_normalized = unicodedata.normalize("NFKD", text_lower)
-    print(f"  After normalize(): '{text_normalized}'")
+    # Test direct method
+    response = PersonalityAnalyzer.get_identity_response(test_input, "ar")
+    print(f"Direct response: {response}")
     
-    # Check if it matches known keywords
-    who_are_you_keywords = [
-        "who are you", "who r u", "who ru", "who u", "tell me about you", "introduce yourself",
-        "about you", "who is this", "ur identity", "your identity",
-        "من أنت", "مين أنت", "منو أنت", "من انت", "مين انت", "منو انت",
-        "عرف بنفسك", "عرفني بنفسك", "قل لي من أنت", "قول لي من أنت",
-        "هويتك", "هويك", "شخصيتك"
+    # Check against each developer pattern
+    text = test_input.lower().strip()
+    print(f"Normalized text: '{text}'")
+    
+    developer_patterns = [
+        r"who\s+(made|built|created|developed)\s+you", 
+        r"who\s+is\s+your\s+developer",
+        r"your\s+(maker|creator|developer)", 
+        r"who\s+designed\s+you", 
+        r"who\s+programmed\s+you",
+        r"من\s+(صنعك|بناك|طورك|صممك)", 
+        r"من\s+هو\s+مطورك", 
+        r"مين\s+عملك"
     ]
     
-    print(f"\n  Checking against who_are_you keywords:")
-    for keyword in who_are_you_keywords:
-        if keyword in text_normalized:
-            print(f"    ✅ MATCH: '{keyword}'")
-        elif keyword == "مين أنت":
-            print(f"    ❌ NO MATCH: '{keyword}' (this should match!)")
-            # Let's see character by character
-            print(f"      Text chars: {[ord(c) for c in text_normalized]}")
-            print(f"      Keyword chars: {[ord(c) for c in keyword]}")
-
-def test_direct_matching():
-    """Test direct string matching."""
-    print("\n🔍 Testing Direct String Matching:")
+    print("\nTesting against enhanced patterns:")
+    for i, pattern in enumerate(developer_patterns):
+        match = re.search(pattern, text)
+        print(f"  Pattern {i+1}: {pattern} -> {'✅' if match else '❌'}")
     
-    test_text = "مين أنت"
-    keyword = "مين أنت"
+    # Test against original triggers
+    original_triggers = ["who is your developer", "who made you", "who built you", "من هو مطورك", "من صنعك", "من بناك"]
+    print(f"\nTesting against original triggers:")
+    for trigger in original_triggers:
+        if trigger.lower() in text:
+            print(f"  '{trigger}' -> ✅ Found")
+        else:
+            print(f"  '{trigger}' -> ❌ Not found")
     
-    print(f"  test_text == keyword: {test_text == keyword}")
-    print(f"  keyword in test_text: {keyword in test_text}")
-    print(f"  test_text in keyword: {test_text in keyword}")
+    # Test some variations
+    variations = [
+        "مين مطورك",
+        "مين اللي مطورك", 
+        "مين الي مطورك",
+        "من مطورك",
+        "من هو مطورك"
+    ]
     
-    # Test with different character encodings
-    print(f"\n  Character analysis:")
-    print(f"    test_text: {repr(test_text)}")
-    print(f"    keyword: {repr(keyword)}")
-
-def main():
-    print("🧪 Debugging Arabic Text Matching\n")
-    debug_text_processing()
-    test_direct_matching()
-    print("\n✅ Debug completed!")
+    print(f"\nTesting variations:")
+    for var in variations:
+        resp = PersonalityAnalyzer.get_identity_response(var, "ar")
+        print(f"  '{var}' -> {'✅' if resp else '❌'}")
 
 if __name__ == "__main__":
-    main()
+    debug_arabic_pattern()
