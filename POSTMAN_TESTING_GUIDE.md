@@ -15,7 +15,7 @@
 **Method**: `POST`
 **Headers**:
 
-```
+```json
 Content-Type: application/json
 ```
 
@@ -44,6 +44,7 @@ Content-Type: application/json
 ```
 
 **Expected Response**:
+
 ```json
 {
     "id": 225985882206,
@@ -62,14 +63,15 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ### Test Case 2: Identity Question as Last Answer (Should Return Identity)
 
 **URL**: `http://localhost:8000/analyze-personality`
 **Method**: `POST`
 **Headers**:
-```
+
+```json
 Content-Type: application/json
 ```
 
@@ -94,6 +96,7 @@ Content-Type: application/json
 ```
 
 **Expected Response**:
+
 ```json
 {
     "id": 225985882206,
@@ -112,14 +115,15 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ### Test Case 3: Standalone Identity Question (Should Return Identity)
 
 **URL**: `http://localhost:8000/analyze-personality`
 **Method**: `POST`
 **Headers**:
-```
+
+```json
 Content-Type: application/json
 ```
 
@@ -154,18 +158,20 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ### Test Case 4: Standalone Identity Question (Should Return Identity)
 
 **URL**: `http://localhost:8000/analyze-personality`
 **Method**: `POST`
 **Headers**:
-```
+
+```json
 Content-Type: application/json
 ```
 
 **Body** (JSON):
+
 ```json
 {
     "id": 123456789,
@@ -176,6 +182,7 @@ Content-Type: application/json
 ```
 
 **Expected Response**:
+
 ```json
 {
     "id": 123456789,
@@ -194,11 +201,12 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ### Test Case 5: Other Identity Questions
 
 **Body** (JSON):
+
 ```json
 {
     "id": 123456789,
@@ -209,6 +217,7 @@ Content-Type: application/json
 ```
 
 **Body** (JSON):
+
 ```json
 {
     "id": 123456789,
@@ -219,6 +228,7 @@ Content-Type: application/json
 ```
 
 **Body** (JSON):
+
 ```json
 {
     "id": 123456789,
@@ -228,11 +238,12 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ### Test Case 4: Normal Personality Analysis (No Identity Question)
 
 **Body** (JSON):
+
 ```json
 {
     "id": 987654321,
@@ -247,65 +258,75 @@ Content-Type: application/json
 }
 ```
 
----
+______________________________________________________________________
 
 ## 🔍 How to Test in Postman
 
 ### Step 1: Setup
+
 1. Open Postman
-2. Create a new request
-3. Set method to `POST`
-4. Set URL to `http://localhost:8000/analyze-personality`
+1. Create a new request
+1. Set method to `POST`
+1. Set URL to `http://localhost:8000/analyze-personality`
 
 ### Step 2: Headers
+
 1. Click on "Headers" tab
-2. Add header: `Content-Type` = `application/json`
+1. Add header: `Content-Type` = `application/json`
 
 ### Step 3: Body
+
 1. Click on "Body" tab
-2. Select "raw"
-3. Choose "JSON" from the dropdown
-4. Copy and paste one of the test cases above
+1. Select "raw"
+1. Choose "JSON" from the dropdown
+1. Copy and paste one of the test cases above
 
 ### Step 4: Send Request
+
 1. Click "Send"
-2. Check the response in the bottom panel
+1. Check the response in the bottom panel
 
 ### Step 5: Verify Results
+
 - **Status Code**: Should be `200 OK`
 - **Response Body**: Should match expected JSON structure
 - **Identity Cases**: Should have `"status": "identity"`
 - **Clarification Questions**: Should be present and appropriate for the language
 
----
+______________________________________________________________________
 
 ## 🧪 Key Things to Verify
 
 ### ✅ Identity Detection
+
 - Status should be "identity" when identity questions are detected
 - Works for questions in any position within new_input answers
 - Works for standalone questions in user_input
 
 ### ✅ Language Support
+
 - English identity questions return English responses
 - Arabic identity questions return Arabic responses
 - Clarification questions match the requested language
 
 ### ✅ Conversation Continuation
+
 - missing_traits should contain traits that need more exploration
 - clarification_questions should be generated to continue the conversation
 - Never returns empty clarification_questions for identity responses
 
 ### ✅ Response Structure
+
 - All required fields are present
 - description_identity contains the appropriate predefined response
 - Token counts are included (may be 0 for identity responses)
 
----
+______________________________________________________________________
 
 ## 🚨 Troubleshooting
 
-### If Server Won't Start:
+### If Server Won't Start
+
 ```bash
 # Make sure you're in the right directory and virtual environment is activated
 cd "c:\Users\aalma\Desktop\python\dall-in-model"
@@ -313,26 +334,27 @@ cd "c:\Users\aalma\Desktop\python\dall-in-model"
 python -m uvicorn app.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### If Getting 422 Validation Error:
+### If Getting 422 Validation Error
+
 - Check that all required fields are included
 - Verify JSON syntax is correct
 - Make sure `id` is an integer, not a string
 
-### If Identity Not Detected:
+### If Identity Not Detected
+
 - Check that your identity trigger is in the IDENTITY_RESPONSES dictionary
 - Verify language parameter matches the question language
 - Try exact phrases like "who are you" or "من انت"
 
----
+______________________________________________________________________
 
 ## 📊 Success Indicators
 
 ✅ **Test Case 1**: Identity detected in middle answer, English response with clarification questions
-✅ **Test Case 2**: Arabic standalone question, Arabic response with Arabic clarification questions  
+✅ **Test Case 2**: Arabic standalone question, Arabic response with Arabic clarification questions\
 ✅ **Test Case 3**: Various identity triggers work correctly
 ✅ **Test Case 4**: Normal personality analysis works when no identity questions
 
 🎉 **System Ready**: When all test cases pass, your identity response system is working perfectly!
-
 
 **Signature:** ENG Ahmed Almalki AI Engineer

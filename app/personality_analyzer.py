@@ -100,31 +100,63 @@ class PersonalityAnalyzer:
             from openai import OpenAI
             openai_client = OpenAI()
         prompt = f"""
-        Analyze the following answer for personality traits (emotional, social, cognitive, behavioral). Only respond with a JSON object containing:
+        Analyze the following answer for personality traits and categorize them into exactly these four categories:
+        - emotional: emotional intelligence, mood, feelings, motivation, stress handling
+        - social: teamwork, leadership, communication, interpersonal skills
+        - cognitive: analytical thinking, problem-solving, learning, decision-making
+        - behavioral: work habits, organization, consistency, actions, routines
+        
+        Only respond with a JSON object containing:
         {{
             'type': 'traits',
-            'detected_traits': [list of detected traits],
+            'detected_traits': [list containing only: "emotional", "social", "cognitive", "behavioral"],
             'question': '{question}',
             'answer': '{answer}',
-            'skip_traits': False,
-            'status': 'complete' if all traits are present else 'incomplete'
+            'skip_traits': false,
+            'status': 'incomplete'
         }}
+        
+        Answer to analyze: {answer}
         Context: {context}
         Language: {language}
         """
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field. Only output valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=300,
-            temperature=0.2
-        )
-        import json
         try:
-            result = json.loads(response.choices[0].message.content)
-        except Exception:
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field. Only output valid JSON with trait categories: emotional, social, cognitive, behavioral."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.2
+            )
+            import json
+            content = response.choices[0].message.content
+            print(f"[LOG] GPT trait analysis response: {content}")
+            
+            # Handle markdown code blocks
+            if content.startswith("```"):
+                # Extract JSON from markdown code blocks
+                import re
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+                if json_match:
+                    content = json_match.group(1)
+                else:
+                    # Try to find JSON without code blocks
+                    json_match = re.search(r'(\{.*?\})', content, re.DOTALL)
+                    if json_match:
+                        content = json_match.group(1)
+            
+            result = json.loads(content.strip())
+            
+            # Ensure detected_traits only contains the four main categories
+            valid_traits = ["emotional", "social", "cognitive", "behavioral"]
+            detected_traits = result.get("detected_traits", [])
+            filtered_traits = [trait for trait in detected_traits if trait in valid_traits]
+            result["detected_traits"] = filtered_traits
+            
+        except Exception as e:
+            print(f"[LOG] Error in gpt_trait_analysis: {e}")
             result = {
                 "type": "traits",
                 "detected_traits": [],
@@ -187,7 +219,17 @@ class PersonalityAnalyzer:
                 temperature=0.7
             )
             import json
-            questions = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if logger:
+                logger.info(f"OpenAI response content: {content}")
+            
+            # Handle empty or null content
+            if not content or content.strip() == "":
+                if logger:
+                    logger.warning("OpenAI returned empty content")
+                return [fallback]
+            
+            questions = json.loads(content.strip())
             if isinstance(questions, list) and questions:
                 # Ensure all questions are in the correct language
                 if lang_code in ["ar", "arabic"]:
@@ -196,6 +238,9 @@ class PersonalityAnalyzer:
                 else:
                     if all(re.search(r'[a-zA-Z]', q) for q in questions):
                         return [questions[0]]
+        except json.JSONDecodeError as e:
+            if logger:
+                logger.error(f"JSON decode error in generate_clarification_questions_gpt: {e}, content: {content if 'content' in locals() else 'No content'}")
         except Exception as e:
             if logger:
                 logger.error(f"OpenAI error in generate_clarification_questions_gpt: {e}")
@@ -241,14 +286,179 @@ class PersonalityAnalyzer:
         }
     }
         
+    def _extract_personality_content_from_mixed_input(self, text: str, language: str = "en") -> str:
+        """
+        AI-powered extraction of personality-related content from mixed input.
+        Intelligently separates personality descriptions from identity questions and other content.
+        """
+        if not text.strip():
+            return ""
+        
+        # Use GPT for intelligent content separation
+        if not hasattr(self, 'client') or not self.client:
+            from openai import OpenAI
+            self.client = OpenAI()
+
+        system_prompt = """You are an expert content analyzer for a personality analysis system. Your job is to extract ONLY personality-related content from mixed input.
+
+EXTRACT THESE PERSONALITY ELEMENTS:
+- Personal traits: "I am introverted", "I'm very social", "أنا شخص هادئ"
+- Behaviors: "I like to help others", "I prefer working alone", "أحب العمل الجماعي"
+- Social preferences: "I like going out with friends", "I enjoy social gatherings", "أحب اللقاءات الاجتماعية"
+- Activity preferences that reveal personality: "I enjoy reading", "I dislike crowds", "أفضل الأنشطة الهادئة"
+- Emotional patterns: "I get stressed easily", "I'm usually optimistic", "أشعر بالقلق أحيانًا"
+- Social tendencies: "I make friends easily", "I'm shy around new people", "أتفاعل بسهولة"
+- Work styles: "I'm detail-oriented", "I like big picture thinking", "أركز على التفاصيل"
+- Decision-making: "I think things through", "I go with my gut", "أتخذ قرارات سريعة"
+- Lifestyle choices that show personality: "I prefer quiet evenings", "I love parties", "أحب السهر مع الأصدقاء"
+
+IGNORE THESE NON-PERSONALITY ELEMENTS:
+- Identity questions: "who are you", "what is BEGINING", "من انت"
+- Greetings: "hello", "hi", "مرحبا"
+- Pure off-topic: weather facts, news, general conversation unrelated to personal preferences
+- Technical questions: how the system works (unless describing personal work style)
+
+RESPONSE FORMAT:
+- If personality content found: Return ONLY the personality-related parts
+- If no personality content: Return "EMPTY"
+- Preserve the original language and phrasing
+- Clean up grammar but keep the meaning intact
+
+EXAMPLES:
+Input: "Hello, I am an introverted software developer who likes working alone"
+Output: "I am an introverted software developer who likes working alone"
+
+Input: "I like go out with friends"
+Output: "I like go out with friends"
+
+Input: "مرحبا، من انت؟ أنا شخص اجتماعي وأحب العمل مع الفريق"
+Output: "أنا شخص اجتماعي وأحب العمل مع الفريق"
+
+Input: "Who are you and what is BEGINING?"
+Output: "EMPTY"
+
+Input: "What color is the sky?"
+Output: "EMPTY"
+
+Input: "I was reading about AI, by the way I'm very analytical and detail-oriented in my work"
+Output: "I'm very analytical and detail-oriented in my work"
+
+IMPORTANT: Social activities and preferences (like "going out with friends") are personality-related. Be generous in extracting personality content but strict about ignoring pure identity questions, greetings, and factual off-topic questions."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Extract personality content from: '{text}'"}
+                ],
+                max_tokens=300,
+                temperature=0.1
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            if result.upper() == "EMPTY" or not result:
+                return ""
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error in AI content extraction: {e}")
+            # Fallback: return original text if AI fails
+            return text
+    
+    def _pattern_based_content_separation(self, text: str) -> str:
+        """
+        Fallback method for content separation using patterns.
+        """
+        # Split by common sentence separators
+        import re
+        sentences = re.split(r'[.؟!?\n]', text)
+        personality_sentences = []
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            
+            # Enhanced identity question patterns
+            identity_patterns = [
+                # Arabic patterns
+                r'من\s+انت|اخبرني\s+عن\s+نفسك|عرف\s+نفسك|اشرح\s+لي\s+من\s+انت',
+                r'ما\s+هو\s+مشروع|اشرح\s+مشروع|عن\s+المشروع|ما\s+هو\s+بيجينينج',
+                r'ما\s+هدفك|ما\s+هو\s+هدفك|لماذا\s+موجود|ما\s+دورك|ايش\s+دورك',
+                r'من\s+طورك|من\s+صنعك|من\s+فريقك|كيف\s+تعمل|كيف\s+تحلل',
+                
+                # English patterns  
+                r'who\s+are\s+you|what\s+are\s+you|tell\s+me\s+about\s+yourself|introduce\s+yourself',
+                r'what\s+is\s+begining|explain\s+begining|about\s+this\s+project|what\s+is\s+this\s+system',
+                r'what\s+is\s+your\s+purpose|why\s+do\s+you\s+exist|what\s+do\s+you\s+do|what\s+is\s+your\s+role',
+                r'who\s+made\s+you|who\s+created\s+you|who\s+developed\s+you|who\s+is\s+your\s+team',
+                r'how\s+do\s+you\s+work|how\s+do\s+you\s+analyze|what\s+is\s+your\s+method',
+            ]
+            
+            is_identity = False
+            for pattern in identity_patterns:
+                if re.search(pattern, sentence, re.IGNORECASE):
+                    is_identity = True
+                    break
+            
+            if not is_identity:
+                personality_sentences.append(sentence)
+        
+        # Rejoin the personality sentences
+        result = '. '.join(personality_sentences)
+        if result and not result.endswith('.'):
+            result += '.'
+        
+        return result.strip()
+
+    def _is_greeting(self, text: str, language: str = "en") -> bool:
+        """
+        Helper function to determine if text is a greeting.
+        """
+        if not text.strip():
+            return False
+            
+        text_lower = text.lower().strip()
+        
+        # Arabic greeting patterns
+        arabic_greetings = [
+            "مرحبا", "اهلا", "السلام عليكم", "صباح الخير", "مساء الخير",
+            "هلا", "اهلين", "حياك", "كيف حالك", "كيفك", "شلونك",
+            "يسعد صباحك", "يسعد مساءك", "تسلم", "نهارك سعيد"
+        ]
+        
+        # English greeting patterns  
+        english_greetings = [
+            "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
+            "how are you", "how do you do", "nice to meet you", "pleased to meet you",
+            "greetings", "howdy", "what's up", "how's it going"
+        ]
+        
+        # Check for greetings
+        if language.lower() in ["ar", "arabic"]:
+            for greeting in arabic_greetings:
+                if greeting in text_lower:
+                    return True
+        else:
+            for greeting in english_greetings:
+                if greeting in text_lower:
+                    return True
+                    
+        return False
+
     @staticmethod
     def get_identity_response(user_input: str, language: str = "en", openai_client=None, conversation_context: list = None) -> str:
         """
         Get the appropriate identity response based on user input and language.
-        Uses GPT to intelligently detect identity questions and ALWAYS responds when detected.
+        Uses GPT to intelligently detect and categorize identity questions in multiple languages.
+        Can handle multiple identity questions and create friendly combined responses.
         Returns the response string or empty string if no match.
         """
         print(f"[LOG] get_identity_response: user_input={user_input}, language={language}, conversation_context={conversation_context}")
+        
         # Auto-detect language from input if not specified
         detected_lang = language
         if any(ord(char) >= 0x0600 and ord(char) <= 0x06FF for char in user_input):
@@ -256,50 +466,456 @@ class PersonalityAnalyzer:
 
         # Clean input for matching
         text = user_input.strip()
+        if not text:
+            return ""
+            
         if not openai_client:
             from openai import OpenAI
             openai_client = OpenAI()
 
-        # Split input into sentences and check each for identity triggers
-        import re
-        sentences = re.split(r'[.؟!?\n]', text)
-        found_categories = []
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-            try:
-                response = openai_client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an identity question detector. Respond ONLY with the category name (who_are_you, what_is_begining, purpose, role, developer, team, understand_personality, how_analyze, objectives) if the sentence is an identity question, or 'none' if not."
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Is this an identity question? Text: '{sentence}'"
-                        }
-                    ],
-                    max_tokens=10,
-                    temperature=0
-                )
-                cat = response.choices[0].message.content.strip()
-                if cat != "none" and cat in PersonalityAnalyzer.IDENTITY_RESPONSES:
-                    found_categories.append(cat)
-            except Exception as e:
-                print(f"Error in identity detection for sentence '{sentence}': {e}")
-                continue
+        # Enhanced prompt for detecting identity questions in ANY context (stories, articles, etc.)
+        system_prompt = """You are a PRECISE identity question detector for a personality analysis system called "BEGINING" with an AI assistant named "Minus Zero".
 
-        # Remove duplicates, preserve order
-        found_categories = list(dict.fromkeys(found_categories))
-        if found_categories:
-            responses = []
-            for cat in found_categories:
-                resp = PersonalityAnalyzer.IDENTITY_RESPONSES[cat]["arabic"] if detected_lang == "ar" else PersonalityAnalyzer.IDENTITY_RESPONSES[cat]["english"]
-                responses.append(resp)
-            return "\n".join(responses)
-        return ""
+MISSION: Detect ONLY genuine identity questions about the SYSTEM/AI. Do NOT misclassify personality descriptions as identity questions.
+
+CATEGORIES:
+- who_are_you: Questions about the AI's identity (who are you, what are you, tell me about yourself, introduce yourself)
+- what_is_begining: Questions about the BEGINING project/system (what is BEGINING, explain BEGINING, about this project)
+- purpose: Questions about the AI's purpose/mission (what's your purpose, why do you exist, what do you do)
+- role: Questions about the AI's role/function (what's your role, how do you help, what's your job)
+- developer: Questions about who created/developed the system (who made you, who created you, who built you)
+- team: Questions about the development team (who's your team, tell me about your creators)
+- understand_personality: Questions about how personality analysis works (how do you understand personality, can you replace psychology)
+- how_analyze: Questions about the analysis methodology (how do you analyze, what's your method, how does this work)
+- objectives: Questions about goals/applications (what are your objectives, what's this for, applications)
+
+CRITICAL: ONLY detect questions ABOUT THE SYSTEM/AI, NOT personality descriptions.
+
+EXAMPLES OF IDENTITY QUESTIONS (detect these):
+
+SMART DETECTION RULES:
+1. Look for identity questions ANYWHERE in the text, even if mixed with other content
+2. Detect questions hidden in stories: "I was wondering who you are while reading this article..."
+3. Catch indirect questions: "Could you explain a bit about yourself before we start?"
+4. Find embedded questions: "In my research about AI systems, I want to know what BEGINING is..."
+5. Recognize conversational patterns: "Before we continue, tell me about your purpose..."
+6. Handle multiple languages flexibly (Arabic, English, mixed)
+7. Be context-aware: even if 90% is other content, find the 10% identity question
+
+RETURN FORMAT:
+- Return ALL applicable categories separated by commas if identity questions found
+- Return "none" ONLY if there are absolutely NO identity questions about the system
+- Be generous in detection - better to catch false positives than miss real questions
+
+Examples:
+"من انت" → who_are_you
+"Who are you and what is your purpose?" → who_are_you,purpose
+"How do you analyze personalities?" → how_analyze
+"What is BEGINING?" → what_is_begining
+"Who created you?" → developer
+"Tell me about your methodology" → how_analyze
+"I want to know how you work" → how_analyze
+"I'm curious about your method" → how_analyze
+"Can you explain how you analyze?" → how_analyze
+"I'm a scientist but I want to know how you work" → how_analyze
+"I love data, but tell me about your approach" → how_analyze
+
+EXAMPLES OF PERSONALITY DESCRIPTIONS (DO NOT detect these):
+"I enjoy working with data and solving problems" → none
+"I love analytical work and finding patterns" → none  
+"I'm someone who likes to analyze things" → none
+"I find satisfaction in solving complex problems" → none
+"I work with data and enjoy finding insights" → none
+"I'm analytical and detail-oriented" → none
+"I like to understand how things work" → none
+"I'm a data scientist who loves patterns" → none
+
+STRICT RULES:
+1. Look for questions that are ABOUT the system/AI, not descriptions of the user's personality
+2. If someone describes their own analytical nature, that's personality data, NOT an identity question
+3. Only detect actual questions or requests for information about the system
+4. User describing their work/interests/traits = personality data (return "none")
+5. User asking about system's work/purpose/identity = identity question (return category)
+6. Mixed content: "I'm X, but I want to know how you work" = identity question (detect the question part)
+7. Watch for phrases like "I want to know", "I'm curious about", "tell me about", "but I want to know" referring to the system
+8. Key detection phrases for mixed content: "want to know how you", "curious about your", "tell me about your", "explain your"
+
+RETURN FORMAT:
+- Return applicable categories separated by commas if genuine identity questions found
+- Return "none" if NO identity questions about the system (even if analytical language is present)
+- Be PRECISE, not generous - avoid false positives that confuse personality data with identity questions"""
+
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Analyze this text: '{text}'"}
+                ],
+                max_tokens=50,
+                temperature=0
+            )
+            
+            categories = response.choices[0].message.content.strip().lower()
+            print(f"[LOG] GPT identified categories: {categories}")
+            
+            if categories == "none" or not categories:
+                print(f"[LOG] No identity question detected")
+                return ""
+            
+            # Split multiple categories
+            category_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
+            
+            # Generate combined friendly response
+            response_text = PersonalityAnalyzer._create_combined_identity_response(category_list, detected_lang)
+            
+            if response_text:
+                print(f"[LOG] Returning combined identity response for categories: {category_list}")
+                return response_text
+            else:
+                print(f"[LOG] No valid categories found in: {categories}")
+                return ""
+                
+        except Exception as e:
+            print(f"[LOG] Error in GPT identity detection: {e}")
+            # Fallback to pattern matching for critical identity questions
+            import re
+            detected_categories = []
+            
+            fallback_patterns = [
+                (r'من\s+انت|اخبرني\s+عن\s+نفسك|عرف\s+نفسك', 'who_are_you'),
+                (r'who\s+are\s+you|what\s+are\s+you|tell\s+me\s+about\s+yourself|introduce\s+yourself', 'who_are_you'),
+                (r'ما\s+هو\s+مشروع|اشرح\s+مشروع|عن\s+المشروع|ما\s+هو\s+بيجينينج', 'what_is_begining'),
+                (r'what\s+is\s+begining|explain\s+begining|about\s+this\s+project', 'what_is_begining'),
+                (r'ما\s+هدفك|ما\s+هو\s+هدفك|لماذا\s+موجود', 'purpose'),
+                (r'what\s+is\s+your\s+purpose|why\s+do\s+you\s+exist|what\s+do\s+you\s+do', 'purpose'),
+                (r'كيف\s+تعمل|كيف\s+تحلل', 'how_analyze'),
+                (r'how\s+do\s+you\s+work|how\s+do\s+you\s+analyze', 'how_analyze'),
+            ]
+            
+            for pattern, category in fallback_patterns:
+                if re.search(pattern, text, re.IGNORECASE):
+                    if category not in detected_categories:
+                        detected_categories.append(category)
+            
+            if detected_categories:
+                response_text = PersonalityAnalyzer._create_combined_identity_response(detected_categories, detected_lang)
+                print(f"[LOG] Fallback pattern match for categories: {detected_categories}")
+                return response_text
+            
+            return ""
+    
+    @staticmethod
+    def get_greeting_or_offtopic_response(user_input: str, language: str = "en", openai_client=None) -> str:
+        """
+        AI-powered detection of greetings and off-topic conversations.
+        Returns a friendly conversational response if greeting/off-topic detected, empty string otherwise.
+        """
+        if not user_input.strip():
+            return ""
+            
+        if not openai_client:
+            from openai import OpenAI
+            openai_client = OpenAI()
+
+        # Enhanced prompt for greeting/off-topic detection
+        system_prompt = """You are an AI assistant that detects greetings and off-topic conversations for a personality analysis system called "BEGINING".
+
+MISSION: Detect greetings, casual conversation, and off-topic content. Generate FRIENDLY conversational responses.
+
+DETECT THESE PATTERNS:
+- Greetings: "hi", "hello", "good morning", "مرحبا", "أهلا", "صباح الخير"
+- Casual conversation: "how are you", "what's up", "كيف حالك", "شلونك"
+- Name introductions: "I am John", "My name is Sarah", "انا احمد", "اسمي فاطمة"
+- Title/profession introductions: "I am Dr. Smith", "انا المهندس احمد", "انا الدكتور محمد", "I am Engineer Sarah"
+- Off-topic content: weather, news, random topics not related to personality analysis
+- Friendly small talk: "nice to meet you", "تشرفنا", compliments, general conversation
+
+RESPONSE RULES:
+1. If greeting/off-topic detected: Generate a WARM, FRIENDLY response that:
+   - Acknowledges their greeting/comment warmly
+   - **USE THEIR NAME and TITLE if they introduced themselves** (very important!)
+   - Show respect for their profession/title when mentioned
+   - Expresses enthusiasm for helping with personality analysis
+   - Uses encouraging, welcoming language
+   - ABSOLUTELY NO question marks (? or ؟)
+   - NO rhetorical questions like "isn't it?" or "right?"
+   - NO direct questions like "How can I help?" or "كيف يمكنني مساعدتك؟"
+   - Ends with positive statements only
+
+2. If NOT greeting/off-topic: Return "none"
+
+3. Response should be natural and friendly, like talking to a friend
+
+EXAMPLES:
+Input: "Hello" → "Hello there! It's wonderful to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
+
+Input: "Hi, I'm John" → "Hello John! It's wonderful to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
+
+Input: "مرحبا! انا احمد كيف حالك" → "مرحبًا أحمد! أهلًا وسهلًا! يسعدني جدًا لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة وما يجعلك مميزًا."
+
+Input: "مرحبا! انا المهندس احمد كيف حالك" → "مرحبًا المهندس أحمد! أهلًا وسهلًا! يشرفني لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة وما يجعلك مميزًا."
+
+Input: "Hi, I'm Dr. Sarah" → "Hello Dr. Sarah! It's an honor to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
+
+Input: "اسمي الدكتور محمد، كيف حالك" → "أهلًا الدكتور محمد! مرحبًا بك! يشرفني جدًا لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة."
+
+Input: "Nice weather today" → "That sounds lovely! I hope you're having a wonderful day. I'd love to help you discover the wonderful and unique aspects of your personality!"
+
+Input: "I am introverted" → "none" (this is personality-related, not greeting/off-topic)
+
+CRITICAL RULES:
+- **ALWAYS use the person's title AND name if they introduce themselves with both**
+- Show respect for professional titles (Dr., Engineer, Professor, etc.)
+- NEVER use question marks (? or ؟) in responses
+- NEVER ask any questions, even rhetorical ones
+- Only make positive, welcoming statements
+- The system handles all questions separately
+
+IMPORTANT: Only detect actual greetings and off-topic content, NOT personality descriptions."""
+
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Analyze this input: '{user_input}'"}
+                ],
+                max_tokens=200,
+                temperature=0.7
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            if result.lower() == "none":
+                return ""
+            else:
+                return result
+                
+        except Exception as e:
+            print(f"[LOG] Error in greeting/off-topic detection: {e}")
+            return ""
+    
+    @staticmethod
+    def get_varied_offtopic_response(user_input: str, language: str = "en", openai_client=None) -> str:
+        """
+        Generate varied, casual responses for off-topic content without emojis.
+        Returns a short, conversational response that redirects to the main task.
+        """
+        if not user_input.strip():
+            return ""
+            
+        if not openai_client:
+            from openai import OpenAI
+            openai_client = OpenAI()
+
+        # More formal, complete response templates for better concatenation
+        english_templates = [
+            "I understand your question, but that's outside my area of expertise. Let me help you with personality analysis instead.",
+            "That's an interesting topic, however I specialize in personality analysis. Let's continue with that.",
+            "I appreciate your curiosity, but I'm designed to focus on personality assessment. Shall we proceed?",
+            "That's beyond my current scope, but I'd be happy to continue analyzing your personality traits.",
+            "I recognize your interest in that topic, though my expertise is in personality analysis. Let's continue.",
+            "While that's a fascinating subject, my role is to help with personality evaluation. Let's get back to that.",
+            "I understand your question, but I'm specifically designed for personality analysis. Let me continue helping you with that.",
+            "That topic is outside my specialization, but I'm here to assist with your personality assessment.",
+            "I see what you're asking about, however my focus is on personality analysis. Let's proceed with that.",
+            "That's not within my area of expertise, but I can certainly help you understand your personality better."
+        ]
+        
+        arabic_templates = [
+            "أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.",
+            "هذا موضوع مثير للاهتمام، لكنني متخصص في تحليل الشخصية. لنكمل بذلك.",
+            "أقدر فضولك، لكنني مصمم للتركيز على تقييم الشخصية. هل نتابع؟",
+            "هذا خارج نطاقي الحالي، لكنني سأكون سعيداً لمتابعة تحليل سمات شخصيتك.",
+            "أدرك اهتمامك بذلك الموضوع، لكن خبرتي في تحليل الشخصية. لنكمل.",
+            "رغم أن هذا موضوع رائع، دوري هو المساعدة في تقييم الشخصية. لنعود لذلك.",
+            "أفهم سؤالك، لكنني مصمم خصيصاً لتحليل الشخصية. دعني أكمل مساعدتك في ذلك.",
+            "هذا الموضوع خارج تخصصي، لكنني هنا لمساعدتك في تقييم شخصيتك.",
+            "أرى ما تسأل عنه، لكن تركيزي على تحليل الشخصية. لننتقل لذلك.",
+            "هذا ليس في مجال خبرتي، لكن يمكنني بالتأكيد مساعدتك على فهم شخصيتك بشكل أفضل."
+        ]
+
+        system_prompt = f"""You are a professional personality analyst that provides formal, complete responses for off-topic queries.
+
+MISSION: If the input is off-topic or not related to personality analysis, respond with a polite, professional redirect that flows well when concatenated with clarification questions.
+
+RESPONSE STYLE:
+- Use formal, complete sentences
+- Be polite and professional
+- NO emojis or casual expressions  
+- Redirect professionally to personality analysis
+- Make responses that flow well with follow-up questions
+- Use the language: {"Arabic" if language == "ar" else "English"}
+- End with a transition that connects well to clarification questions
+
+RESPONSE EXAMPLES for {"Arabic" if language == "ar" else "English"}:
+{chr(10).join(f"- {template}" for template in (arabic_templates if language == "ar" else english_templates)[:5])}
+
+RULES:
+1. If off-topic: Generate ONE professional redirect response similar to examples
+2. If personality-related: Return "none"  
+3. Make it formal and complete for better concatenation
+4. End with a smooth transition to personality questions"""
+
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Respond to: '{user_input}'"}
+                ],
+                max_tokens=100,
+                temperature=0.6
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            if result.lower() == "none":
+                return ""
+            else:
+                return result
+                
+        except Exception as e:
+            print(f"[LOG] Error in varied off-topic detection: {e}")
+            # Fallback to random template
+            import random
+            templates = arabic_templates if language == "ar" else english_templates
+            return random.choice(templates)
+    
+    @staticmethod
+    def _create_combined_identity_response(categories: list, language: str) -> str:
+        """
+        Create a single, flowing, friendly response block that combines multiple identity categories
+        into one readable, conversational sentence.
+        """
+        if not categories:
+            return ""
+        
+        # Remove duplicates and maintain order
+        unique_categories = []
+        for cat in categories:
+            if cat not in unique_categories:
+                unique_categories.append(cat)
+        
+        if language == "ar":
+            return PersonalityAnalyzer._create_arabic_flowing_response(unique_categories)
+        else:
+            return PersonalityAnalyzer._create_english_flowing_response(unique_categories)
+    
+    @staticmethod
+    def _create_english_flowing_response(categories: list) -> str:
+        """
+        Create a single flowing English response that naturally combines all requested information.
+        """
+        parts = []
+        
+        # Start with friendly introduction
+        if 'who_are_you' in categories:
+            parts.append("I'm Minus Zero, your friendly AI assistant and part of the BEGINING project")
+        
+        # Add project description if asked
+        if 'what_is_begining' in categories:
+            if parts:
+                parts.append("BEGINING is a comprehensive personality trait measurement system that explores the foundations of intellectual, behavioral, and societal excellence, classifying individuals into 120 unique personality types")
+            else:
+                parts.append("BEGINING is a comprehensive personality trait measurement system that explores intellectual, behavioral, and societal excellence")
+        
+        # Add purpose naturally
+        if 'purpose' in categories:
+            if parts:
+                parts.append("My purpose is to guide you in discovering your unique strengths, patterns, and inclinations so you can better understand yourself and how you interact with the world around you")
+            else:
+                parts.append("My purpose is to guide you in discovering your strengths, patterns, and inclinations for better self-understanding")
+        
+        # Add role/methodology
+        if 'role' in categories or 'how_analyze' in categories:
+            if parts:
+                parts.append("I analyze your personality using a structured approach that examines your emotional, social, cognitive, and behavioral traits to create your personalized profile")
+            else:
+                parts.append("I analyze personality through a structured approach examining emotional, social, cognitive, and behavioral traits")
+        
+        # Add team/developer info
+        if 'developer' in categories or 'team' in categories:
+            if parts:
+                parts.append("I was developed by a talented team of Saudi researchers and engineers specializing in psychology, sociology, and artificial intelligence")
+            else:
+                parts.append("Developed by Saudi experts in psychology and AI technology")
+        
+        # Add objectives if specifically asked
+        if 'objectives' in categories:
+            if parts:
+                parts.append("Our objectives include educational guidance, human resource development, academic research, and future integration with advanced AI systems")
+            else:
+                parts.append("We focus on educational guidance, HR development, and research applications")
+        
+        # Create one flowing sentence
+        if len(parts) == 1:
+            response = parts[0] + ". Let's begin uncovering what makes you unique!"
+        elif len(parts) == 2:
+            response = f"{parts[0]}, and {parts[1].lower()}. Let's begin this exciting journey of self-discovery together!"
+        else:
+            # Multiple parts - create flowing narrative
+            response = f"{parts[0]}. {parts[1]}, and {' '.join(parts[2:]).lower()}. I'm here to help you explore your traits, tendencies, and inner potential. Let's begin uncovering what makes you truly unique!"
+        
+        return response
+    
+    @staticmethod
+    def _create_arabic_flowing_response(categories: list) -> str:
+        """
+        Create a single flowing Arabic response that naturally combines all requested information.
+        """
+        parts = []
+        
+        # Start with friendly introduction
+        if 'who_are_you' in categories:
+            parts.append("أنا ماينس زيرو، مساعدك الذكي الودود وجزء من مشروع BEGINING")
+        
+        # Add project description
+        if 'what_is_begining' in categories:
+            if parts:
+                parts.append("BEGINING هو نظام شامل لقياس سمات الشخصية يستكشف أسس التميز الفكري والسلوكي والاجتماعي، ويصنف الأفراد إلى 120 نوعًا فريدًا من الشخصيات")
+            else:
+                parts.append("BEGINING هو نظام شامل لقياس سمات الشخصية يستكشف التميز الفكري والسلوكي")
+        
+        # Add purpose
+        if 'purpose' in categories:
+            if parts:
+                parts.append("هدفي هو إرشادك لاكتشاف نقاط قوتك وأنماطك وميولك الفريدة، لتتمكن من فهم نفسك بشكل أفضل وطريقة تفاعلك مع العالم من حولك")
+            else:
+                parts.append("هدفي إرشادك لاكتشاف نقاط قوتك وأنماطك لفهم أفضل لذاتك")
+        
+        # Add role/methodology
+        if 'role' in categories or 'how_analyze' in categories:
+            if parts:
+                parts.append("أحلل شخصيتك باستخدام منهج منظم يدرس السمات العاطفية والاجتماعية والمعرفية والسلوكية لإنشاء ملفك الشخصي المخصص")
+            else:
+                parts.append("أحلل الشخصية عبر منهج منظم يدرس السمات العاطفية والاجتماعية والمعرفية")
+        
+        # Add team/developer info
+        if 'developer' in categories or 'team' in categories:
+            if parts:
+                parts.append("تم تطويري من قبل فريق موهوب من الباحثين والمهندسين السعوديين المتخصصين في علم النفس وعلم الاجتماع والذكاء الاصطناعي")
+            else:
+                parts.append("طُورت من قبل خبراء سعوديين في علم النفس وتقنية الذكاء الاصطناعي")
+        
+        # Add objectives if asked
+        if 'objectives' in categories:
+            if parts:
+                parts.append("أهدافنا تشمل الإرشاد التعليمي وتطوير الموارد البشرية والبحث الأكاديمي والتكامل المستقبلي مع أنظمة الذكاء الاصطناعي المتقدمة")
+            else:
+                parts.append("نركز على الإرشاد التعليمي وتطوير الموارد البشرية والتطبيقات البحثية")
+        
+        # Create one flowing response
+        if len(parts) == 1:
+            response = parts[0] + ". لنبدأ باكتشاف ما يميزك!"
+        elif len(parts) == 2:
+            response = f"{parts[0]}، و{parts[1]}. لنبدأ هذه الرحلة المثيرة لاكتشاف الذات معًا!"
+        else:
+            # Multiple parts - create flowing narrative  
+            response = f"{parts[0]}. {parts[1]}، و{' '.join(parts[2:])}. أنا هنا لمساعدتك على استكشاف سماتك وميولك وإمكاناتك الداخلية. لنبدأ باكتشاف ما يجعلك مميزًا حقًا!"
+        
+        return response
         
     SYSTEM_PROMPT = """
 You are a sociologist and can analyze and extract character descriptions from texts in a professional manner, in line with your field.
@@ -471,6 +1087,7 @@ Example Output — Off-topic (non-identity):
     "personal_greeting": "Hey Ahmad! Nice to meet you! Working as an engineer must be exciting!",
     "description_arabic": "",
     "description_english": "",
+    "description_identity": null,
     "missing_traits": ["behavioral", "emotional"],
     "clarification_questions": [
         "How do you usually respond when faced with unexpected challenges?"
@@ -487,6 +1104,7 @@ Example Output — Complete will always include identity as null
     "personal_greeting": "",
     "description_arabic": "أحمد شخصية متميزة تجمع بين العقلانية الهادئة والدفء الاجتماعي، يتعامل مع التحديات بصبر وحكمة، ويملك قدرة فريدة على الموازنة بين التفكير العملي والذكاء العاطفي.",
     "description_english": "Ahmed possesses a unique blend of calm rationality and social warmth, approaching challenges with patience and wisdom while maintaining an exceptional balance between practical thinking and emotional intelligence.",
+    "description_identity": null,
     "missing_traits": [],
     "clarification_questions": [],
     "input_tokens": 1245,
@@ -683,6 +1301,45 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             "total_tokens": getattr(usage, "total_tokens", None) if usage else None,
         }
 
+    @staticmethod
+    def _extract_traits_by_pattern(text: str) -> set:
+        """
+        Extract personality traits using regex patterns as a fallback.
+        Returns a set of trait categories found in the text.
+        Supports both English and Arabic text.
+        """
+        import re
+        found_traits = set()
+        text_lower = text.lower()
+        
+        # English patterns
+        english_patterns = {
+            "emotional": r"enthusiastic|happy|sad|calm|feel(s)?|emotion|stress|excited|passion|motivat(ed|ion)|anxiety|angry|nervous|worried|content|optimistic|pessimistic|joyful|frustrated|relaxed|overwhelmed|mood|temper|patient|sensitive|expressive|reserved|emotional intelligence|cope|satisfaction|proud|embarrassed|guilty|inspired|enjoy|love|like|hate|dislike",
+            "social": r"collaborative|team|help|assist|shy|introvert|extrovert|interact|polite|friendly|people|others|social|network|connection|relationship|communicate|listen|leadership|followership|assertive|passive|aggressive|empathy|sympathy|understand|socialize|negotiate|persuade|influence|charm|crowd|isolation|community|group|belong|inclusion|exclusion|trust|distrust|approachable|distant|boundary|conflict|mentor|colleagues|discussions",
+            "cognitive": r"think|critical|logical|analytical|understand|reason|solve|strateg(y|ic)|intuitive|creative|innovative|practical|abstract|concrete|detail-oriented|big picture|conceptual|perspective|mental|intellectual|curious|learning|knowledge|information|decision|judgment|bias|objective|subjective|rational|irrational|memory|attention|focus|concentrate|distracted|multi-task|prioritize|plan|reflect|comprehend|insight|wisdom|intelligence|data|analysis|patterns|insights|problems",
+            "behavioral": r"organized|spontaneous|routine|habit|act|impulsive|disciplined|methodical|child(ish)?|consistent|reliable|flexible|rigid|adaptable|predictable|unpredictable|responsible|irresponsible|cautious|risk-taking|procrastinate|proactive|reactive|efficient|systematic|messy|neat|punctual|late|deadline|priority|goal|achievement|motivation|ambition|lazy|industrious|perseverance|persistence|give up|determined|stubborn|exercise|diet|sleep|activity|energetic|sedentary|roles|working"
+        }
+        
+        # Arabic patterns
+        arabic_patterns = {
+            "emotional": r"يستمتع|أستمتع|أحب|يحب|أشعر|يشعر|رضا|سعيد|حزين|هادئ|متحمس|شغوف|قلق|غاضب|متوتر|قلق|راض|متفائل|متشائم|فرح|محبط|مسترخي|مرهق|مزاج|صبور|حساس|معبر|محفوظ|ذكي عاطفي|تأقلم|رضا|فخور|محرج|مذنب|ملهم|استمتاع|حب|إعجاب|كراهية|عدم إعجاب",
+            "social": r"تعاوني|فريق|فرق|مساعدة|يساعد|خجول|منطوي|منفتح|تفاعل|مهذب|ودود|الناس|الآخرين|اجتماعي|شبكة|اتصال|علاقة|تواصل|استماع|قيادة|قائد|أدوار القيادة|حازم|سلبي|عدواني|تعاطف|تفهم|اجتماع|تفاوض|إقناع|تأثير|سحر|حشد|عزلة|مجتمع|مجموعة|انتماء|شمول|استبعاد|ثقة|عدم ثقة|ودود|بعيد|حدود|صراع|إرشاد|زملاء|مناقشات",
+            "cognitive": r"تفكير|نقدي|منطقي|تحليلي|فهم|سبب|حل|استراتيجي|بديهي|إبداعي|مبتكر|عملي|مجرد|ملموس|موجه للتفاصيل|الصورة الكبيرة|مفاهيمي|منظور|عقلي|فكري|فضولي|تعلم|معرفة|معلومات|قرار|حكم|تحيز|موضوعي|ذاتي|عقلاني|غير عقلاني|ذاكرة|انتباه|تركيز|تركيز|مشتت|متعدد المهام|أولوية|خطة|تأمل|فهم|بصيرة|حكمة|ذكاء|بيانات|تحليل|أنماط|رؤى|مشاكل|مشكلات",
+            "behavioral": r"منظم|عفوي|روتين|عادة|فعل|متهور|منضبط|منهجي|طفولي|متسق|موثوق|مرن|جامد|قابل للتكيف|متوقع|غير متوقع|مسؤول|غير مسؤول|حذر|مخاطر|تأجيل|استباقي|رد فعل|فعال|منهجي|فوضوي|أنيق|دقيق|متأخر|موعد نهائي|أولوية|هدف|إنجاز|دافع|طموح|كسلان|مجتهد|مثابرة|إصرار|استسلام|مصمم|عنيد|تمرين|نظام غذائي|نوم|نشاط|نشيط|خامل|أدوار|عمل|عامل"
+        }
+        
+        # Check English patterns
+        for trait_category, pattern in english_patterns.items():
+            if re.search(pattern, text_lower):
+                found_traits.add(trait_category)
+        
+        # Check Arabic patterns (no need to lowercase for Arabic)
+        for trait_category, pattern in arabic_patterns.items():
+            if re.search(pattern, text):
+                found_traits.add(trait_category)
+        
+        return found_traits
+
     def analyze(
         self,
         id: int,
@@ -708,73 +1365,354 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             detected_languages = "ar"
         self.logger.info(f"Step: Language detected as {detected_languages}")
 
-        # 1. Greeting / Off-topic detection (stub: always False, implement as needed)
-        is_greeting_or_offtopic = False  # TODO: Implement actual detection logic
-        self.logger.info(f"Step: is_greeting_or_offtopic={is_greeting_or_offtopic}")
-        if is_greeting_or_offtopic:
-            fallback_question = "هل يمكنك أن تخبرني المزيد عن نفسك؟" if detected_languages == "ar" else "Could you tell me more about yourself?"
-            self.logger.info(f"Step: Detected greeting/off-topic. Returning fallback question: {fallback_question}")
-            result = {
-                "id": id,
-                "status": "incomplete",
-                "personal_greeting_and_off_topic": user_input or "",
-                "description_english": "",
-                "description_arabic": "",
-                "description_identity": "",
-                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
-                "clarification_questions": [fallback_question],
-                "input_tokens": len(user_input.split()),
-                "output_tokens": 0,
-                "total_tokens": len(user_input.split())
-            }
-            self.logger.info(f"[EXIT] analyze (greeting/off-topic): {result}")
-            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
-            return result
+        # 1. Check for conversation context first
+        has_conversation_history = bool(new_input and isinstance(new_input, list) and len(new_input) > 0)
+        
+        # 2. For conversation with history: check ONLY the LATEST answer
+        if has_conversation_history:
+            latest_qa = new_input[-1]  # Get the last (most recent) Q&A pair
+            latest_answer = latest_qa.get("answer", "").strip()
+            self.logger.info(f"Step: Conversation detected, analyzing LATEST answer: {latest_answer}")
+            
+            if latest_answer:
+                # Check latest answer in order: greeting → identity → off-topic → personality
+                
+                # 1. Check if latest answer is greeting (highest priority)
+                try:
+                    greeting_response = self.get_greeting_or_offtopic_response(latest_answer, detected_languages, openai_client=self.client)
+                    if greeting_response and self._is_greeting(latest_answer, detected_languages):
+                        self.logger.info(f"Step: Latest answer is greeting")
+                        contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                        
+                        result = {
+                            "id": id,
+                            "status": "incomplete",
+                            "personal_greeting_and_off_topic": greeting_response,
+                            "description_english": "",
+                            "description_arabic": "",
+                            "description_identity": None,
+                            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                            "clarification_questions": [contextual_question],
+                            "input_tokens": len(user_input.split()),
+                            "output_tokens": len(greeting_response.split()),
+                            "total_tokens": len(user_input.split()) + len(greeting_response.split())
+                        }
+                        self.logger.info(f"[EXIT] analyze (latest answer greeting): {result}")
+                        self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                        return result
+                except Exception as e:
+                    self.logger.error(f"Error checking latest answer for greeting: {e}")
+                
+                # 2. Check if latest answer is identity question
+                try:
+                    identity_response = self.get_identity_response(latest_answer, detected_languages, openai_client=self.client)
+                    if identity_response:
+                        self.logger.info(f"Step: Latest answer is identity question")
+                        # Generate clarification question for personality traits
+                        try:
+                            clarification_questions = self.generate_clarification_questions_gpt(["emotional", "social", "cognitive", "behavioral"], detected_languages, openai_client=self.client, logger=self.logger)
+                        except Exception as e:
+                            self.logger.error(f"Error generating clarification questions: {e}")
+                            clarification_questions = []
+                        if not clarification_questions:
+                            contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                            clarification_questions = [contextual_question]
+                        
+                        result = {
+                            "id": id,
+                            "status": "incomplete",
+                            "personal_greeting_and_off_topic": "",
+                            "description_english": "",
+                            "description_arabic": "",
+                            "description_identity": identity_response,
+                            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                            "clarification_questions": clarification_questions,
+                            "input_tokens": len(user_input.split()),
+                            "output_tokens": len(identity_response.split()),
+                            "total_tokens": len(user_input.split()) + len(identity_response.split())
+                        }
+                        self.logger.info(f"[EXIT] analyze (latest answer identity): {result}")
+                        self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                        return result
+                except Exception as e:
+                    self.logger.error(f"Error checking latest answer for identity: {e}")
+                
+                # 3. Check if latest answer is off-topic
+                try:
+                    off_topic_response = self.get_greeting_or_offtopic_response(latest_answer, detected_languages, openai_client=self.client)
+                    if off_topic_response and not self._is_greeting(latest_answer, detected_languages):
+                        self.logger.info(f"Step: Latest answer is off-topic (direct detection), generating varied response")
+                        # Generate varied casual response
+                        try:
+                            varied_response = self.get_varied_offtopic_response(latest_answer, detected_languages, openai_client=self.client)
+                        except Exception as e:
+                            self.logger.error(f"Error generating varied off-topic response: {e}")
+                            if detected_languages == "ar":
+                                varied_response = "تمام لكن هذا خارج نطاقي. هل نكمل طلبك؟"
+                            else:
+                                varied_response = "Got it but that's outside my scope. Want me to continue your request?"
+                        
+                        contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                        
+                        result = {
+                            "id": id,
+                            "status": "incomplete",
+                            "personal_greeting_and_off_topic": varied_response,
+                            "description_english": "",
+                            "description_arabic": "",
+                            "description_identity": None,
+                            "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                            "clarification_questions": [contextual_question],
+                            "input_tokens": len(user_input.split()),
+                            "output_tokens": len(varied_response.split()),
+                            "total_tokens": len(user_input.split()) + len(varied_response.split())
+                        }
+                        self.logger.info(f"[EXIT] analyze (latest answer off-topic): {result}")
+                        self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                        return result
+                    else:
+                        # Check if answer has no personality content (alternative off-topic detection)
+                        personality_content = self._extract_personality_content_from_mixed_input(latest_answer, detected_languages)
+                        if not personality_content.strip():
+                            self.logger.info(f"Step: Latest answer is off-topic (no personality content), generating varied response")
+                            # Generate varied casual response
+                            try:
+                                varied_response = self.get_varied_offtopic_response(latest_answer, detected_languages, openai_client=self.client)
+                            except Exception as e:
+                                self.logger.error(f"Error generating varied off-topic response: {e}")
+                                if detected_languages == "ar":
+                                    varied_response = "تمام لكن هذا خارج نطاقي. هل نكمل طلبك؟"
+                                else:
+                                    varied_response = "Got it but that's outside my scope. Want me to continue your request?"
+                            
+                            contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                            
+                            result = {
+                                "id": id,
+                                "status": "incomplete",
+                                "personal_greeting_and_off_topic": varied_response,
+                                "description_english": "",
+                                "description_arabic": "",
+                                "description_identity": None,
+                                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                                "clarification_questions": [contextual_question],
+                                "input_tokens": len(user_input.split()),
+                                "output_tokens": len(varied_response.split()),
+                                "total_tokens": len(user_input.split()) + len(varied_response.split())
+                            }
+                            self.logger.info(f"[EXIT] analyze (latest answer off-topic via personality check): {result}")
+                            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                            return result
+                except Exception as e:
+                    self.logger.error(f"Error checking latest answer for off-topic: {e}")
+                
+                # 4. If latest answer is none of the above, continue with personality analysis
+                self.logger.info(f"Step: Latest answer is personality-related, continuing with trait analysis")
+                
+        # Clean user_input to contain only self-description content for personality analysis
+        self.logger.info(f"Step: Cleaning user_input to extract only personality content")
+        cleaned_user_input = self._extract_personality_content_from_mixed_input(user_input, detected_languages)
+        if cleaned_user_input.strip():
+            self.logger.info(f"Step: Cleaned user_input for personality analysis: {cleaned_user_input}")
+            user_input = cleaned_user_input.strip()
+        else:
+            self.logger.info(f"Step: No personality content found in user_input after cleaning")
+        
+        # Continue with the rest of the analysis...
+            
+            # Check user_input for off-topic/greeting
+            try:
+                greeting_response = self.get_greeting_or_offtopic_response(user_input, detected_languages, openai_client=self.client)
+                if greeting_response:
+                    self.logger.info(f"Step: user_input is greeting/off-topic")
+                    contextual_question = "هل يمكنك أن تخبرني المزيد عن نفسك؟" if detected_languages == "ar" else "Could you tell me more about yourself?"
+                    
+                    result = {
+                        "id": id,
+                        "status": "incomplete",
+                        "personal_greeting_and_off_topic": greeting_response,
+                        "description_english": "",
+                        "description_arabic": "",
+                        "description_identity": None,
+                        "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                        "clarification_questions": [contextual_question],
+                        "input_tokens": len(user_input.split()),
+                        "output_tokens": len(greeting_response.split()),
+                        "total_tokens": len(user_input.split()) + len(greeting_response.split())
+                    }
+                    self.logger.info(f"[EXIT] analyze (user_input greeting/off-topic): {result}")
+                    self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                    return result
+            except Exception as e:
+                self.logger.error(f"Error checking user_input for greeting/off-topic: {e}")
+            
+            # Check user_input for identity
+            try:
+                identity_response = self.get_identity_response(user_input, detected_languages, openai_client=self.client)
+                if identity_response:
+                    self.logger.info(f"Step: user_input is identity question")
+                    try:
+                        clarification_questions = self.generate_clarification_questions_gpt(["emotional", "social", "cognitive", "behavioral"], detected_languages, openai_client=self.client, logger=self.logger)
+                    except Exception as e:
+                        self.logger.error(f"Error generating clarification questions: {e}")
+                        clarification_questions = []
+                    if not clarification_questions:
+                        contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                        clarification_questions = [contextual_question]
+                    
+                    result = {
+                        "id": id,
+                        "status": "incomplete",
+                        "personal_greeting_and_off_topic": "",
+                        "description_english": "",
+                        "description_arabic": "",
+                        "description_identity": identity_response,
+                        "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                        "clarification_questions": clarification_questions,
+                        "input_tokens": len(user_input.split()),
+                        "output_tokens": len(identity_response.split()),
+                        "total_tokens": len(user_input.split()) + len(identity_response.split())
+                    }
+                    self.logger.info(f"[EXIT] analyze (user_input identity): {result}")
+                    self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+                    return result
+            except Exception as e:
+                self.logger.error(f"Error checking user_input for identity: {e}")
 
-        # 2. Trait extraction: accumulate traits from all non-identity answers
+        # 3. Continue with personality trait extraction
         trait_patterns = self.TRAIT_PATTERNS
         present_traits = set()
         answers_for_traits = []
         identity_response = ""
 
-        # Check if the latest answer in new_input is an identity question
-        latest_answer = None
-        if new_input and isinstance(new_input, list):
-            latest_answer = new_input[-1].get("answer", "").strip()
-        self.logger.info(f"Step: Latest answer in new_input: {latest_answer}")
-        is_latest_identity = False
+        # Check if user_input contains identity questions first
+        is_user_input_identity = False
         try:
-            if latest_answer and self.get_identity_response(latest_answer, detected_languages, openai_client=self.client):
-                identity_response = self.get_identity_response(latest_answer, detected_languages, openai_client=self.client)
-                is_latest_identity = True
-            else:
-                identity_response = ""
-        except Exception as e:
-            self.logger.error(f"Error in identity detection for latest_answer: {e}")
-            identity_response = ""
-        self.logger.info(f"Step: Identity response: {identity_response}")
-        self.logger.info(f"Step: is_latest_identity={is_latest_identity}")
-
-        # Accumulate all non-identity answers for trait extraction
-        for qa in (new_input or []):
-            answer = qa.get("answer", "").strip()
-            self.logger.info(f"Step: Checking if answer is identity: {answer}")
-            try:
-                is_identity = self.get_identity_response(answer, detected_languages, openai_client=self.client)
-            except Exception as e:
-                self.logger.error(f"Error in identity detection for answer: {e}")
-                is_identity = False 
-            if not is_identity:
-                answers_for_traits.append(answer)
-        # Also include user_input if not an identity question
-        try:
-            is_user_input_identity = self.get_identity_response(user_input, detected_languages, openai_client=self.client)
+            user_identity_response = self.get_identity_response(user_input, detected_languages, openai_client=self.client)
+            if user_identity_response:
+                identity_response = user_identity_response
+                is_user_input_identity = True
+                self.logger.info(f"Step: user_input detected as identity question")
         except Exception as e:
             self.logger.error(f"Error in identity detection for user_input: {e}")
-            is_user_input_identity = False
+            
+        # Check if the LATEST answer in new_input is an identity question (for identity responses)
+        latest_answer = None
+        if not is_user_input_identity and new_input and isinstance(new_input, list):
+            latest_answer = new_input[-1].get("answer", "").strip()
+        self.logger.info(f"Step: Latest answer in new_input (for identity response): {latest_answer}")
+        is_latest_identity = False
         if not is_user_input_identity:
-            answers_for_traits.append(user_input)
-        self.logger.info(f"Step: Answers for trait extraction: {answers_for_traits}")
+            try:
+                if latest_answer and self.get_identity_response(latest_answer, detected_languages, openai_client=self.client):
+                    identity_response = self.get_identity_response(latest_answer, detected_languages, openai_client=self.client)
+                    is_latest_identity = True
+                elif not identity_response:
+                    identity_response = ""
+            except Exception as e:
+                self.logger.error(f"Error in identity detection for latest_answer: {e}")
+                if not identity_response:
+                    identity_response = ""
+        self.logger.info(f"Step: Identity response: {identity_response}")
+        self.logger.info(f"Step: is_latest_identity={is_latest_identity}, is_user_input_identity={is_user_input_identity}")
+
+        # ALWAYS include user_input for trait extraction, but clean it of identity questions
+        # Handle mixed content by separating personality descriptions from identity questions
+        cleaned_user_input = self._extract_personality_content_from_mixed_input(user_input, detected_languages)
+        if cleaned_user_input.strip():
+            answers_for_traits.append(cleaned_user_input)
+            self.logger.info(f"Step: Added user_input to trait extraction (cleaned)")
+        else:
+            self.logger.info(f"Step: user_input contained only identity questions, skipped")
+
+        # Accumulate ONLY personality descriptions from conversation history
+        # Filter out identity answers and only use self-descriptions for personality analysis
+        # Process in chronological order but prioritize LATEST answers for trait extraction
+        identity_answers_found = []
+        off_topic_answers_found = []
+        
+        for i, qa in enumerate(new_input or []):
+            answer = qa.get("answer", "").strip()
+            if not answer:
+                continue
+                
+            self.logger.info(f"Step: Checking answer {i+1} for personality content: {answer}")
+            try:
+                # Check if this answer is an identity question
+                is_identity = bool(self.get_identity_response(answer, detected_languages, openai_client=self.client))
+                
+                if is_identity:
+                    identity_answers_found.append((i, answer))
+                    self.logger.info(f"Step: Skipped answer {i+1} (detected as identity question): {answer}")
+                else:
+                    # Check if this answer is off-topic/greeting
+                    off_topic_response = self.get_greeting_or_offtopic_response(answer, detected_languages, openai_client=self.client)
+                    if off_topic_response:
+                        off_topic_answers_found.append((i, answer))
+                        self.logger.info(f"Step: Answer {i+1} detected as off-topic: {answer}")
+                    else:
+                        # Extract personality content from non-identity, non-off-topic answers
+                        personality_content = self._extract_personality_content_from_mixed_input(answer, detected_languages)
+                        if personality_content.strip():
+                            answers_for_traits.append(personality_content)
+                            self.logger.info(f"Step: Added answer {i+1} to trait extraction (personality content): {personality_content}")
+                        else:
+                            # If no personality content and not explicitly off-topic, treat as off-topic
+                            off_topic_answers_found.append((i, answer))
+                            self.logger.info(f"Step: Answer {i+1} contained no personality content, treating as off-topic")
+                    
+            except Exception as e:
+                self.logger.error(f"Error processing answer {i+1} for personality content: {e}")
+                # If error, treat as potential personality content
+                answers_for_traits.append(answer)
+        
+        # Log identity and off-topic answers found for debugging
+        if identity_answers_found:
+            self.logger.info(f"Step: Identity answers found at positions: {[pos for pos, _ in identity_answers_found]}")
+        if off_topic_answers_found:
+            self.logger.info(f"Step: Off-topic answers found at positions: {[pos for pos, _ in off_topic_answers_found]}")
+        
+        # Check if all new_input answers are off-topic (and no personality content from user_input)
+        if new_input and off_topic_answers_found and len(off_topic_answers_found) == len(new_input) and not answers_for_traits:
+            self.logger.info(f"Step: All conversation answers are off-topic, generating off-topic response")
+            
+            # Generate a varied, casual off-topic response
+            try:
+                # Combine all off-topic answers to generate a contextual response
+                all_off_topic_content = user_input + " " + " ".join([answer for _, answer in off_topic_answers_found])
+                off_topic_combined_response = self.get_varied_offtopic_response(all_off_topic_content, detected_languages, openai_client=self.client)
+            except Exception as e:
+                self.logger.error(f"Error generating varied off-topic response: {e}")
+                # Fallback to simple template
+                if detected_languages == "ar":
+                    off_topic_combined_response = "تمام لكن هذا خارج نطاقي. هل نكمل طلبك؟"
+                else:
+                    off_topic_combined_response = "Got it but that's outside my scope. Want me to continue your request?"
+            
+            # Generate appropriate follow-up question
+            if detected_languages == "ar":
+                contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟"
+            else:
+                contextual_question = "Could you tell me how you typically interact with others in social situations?"
+            
+            result = {
+                "id": id,
+                "status": "incomplete",
+                "personal_greeting_and_off_topic": off_topic_combined_response,
+                "description_english": "",
+                "description_arabic": "",
+                "description_identity": None,
+                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                "clarification_questions": [contextual_question],
+                "input_tokens": len(user_input.split()),
+                "output_tokens": len(off_topic_combined_response.split()) if off_topic_combined_response else 0,
+                "total_tokens": len(user_input.split()) + (len(off_topic_combined_response.split()) if off_topic_combined_response else 0)
+            }
+            self.logger.info(f"[EXIT] analyze (all off-topic): {result}")
+            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+            return result
+        
+        self.logger.info(f"Step: Final answers for trait extraction: {answers_for_traits}")
 
         # Use AI (GPT) to extract traits from all non-identity answers
         present_traits = set()
@@ -787,14 +1725,72 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                     present_traits.add(trait)
             except Exception as e:
                 self.logger.error(f"Error in trait extraction for answer '{answer}': {e}")
+                gpt_result = {"detected_traits": []}
+            
+            # Always use pattern matching as supplementary detection
+            self.logger.info(f"Step: Using supplementary pattern matching for answer: {answer}")
+            pattern_traits = self._extract_traits_by_pattern(answer)
+            self.logger.info(f"Step: Pattern-based traits for '{answer}': {pattern_traits}")
+            for trait in pattern_traits:
+                present_traits.add(trait)
+                    
         # Always check for all four traits
         all_traits = set(["emotional", "social", "cognitive", "behavioral"])
         missing_traits = [trait for trait in all_traits if trait not in present_traits]
         self.logger.info(f"Step: Present traits: {present_traits}, Missing traits: {missing_traits}")
 
-        # 3. Output logic
+        # 3. Output logic - Priority order: Complete personality > Identity > Incomplete
 
-        if is_latest_identity:
+        # FIRST: Check if personality analysis is complete (all traits found)
+        if not missing_traits:
+            # All traits present, generate complete personality description
+            # Use GPT to create a flowing description from all personality content
+            personality_text = " ".join(answers_for_traits)
+            
+            try:
+                # Generate professional personality description
+                description_prompt = f"""Based on the following personality information, create a professional, flowing personality description that captures the person's key traits:
+
+{personality_text}
+
+Create a 2-3 sentence description that highlights their emotional, social, cognitive, and behavioral characteristics in a natural, professional manner."""
+
+                description_response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a professional personality analyst. Create flowing, professional personality descriptions."},
+                        {"role": "user", "content": description_prompt}
+                    ],
+                    max_tokens=200,
+                    temperature=0.3
+                )
+                
+                generated_description = description_response.choices[0].message.content.strip()
+                
+            except Exception as e:
+                self.logger.error(f"Error generating personality description: {e}")
+                # Fallback to simple concatenation
+                generated_description = personality_text
+            
+            result = {
+                "id": id,
+                "status": "complete",
+                "personal_greeting_and_off_topic": "",
+                "description_english": generated_description if detected_languages == "en" else "",
+                "description_arabic": generated_description if detected_languages == "ar" else "",
+                "description_identity": None,
+                "missing_traits": [],
+                "clarification_questions": [],
+                "input_tokens": len(user_input.split()),
+                "output_tokens": len(generated_description.split()) if generated_description else 0,
+                "total_tokens": len(user_input.split()) + (len(generated_description.split()) if generated_description else 0)
+            }
+            self.logger.info(f"[EXIT] analyze (complete personality): {result}")
+            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+            return result
+
+        # SECOND: Check if identity response should be returned (when traits are incomplete)
+        if is_latest_identity or is_user_input_identity:
             # If traits are missing, generate a relevant clarification question
             try:
                 clarification_questions = self.generate_clarification_questions_gpt(missing_traits, detected_languages, openai_client=self.client, logger=self.logger)
@@ -810,7 +1806,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
                 "personal_greeting_and_off_topic": "",  # Only set if greeting/off-topic detected
                 "description_english": "",
                 "description_arabic": "",
-                "description_identity": identity_response if identity_response else "",  # Only set if identity detected
+                "description_identity": identity_response if identity_response else None,  # Only set if identity detected
                 "missing_traits": missing_traits,
                 "clarification_questions": clarification_questions,
                 "input_tokens": len(user_input.split()),
@@ -821,26 +1817,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
             return result
 
-        if not missing_traits:
-            # All traits present, status complete
-            result = {
-                "id": id,
-                "status": "complete",
-                "personal_greeting_and_off_topic": "",  # Only set if greeting/off-topic detected
-                "description_english": user_input if detected_languages == "en" else "",
-                "description_arabic": user_input if detected_languages == "ar" else "",
-                "description_identity": "",  # Only set if identity detected
-                "missing_traits": [],
-                "clarification_questions": [],
-                "input_tokens": len(user_input.split()),
-                "output_tokens": len(user_input.split()),
-                "total_tokens": len(user_input.split()) * 2
-            }
-            self.logger.info(f"[EXIT] analyze (complete): {result}")
-            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
-            return result
-
-        # 4. Clarification stage (ask one question for missing traits)
+        # THIRD: Handle incomplete personality analysis (no identity questions but missing traits)
         try:
             clarification_questions = self.generate_clarification_questions_gpt(missing_traits, detected_languages, openai_client=self.client, logger=self.logger)
         except Exception as e:
@@ -855,7 +1832,7 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             "personal_greeting_and_off_topic": "",  # Only set if greeting/off-topic detected
             "description_english": "",
             "description_arabic": "",
-            "description_identity": "",  # Only set if identity detected
+            "description_identity": None,  # Only set if identity detected
             "missing_traits": missing_traits,
             "clarification_questions": clarification_questions,
             "input_tokens": len(user_input.split()),

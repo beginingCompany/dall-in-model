@@ -1,20 +1,24 @@
 # BEGINING Personality Analysis API
 
 ## Overview
+
 The BEGINING Personality Analysis API provides comprehensive personality trait analysis and classification using advanced machine learning models. The API supports multilingual analysis (English and Arabic) and includes intelligent handling for identity questions and off-topic queries.
 
 ## Base URL
-```
+
+```json
 http://localhost:8000
 ```
 
 ## Endpoints
 
 ### 1. Root Endpoint
-**GET /** 
+
+**GET /**
 Returns basic API information and available endpoints.
 
 **Response:**
+
 ```json
 {
   "message": "BEGINING Personality Analysis API",
@@ -29,10 +33,12 @@ Returns basic API information and available endpoints.
 ```
 
 ### 2. Health Check
+
 **GET /health**
 Checks if the API and its services are running properly.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -45,10 +51,12 @@ Checks if the API and its services are running properly.
 ```
 
 ### 3. Personality Analysis (Main Endpoint)
+
 **POST /analyze-personality**
 Analyzes user input to extract personality traits and provide intelligent responses.
 
 **Request Body:**
+
 ```json
 {
   "id": 1,
@@ -64,6 +72,7 @@ Analyzes user input to extract personality traits and provide intelligent respon
 ```
 
 **Parameters:**
+
 - `id` (integer): Unique user identifier
 - `user_input` (string): Initial user input text
 - `new_input` (array): Optional conversation history with Q&A pairs
@@ -72,6 +81,7 @@ Analyzes user input to extract personality traits and provide intelligent respon
 **Response Status Types:**
 
 #### 1. Complete Analysis
+
 ```json
 {
   "id": 1,
@@ -89,6 +99,7 @@ Analyzes user input to extract personality traits and provide intelligent respon
 ```
 
 #### 2. Incomplete Analysis
+
 ```json
 {
   "id": 1,
@@ -109,6 +120,7 @@ Analyzes user input to extract personality traits and provide intelligent respon
 ```
 
 #### 3. Identity Questions
+
 ```json
 {
   "id": 1,
@@ -128,6 +140,7 @@ Analyzes user input to extract personality traits and provide intelligent respon
 ```
 
 #### 4. Off-Topic Questions
+
 ```json
 {
   "id": 1,
@@ -147,10 +160,12 @@ Analyzes user input to extract personality traits and provide intelligent respon
 ```
 
 ### 4. Personality Classification
+
 **POST /predict**
 Provides personality type classification from the 120-type BEGINING system.
 
 **Request Body:**
+
 ```json
 {
   "text": "I am a creative and analytical person who enjoys teamwork"
@@ -158,6 +173,7 @@ Provides personality type classification from the 120-type BEGINING system.
 ```
 
 **Response:**
+
 ```json
 {
   "text": "I am a creative and analytical person who enjoys teamwork",
@@ -179,10 +195,12 @@ Provides personality type classification from the 120-type BEGINING system.
 ```
 
 ### 5. User Memory Management
+
 **GET /user/{user_id}/memory**
 Retrieves stored conversation memory for a user.
 
 **Response:**
+
 ```json
 {
   "user_id": 123,
@@ -198,6 +216,7 @@ Retrieves stored conversation memory for a user.
 Clears stored conversation memory for a user.
 
 **Response:**
+
 ```json
 {
   "message": "Memory cleared for user 123"
@@ -205,10 +224,12 @@ Clears stored conversation memory for a user.
 ```
 
 ### 6. API Statistics
+
 **GET /stats**
 Returns basic usage statistics.
 
 **Response:**
+
 ```json
 {
   "active_users": 5,
@@ -220,31 +241,37 @@ Returns basic usage statistics.
 ## Features
 
 ### 🧠 **Intelligent Analysis**
+
 - **4-Trait System**: Analyzes emotional, social, cognitive, and behavioral traits
 - **120 Personality Types**: Classification into BEGINING's comprehensive personality system
 - **Adaptive Questioning**: Generates targeted clarification questions for missing traits
 
 ### 🌍 **Multilingual Support**
+
 - **English & Arabic**: Full support for both languages
 - **Auto-Detection**: Automatic language detection from user input
 - **Localized Responses**: Culture-appropriate responses in user's preferred language
 
 ### 🎯 **Smart Question Handling**
+
 - **Identity Detection**: Recognizes questions about the system itself
 - **Off-Topic Detection**: Identifies unrelated questions and guides back to personality topics
 - **Conversation Flow**: Maintains context across multiple interactions
 
 ### 🔧 **Robust Error Handling**
+
 - **Graceful Fallbacks**: Provides meaningful responses even when processing fails
 - **Input Validation**: Comprehensive validation of request parameters
 - **Memory Management**: Persistent conversation history with cleanup options
 
 ## Interactive Documentation
+
 Visit `/docs` for Swagger UI documentation or `/redoc` for ReDoc documentation when the server is running.
 
 ## Example Usage
 
 ### Python Example
+
 ```python
 import requests
 
@@ -264,6 +291,7 @@ print(f"Questions: {result['clarification_questions']}")
 ```
 
 ### PowerShell Example
+
 ```powershell
 $body = @{
     id = 1
@@ -276,6 +304,7 @@ Invoke-RestMethod -Uri "http://localhost:8000/analyze-personality" `
 ```
 
 ### cURL Example
+
 ```bash
 curl -X POST "http://localhost:8000/analyze-personality" \
   -H "Content-Type: application/json" \
@@ -287,12 +316,12 @@ curl -X POST "http://localhost:8000/analyze-personality" \
 ```
 
 ## Status Codes
+
 - **200**: Success
 - **400**: Bad Request (invalid input)
 - **422**: Validation Error (missing/invalid parameters)
 - **500**: Internal Server Error
 
 The API is now complete and fully functional with comprehensive error handling, multilingual support, and intelligent question detection!
-
 
 **Signature:** ENG Ahmed Almalki AI Engineer
