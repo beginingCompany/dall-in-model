@@ -2810,3 +2810,259 @@
 2025-09-01 15:48:23,526 INFO Step: Duration: 0.814s
 [LOG INIT] personality_analyzer log file created.
 2025-09-01 15:49:35,161 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+2025-09-02 13:50:18,983 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 13:50:18,984 INFO Step: Initializing analysis for user 102
+2025-09-02 13:50:18,984 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 13:50:18,984 INFO Step: Language detected as ar
+2025-09-02 13:50:18,985 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 13:50:23,219 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 13:50:24,591 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك. هل لديك أي اهتمامات خاصة ترغب في مناقشتها في سياق تحليل الشخص', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟'], 'input_tokens': 12, 'output_tokens': 27, 'total_tokens': 39}
+2025-09-02 13:50:24,592 INFO Step: Duration: 5.609s
+2025-09-02 13:50:38,388 INFO [ENTRY] analyze(id=225985882206, user_input=Hello! I'm someone who really enjoys working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions., new_input=[{'question': 'How do you usually interact with others in social settings?', 'answer': 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.'}], languages=en)
+2025-09-02 13:50:38,389 INFO Step: Initializing analysis for user 225985882206
+2025-09-02 13:50:38,389 INFO Step: Raw user_input after strip: Hello! I'm someone who really enjoys working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:38,389 INFO Step: Language detected as en
+2025-09-02 13:50:38,390 INFO Step: Conversation detected, analyzing LATEST answer: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:41,798 INFO Step: Latest answer is personality-related, continuing with trait analysis
+2025-09-02 13:50:41,799 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 13:50:42,945 INFO Step: Cleaned user_input for personality analysis: I'm someone who really enjoys working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:43,628 INFO Step: Latest answer in new_input (for identity response): I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:44,341 INFO Step: Identity response: 
+2025-09-02 13:50:44,342 INFO Step: is_latest_identity=False, is_user_input_identity=False
+2025-09-02 13:50:45,251 INFO Step: Added user_input to trait extraction (cleaned)
+2025-09-02 13:50:45,252 INFO Step: Checking answer 1 for personality content: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:47,949 INFO Step: Added answer 1 to trait extraction (personality content): I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:47,950 INFO Step: Final answers for trait extraction: ['I really enjoy working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.', 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.']
+2025-09-02 13:50:49,283 INFO Step: Traits extracted from answer 'I really enjoy working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': ['cognitive', 'social']
+2025-09-02 13:50:49,283 INFO Step: Using supplementary pattern matching for answer: I really enjoy working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:49,293 INFO Step: Pattern-based traits for 'I really enjoy working with data and solving complex analytical problems. I find great satisfaction in finding patterns and insights. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': {'social', 'cognitive', 'emotional', 'behavioral'}
+2025-09-02 13:50:50,333 INFO Step: Traits extracted from answer 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': ['social']
+2025-09-02 13:50:50,333 INFO Step: Using supplementary pattern matching for answer: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 13:50:50,334 INFO Step: Pattern-based traits for 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': {'social', 'behavioral', 'emotional'}
+2025-09-02 13:50:50,334 INFO Step: Present traits: {'behavioral', 'cognitive', 'social', 'emotional'}, Missing traits: []
+2025-09-02 13:50:52,048 INFO [EXIT] analyze (complete personality): {'id': 225985882206, 'status': 'complete', 'personal_greeting_and_off_topic': '', 'description_english': 'This individual possesses a keen analytical mind and a passion for unraveling complex data-driven challenges. Their natural inclination towards leadership and teamwork is evident in their ability to mentor and guide others, fostering a collaborative and supportive work environment. Their adeptness at finding patterns and insights showcases their cognitive prowess, making them a valuable asset in problem-solving and decision-making processes.', 'description_arabic': '', 'description_identity': None, 'missing_traits': [], 'clarification_questions': [], 'input_tokens': 45, 'output_tokens': 60, 'total_tokens': 105}
+2025-09-02 13:50:52,049 INFO Step: Duration: 13.658s
+2025-09-02 14:04:47,502 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:04:47,504 INFO Step: Initializing analysis for user 102
+2025-09-02 14:04:47,504 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:04:47,506 INFO Step: Language detected as ar
+2025-09-02 14:04:47,506 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:04:51,541 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:04:52,867 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك. هل يمكنني مساعدتك في فهم سمات شخصيتك؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟'], 'input_tokens': 12, 'output_tokens': 22, 'total_tokens': 34}
+2025-09-02 14:04:52,874 INFO Step: Duration: 5.369s
+2025-09-02 14:06:06,267 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء. كيف تسوي analyze, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}, {'question': 'هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟', 'answer': 'كيف تسوي analyze'}], languages=ar)
+2025-09-02 14:06:06,267 INFO Step: Initializing analysis for user 102
+2025-09-02 14:06:06,267 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء. كيف تسوي analyze
+2025-09-02 14:06:06,267 INFO Step: Language detected as ar
+2025-09-02 14:06:06,267 INFO Step: Conversation detected, analyzing LATEST answer: كيف تسوي analyze
+2025-09-02 14:06:09,057 INFO Step: Latest answer is identity question
+2025-09-02 14:06:09,058 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-02 14:06:10,716 INFO OpenAI response content: [
+    "هل يمكنك تقديم مثال على سلوكك الطبيعي في مواقف مختلفة؟"
+]
+2025-09-02 14:06:10,720 INFO [EXIT] analyze (latest answer identity): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': 'أحلل الشخصية عبر منهج منظم يدرس السمات العاطفية والاجتماعية والمعرفية. لنبدأ باكتشاف ما يميزك!', 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك تقديم مثال على سلوكك الطبيعي في مواقف مختلفة؟'], 'input_tokens': 15, 'output_tokens': 14, 'total_tokens': 29}
+2025-09-02 14:06:10,721 INFO Step: Duration: 4.454s
+2025-09-02 14:06:39,602 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:06:39,603 INFO Step: Initializing analysis for user 102
+2025-09-02 14:06:39,603 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:06:39,603 INFO Step: Language detected as ar
+2025-09-02 14:06:39,603 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:06:43,629 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:06:45,175 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك. هل يمكنني مساعدتك في فهم سمات شخصيتك؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟'], 'input_tokens': 12, 'output_tokens': 22, 'total_tokens': 34}
+2025-09-02 14:06:45,175 INFO Step: Duration: 5.571s
+2025-09-02 14:07:58,199 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء. كيف تسوي analyze, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}, {'question': 'هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟', 'answer': 'كيف تسوي analyze'}], languages=ar)
+2025-09-02 14:07:58,199 INFO Step: Initializing analysis for user 102
+2025-09-02 14:07:58,199 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء. كيف تسوي analyze
+2025-09-02 14:07:58,200 INFO Step: Language detected as ar
+2025-09-02 14:07:58,200 INFO Step: Conversation detected, analyzing LATEST answer: كيف تسوي analyze
+2025-09-02 14:08:00,484 INFO Step: Latest answer is identity question
+2025-09-02 14:08:00,484 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-02 14:08:01,303 INFO OpenAI response content: [
+    "هل تجد نفسك تعبر عن مشاعرك بسهولة وبوضوح؟"
+]
+
+2025-09-02 14:08:01,303 INFO [EXIT] analyze (latest answer identity): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': 'أحلل الشخصية عبر منهج منظم يدرس السمات العاطفية والاجتماعية والمعرفية. لنبدأ باكتشاف ما يميزك!', 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تجد نفسك تعبر عن مشاعرك بسهولة وبوضوح؟'], 'input_tokens': 15, 'output_tokens': 14, 'total_tokens': 29}
+2025-09-02 14:08:01,304 INFO Step: Duration: 3.106s
+2025-09-02 14:14:20,805 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:14:20,805 INFO Step: Initializing analysis for user 102
+2025-09-02 14:14:20,805 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:14:20,805 INFO Step: Language detected as ar
+2025-09-02 14:14:20,805 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:14:23,672 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:14:24,918 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك. هل يمكنني مساعدتك في فهم جوانب شخصيتك؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟'], 'input_tokens': 12, 'output_tokens': 22, 'total_tokens': 34}
+2025-09-02 14:14:24,922 INFO Step: Duration: 4.116s
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:17:58,272 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+2025-09-02 14:17:58,290 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:17:58,292 INFO Step: Initializing analysis for user 102
+2025-09-02 14:17:58,292 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:17:58,292 INFO Step: Language detected as ar
+2025-09-02 14:17:58,292 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:18:01,995 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:18:03,638 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك. هل يمكنني مساعدتك في فهم سمات شخصيتك؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': [], 'input_tokens': 12, 'output_tokens': 22, 'total_tokens': 34}
+2025-09-02 14:18:03,640 INFO Step: Duration: 5.347s
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:23:38,138 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+2025-09-02 14:24:12,732 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:24:12,732 INFO Step: Initializing analysis for user 102
+2025-09-02 14:24:12,732 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:24:12,733 INFO Step: Language detected as ar
+2025-09-02 14:24:12,733 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:24:17,935 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:24:19,270 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أنا متخصص في تحليل الشخصية. هل ترغب في معرفة المزيد حول سمات شخصيتك؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': [], 'input_tokens': 12, 'output_tokens': 13, 'total_tokens': 25}
+2025-09-02 14:24:19,270 INFO Step: Duration: 6.539s
+2025-09-02 14:24:31,110 INFO [ENTRY] analyze(id=102, user_input=what is the weather today, new_input=[], languages=ar)
+2025-09-02 14:24:31,110 INFO Step: Initializing analysis for user 102
+2025-09-02 14:24:31,110 INFO Step: Raw user_input after strip: what is the weather today
+2025-09-02 14:24:31,110 INFO Step: Language detected as ar
+2025-09-02 14:24:31,110 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:24:31,831 INFO Step: No personality content found in user_input after cleaning
+2025-09-02 14:24:35,139 INFO Step: Latest answer in new_input (for identity response): None
+2025-09-02 14:24:35,139 INFO Step: Identity response: 
+2025-09-02 14:24:35,139 INFO Step: is_latest_identity=False, is_user_input_identity=False
+2025-09-02 14:25:03,710 INFO Step: user_input contained only identity questions, skipped
+2025-09-02 14:25:03,710 INFO Step: Final answers for trait extraction: []
+2025-09-02 14:25:03,710 INFO Step: Present traits: set(), Missing traits: ['emotional', 'social', 'behavioral', 'cognitive']
+2025-09-02 14:25:03,710 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'behavioral', 'cognitive'], language=ar
+2025-09-02 14:25:04,730 INFO OpenAI response content: [
+    "هل يمكنك تقديم مثال على سلوك معين يمكن أن يوضح طبيعة هذا الشخص؟"
+]
+2025-09-02 14:25:04,733 INFO [EXIT] analyze (incomplete): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'behavioral', 'cognitive'], 'clarification_questions': ['هل يمكنك تقديم مثال على سلوك معين يمكن أن يوضح طبيعة هذا الشخص؟'], 'input_tokens': 5, 'output_tokens': 0, 'total_tokens': 5}
+2025-09-02 14:25:04,734 INFO Step: Duration: 33.624s
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:27:22,297 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:29:00,184 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:29:21,543 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+2025-09-02 14:29:21,564 INFO [ENTRY] analyze(id=102, user_input=what is the weather today, new_input=[], languages=ar)
+2025-09-02 14:29:21,566 INFO Step: Initializing analysis for user 102
+2025-09-02 14:29:21,566 INFO Step: Raw user_input after strip: what is the weather today
+2025-09-02 14:29:21,566 INFO Step: Language detected as ar
+2025-09-02 14:29:21,566 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:29:22,854 INFO Step: No personality content found in user_input after cleaning
+2025-09-02 14:29:26,888 INFO Step: Latest answer in new_input (for identity response): None
+2025-09-02 14:29:26,888 INFO Step: Identity response: 
+2025-09-02 14:29:26,888 INFO Step: is_latest_identity=False, is_user_input_identity=False
+2025-09-02 14:29:27,502 INFO Step: user_input contained only identity questions, skipped
+2025-09-02 14:29:27,502 INFO Step: Final answers for trait extraction: []
+2025-09-02 14:29:27,502 INFO Step: Present traits: set(), Missing traits: ['emotional', 'social', 'cognitive', 'behavioral']
+2025-09-02 14:29:27,502 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-02 14:29:28,833 INFO OpenAI response content: [
+    "هل تجد نفسك مستمتعًا بالتفاعل مع الآخرين وبناء العلاقات الاجتماعية؟"
+]
+2025-09-02 14:29:28,833 INFO [EXIT] analyze (incomplete): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تجد نفسك مستمتعًا بالتفاعل مع الآخرين وبناء العلاقات الاجتماعية؟'], 'input_tokens': 5, 'output_tokens': 0, 'total_tokens': 5}
+2025-09-02 14:29:28,836 INFO Step: Duration: 7.271s
+2025-09-02 14:29:48,690 INFO [ENTRY] analyze(id=102, user_input=مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء, new_input=[{'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'من انت وما هدفك؟'}, {'question': 'هل يمكنك أن تخبرني المزيد عن نفسك؟', 'answer': 'ما لون السماء'}], languages=ar)
+2025-09-02 14:29:48,690 INFO Step: Initializing analysis for user 102
+2025-09-02 14:29:48,690 INFO Step: Raw user_input after strip: مرحبا! انا احمد كيف حالك؟. من انت وما هدفك؟. ما لون السماء
+2025-09-02 14:29:48,694 INFO Step: Language detected as ar
+2025-09-02 14:29:48,694 INFO Step: Conversation detected, analyzing LATEST answer: ما لون السماء
+2025-09-02 14:29:51,797 INFO Step: Latest answer is off-topic (no personality content), generating varied response
+2025-09-02 14:29:52,899 INFO [EXIT] analyze (latest answer off-topic via personality check): {'id': 102, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟'], 'input_tokens': 12, 'output_tokens': 15, 'total_tokens': 27}
+2025-09-02 14:29:52,901 INFO Step: Duration: 4.210s
+2025-09-02 14:30:00,395 INFO [ENTRY] analyze(id=103, user_input=what is the weather today, new_input=[], languages=en)
+2025-09-02 14:30:00,395 INFO Step: Initializing analysis for user 103
+2025-09-02 14:30:00,397 INFO Step: Raw user_input after strip: what is the weather today
+2025-09-02 14:30:00,397 INFO Step: Language detected as en
+2025-09-02 14:30:00,397 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:30:02,449 INFO Step: No personality content found in user_input after cleaning
+2025-09-02 14:30:05,875 INFO Step: Latest answer in new_input (for identity response): None
+2025-09-02 14:30:05,875 INFO Step: Identity response: 
+2025-09-02 14:30:05,877 INFO Step: is_latest_identity=False, is_user_input_identity=False
+2025-09-02 14:30:06,518 INFO Step: user_input contained only identity questions, skipped
+2025-09-02 14:30:06,518 INFO Step: Final answers for trait extraction: []
+2025-09-02 14:30:06,518 INFO Step: Present traits: set(), Missing traits: ['emotional', 'social', 'cognitive', 'behavioral']
+2025-09-02 14:30:06,522 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=en
+2025-09-02 14:30:07,235 INFO OpenAI response content: ```json
+[
+    "How does the character typically express their emotions in challenging situations?"
+]
+```
+2025-09-02 14:30:07,237 ERROR JSON decode error in generate_clarification_questions_gpt: Expecting value: line 1 column 1 (char 0), content: ```json
+[
+    "How does the character typically express their emotions in challenging situations?"
+]
+```
+2025-09-02 14:30:07,237 INFO [EXIT] analyze (incomplete): {'id': 103, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['Could you tell me more about yourself?'], 'input_tokens': 5, 'output_tokens': 0, 'total_tokens': 5}
+2025-09-02 14:30:07,237 INFO Step: Duration: 6.842s
+2025-09-02 14:30:35,965 INFO [ENTRY] analyze(id=225985882206, user_input=who are u. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions., new_input=[{'question': 'How do you usually interact with others in social settings?', 'answer': 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.'}], languages=en)
+2025-09-02 14:30:35,965 INFO Step: Initializing analysis for user 225985882206
+2025-09-02 14:30:35,965 INFO Step: Raw user_input after strip: who are u. I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:35,965 INFO Step: Language detected as en
+2025-09-02 14:30:35,965 INFO Step: Conversation detected, analyzing LATEST answer: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:39,808 INFO Step: Latest answer is personality-related, continuing with trait analysis
+2025-09-02 14:30:39,809 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:30:40,968 INFO Step: Cleaned user_input for personality analysis: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:41,853 INFO Step: Latest answer in new_input (for identity response): I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:42,529 INFO Step: Identity response: 
+2025-09-02 14:30:42,533 INFO Step: is_latest_identity=False, is_user_input_identity=False
+2025-09-02 14:30:43,909 INFO Step: Added user_input to trait extraction (cleaned)
+2025-09-02 14:30:43,909 INFO Step: Checking answer 1 for personality content: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:48,309 INFO Step: Added answer 1 to trait extraction (personality content): I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:48,309 INFO Step: Final answers for trait extraction: ['I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.', 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.']
+2025-09-02 14:30:49,806 INFO Step: Traits extracted from answer 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': ['social']
+2025-09-02 14:30:49,806 INFO Step: Using supplementary pattern matching for answer: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:49,827 INFO Step: Pattern-based traits for 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': {'emotional', 'social', 'behavioral'}
+2025-09-02 14:30:51,426 INFO Step: Traits extracted from answer 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': ['social']
+2025-09-02 14:30:51,426 INFO Step: Using supplementary pattern matching for answer: I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.
+2025-09-02 14:30:51,428 INFO Step: Pattern-based traits for 'I love working in teams and often find myself naturally taking on leadership roles. I enjoy mentoring junior colleagues and facilitating group discussions.': {'emotional', 'social', 'behavioral'}
+2025-09-02 14:30:51,428 INFO Step: Present traits: {'emotional', 'social', 'behavioral'}, Missing traits: ['cognitive']
+2025-09-02 14:30:51,428 INFO generate_clarification_questions_gpt: missing_traits=['cognitive'], language=en
+2025-09-02 14:30:54,139 INFO OpenAI response content: ```json
+[
+    "Can you describe how you approach problem-solving and decision-making in your daily life?"
+]
+```
+2025-09-02 14:30:54,139 ERROR JSON decode error in generate_clarification_questions_gpt: Expecting value: line 1 column 1 (char 0), content: ```json
+[
+    "Can you describe how you approach problem-solving and decision-making in your daily life?"
+]
+```
+2025-09-02 14:30:54,139 INFO [EXIT] analyze (incomplete): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': '', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['cognitive'], 'clarification_questions': ['Could you tell me more about yourself?'], 'input_tokens': 23, 'output_tokens': 0, 'total_tokens': 23}
+2025-09-02 14:30:54,139 INFO Step: Duration: 18.174s
+[LOG INIT] personality_analyzer log file created.
+2025-09-02 14:31:35,714 INFO Log file initialized at: C:\Users\aalma\Desktop\python\dall-in-model\personality_analyzer.log
+2025-09-02 14:31:35,745 INFO [ENTRY] analyze(id=104, user_input=what is the weather today, new_input=[], languages=ar)
+2025-09-02 14:31:35,745 INFO Step: Initializing analysis for user 104
+2025-09-02 14:31:35,745 INFO Step: Raw user_input after strip: what is the weather today
+2025-09-02 14:31:35,745 INFO Step: Language detected as ar
+2025-09-02 14:31:35,745 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:31:37,566 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-02 14:31:38,680 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-02 14:31:40,732 INFO OpenAI response content: [
+    "ما هي العوامل التي تثير أو تؤثر على مشاعرك بشكل أساسي؟"
+]
+2025-09-02 14:31:40,732 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 104, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم استفسارك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['ما هي العوامل التي تثير أو تؤثر على مشاعرك بشكل أساسي؟'], 'input_tokens': 5, 'output_tokens': 15, 'total_tokens': 20}
+2025-09-02 14:31:40,732 INFO Step: Duration: 4.987s
+2025-09-02 14:31:50,696 INFO [ENTRY] analyze(id=105, user_input=what is the weather today, new_input=[], languages=en)
+2025-09-02 14:31:50,696 INFO Step: Initializing analysis for user 105
+2025-09-02 14:31:50,696 INFO Step: Raw user_input after strip: what is the weather today
+2025-09-02 14:31:50,696 INFO Step: Language detected as en
+2025-09-02 14:31:50,698 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:31:52,803 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-02 14:31:53,901 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=en
+2025-09-02 14:31:54,703 INFO OpenAI response content: [
+    "How does the character typically express their emotions in different situations?"
+]
+2025-09-02 14:31:54,705 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 105, 'status': 'incomplete', 'personal_greeting_and_off_topic': "I understand your question, but that's outside my area of expertise. Let me help you with personality analysis instead.", 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['How does the character typically express their emotions in different situations?'], 'input_tokens': 5, 'output_tokens': 19, 'total_tokens': 24}
+2025-09-02 14:31:54,707 INFO Step: Duration: 4.011s
+2025-09-02 14:32:02,166 INFO [ENTRY] analyze(id=106, user_input=tell me about the history of France, new_input=[], languages=ar)
+2025-09-02 14:32:02,166 INFO Step: Initializing analysis for user 106
+2025-09-02 14:32:02,169 INFO Step: Raw user_input after strip: tell me about the history of France
+2025-09-02 14:32:02,169 INFO Step: Language detected as ar
+2025-09-02 14:32:02,170 INFO Step: Cleaning user_input to extract only personality content
+2025-09-02 14:32:03,062 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-02 14:32:04,804 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-02 14:32:05,715 INFO OpenAI response content: ```json
+[
+    "هل تجد نفسك تعبر عن مشاعرك بسهولة وبوضوح؟"
+]
+```
+2025-09-02 14:32:05,715 ERROR JSON decode error in generate_clarification_questions_gpt: Expecting value: line 1 column 1 (char 0), content: ```json
+[
+    "هل تجد نفسك تعبر عن مشاعرك بسهولة وبوضوح؟"
+]
+```
+2025-09-02 14:32:05,725 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 106, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم طلبك، ولكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني المزيد عن نفسك؟'], 'input_tokens': 7, 'output_tokens': 15, 'total_tokens': 22}
+2025-09-02 14:32:05,725 INFO Step: Duration: 3.559s

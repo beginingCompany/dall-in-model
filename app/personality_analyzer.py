@@ -709,30 +709,30 @@ IMPORTANT: Only detect actual greetings and off-topic content, NOT personality d
             from openai import OpenAI
             openai_client = OpenAI()
 
-        # More formal, complete response templates for better concatenation
+        # Short, formal responses WITHOUT questions - suitable for concatenation
         english_templates = [
             "I understand your question, but that's outside my area of expertise. Let me help you with personality analysis instead.",
-            "That's an interesting topic, however I specialize in personality analysis. Let's continue with that.",
-            "I appreciate your curiosity, but I'm designed to focus on personality assessment. Shall we proceed?",
+            "That's an interesting topic, however I specialize in personality analysis.",
+            "I appreciate your curiosity, but I'm designed to focus on personality assessment.",
             "That's beyond my current scope, but I'd be happy to continue analyzing your personality traits.",
-            "I recognize your interest in that topic, though my expertise is in personality analysis. Let's continue.",
-            "While that's a fascinating subject, my role is to help with personality evaluation. Let's get back to that.",
-            "I understand your question, but I'm specifically designed for personality analysis. Let me continue helping you with that.",
+            "I recognize your interest in that topic, though my expertise is in personality analysis.",
+            "While that's a fascinating subject, my role is to help with personality evaluation.",
+            "I understand your question, but I'm specifically designed for personality analysis.",
             "That topic is outside my specialization, but I'm here to assist with your personality assessment.",
-            "I see what you're asking about, however my focus is on personality analysis. Let's proceed with that.",
+            "I see what you're asking about, however my focus is on personality analysis.",
             "That's not within my area of expertise, but I can certainly help you understand your personality better."
         ]
         
         arabic_templates = [
             "أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.",
-            "هذا موضوع مثير للاهتمام، لكنني متخصص في تحليل الشخصية. لنكمل بذلك.",
-            "أقدر فضولك، لكنني مصمم للتركيز على تقييم الشخصية. هل نتابع؟",
+            "هذا موضوع مثير للاهتمام، لكنني متخصص في تحليل الشخصية.",
+            "أقدر فضولك، لكنني مصمم للتركيز على تقييم الشخصية.",
             "هذا خارج نطاقي الحالي، لكنني سأكون سعيداً لمتابعة تحليل سمات شخصيتك.",
-            "أدرك اهتمامك بذلك الموضوع، لكن خبرتي في تحليل الشخصية. لنكمل.",
-            "رغم أن هذا موضوع رائع، دوري هو المساعدة في تقييم الشخصية. لنعود لذلك.",
-            "أفهم سؤالك، لكنني مصمم خصيصاً لتحليل الشخصية. دعني أكمل مساعدتك في ذلك.",
+            "أدرك اهتمامك بذلك الموضوع، لكن خبرتي في تحليل الشخصية.",
+            "رغم أن هذا موضوع رائع، دوري هو المساعدة في تقييم الشخصية.",
+            "أفهم سؤالك، لكنني مصمم خصيصاً لتحليل الشخصية.",
             "هذا الموضوع خارج تخصصي، لكنني هنا لمساعدتك في تقييم شخصيتك.",
-            "أرى ما تسأل عنه، لكن تركيزي على تحليل الشخصية. لننتقل لذلك.",
+            "أرى ما تسأل عنه، لكن تركيزي على تحليل الشخصية.",
             "هذا ليس في مجال خبرتي، لكن يمكنني بالتأكيد مساعدتك على فهم شخصيتك بشكل أفضل."
         ]
 
@@ -744,10 +744,11 @@ RESPONSE STYLE:
 - Use formal, complete sentences
 - Be polite and professional
 - NO emojis or casual expressions  
+- NO QUESTIONS in your response
 - Redirect professionally to personality analysis
 - Make responses that flow well with follow-up questions
 - Use the language: {"Arabic" if language == "ar" else "English"}
-- End with a transition that connects well to clarification questions
+- End statements (not questions) that connect well to clarification questions
 
 RESPONSE EXAMPLES for {"Arabic" if language == "ar" else "English"}:
 {chr(10).join(f"- {template}" for template in (arabic_templates if language == "ar" else english_templates)[:5])}
@@ -756,7 +757,8 @@ RULES:
 1. If off-topic: Generate ONE professional redirect response similar to examples
 2. If personality-related: Return "none"  
 3. Make it formal and complete for better concatenation
-4. End with a smooth transition to personality questions"""
+4. NO QUESTIONS - only statements that work well before clarification questions
+5. Keep responses short and professional"""
 
         try:
             response = openai_client.chat.completions.create(
@@ -1516,7 +1518,43 @@ IMPORTANT: Only output the JSON object, no explanations or formatting.
             self.logger.info(f"Step: Cleaned user_input for personality analysis: {cleaned_user_input}")
             user_input = cleaned_user_input.strip()
         else:
-            self.logger.info(f"Step: No personality content found in user_input after cleaning")
+            self.logger.info(f"Step: No personality content found in user_input after cleaning - treating as off-topic")
+            # When no personality content is found, treat as off-topic
+            try:
+                varied_response = self.get_varied_offtopic_response(user_input, detected_languages, openai_client=self.client)
+            except Exception as e:
+                self.logger.error(f"Error generating varied off-topic response: {e}")
+                if detected_languages == "ar":
+                    varied_response = "أفهم سؤالك، لكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك."
+                else:
+                    varied_response = "I understand your question, but that's outside my area of expertise. Let me help you with personality analysis instead."
+            
+            # Generate clarification question for personality traits
+            try:
+                clarification_questions = self.generate_clarification_questions_gpt(["emotional", "social", "cognitive", "behavioral"], detected_languages, openai_client=self.client, logger=self.logger)
+            except Exception as e:
+                self.logger.error(f"Error generating clarification questions: {e}")
+                clarification_questions = []
+            if not clarification_questions:
+                contextual_question = "هل يمكنك أن تخبرني كيف تتفاعل مع الآخرين في المواقف الاجتماعية؟" if detected_languages == "ar" else "Could you tell me how you typically interact with others in social situations?"
+                clarification_questions = [contextual_question]
+            
+            result = {
+                "id": id,
+                "status": "incomplete",
+                "personal_greeting_and_off_topic": varied_response,
+                "description_english": "",
+                "description_arabic": "",
+                "description_identity": None,
+                "missing_traits": ["emotional", "social", "cognitive", "behavioral"],
+                "clarification_questions": clarification_questions,
+                "input_tokens": len(user_input.split()),
+                "output_tokens": len(varied_response.split()),
+                "total_tokens": len(user_input.split()) + len(varied_response.split())
+            }
+            self.logger.info(f"[EXIT] analyze (user_input off-topic - no personality content): {result}")
+            self.logger.info(f"Step: Duration: {time.time() - start_time:.3f}s")
+            return result
         
         # Continue with the rest of the analysis...
             
