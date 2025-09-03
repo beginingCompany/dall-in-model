@@ -11,6 +11,29 @@ load_dotenv()
 
 class PersonalityAnalyzer:
     @staticmethod
+    def remove_questions(text: str) -> str:
+        """
+        Removes any sentences containing question marks (Arabic or English) or question words from the text.
+        """
+        # Split by sentence-ending punctuation
+        sentences = re.split(r'[.!؟?\n]', text)
+        question_words = [
+            'هل', 'فهل', 'لماذا', 'كيف', 'متى', 'أين', 'ما', 'ماذا', 'أي', 'هل ترغب', 'هل تريد',
+            'do you', 'would you', 'can you', 'could you', 'will you', 'are you', 'is it', 'shall we', 'should you', 'why', 'how', 'when', 'where', 'what', 'which'
+        ]
+        filtered = []
+        for s in sentences:
+            s_strip = s.strip()
+            if not s_strip:
+                continue
+            if '?' in s_strip or '؟' in s_strip:
+                continue
+            if any(qw in s_strip for qw in question_words):
+                continue
+            filtered.append(s_strip)
+        return '. '.join(filtered).strip()
+        
+    @staticmethod
     def _is_identity_trigger(answer: str, openai_client=None, logger=None) -> bool:
         """
         Use GPT to detect if an answer is an identity trigger.
@@ -608,92 +631,45 @@ RETURN FORMAT:
     @staticmethod
     def get_greeting_or_offtopic_response(user_input: str, language: str = "en", openai_client=None) -> str:
         """
-        AI-powered detection of greetings and off-topic conversations.
-        Returns a friendly conversational response if greeting/off-topic detected, empty string otherwise.
+        Handles greetings like off-topic: returns a formal, complete, positive statement (no questions), similar to off-topic style.
+        Enforces that no questions are present in the response.
         """
         if not user_input.strip():
             return ""
-            
-        if not openai_client:
-            from openai import OpenAI
-            openai_client = OpenAI()
 
-        # Enhanced prompt for greeting/off-topic detection
-        system_prompt = """You are an AI assistant that detects greetings and off-topic conversations for a personality analysis system called "BEGINING".
+        # Templates for greeting responses (no questions, only positive statements)
+        english_templates = [
+            "It's wonderful to meet you! I'm excited to help you discover your unique personality traits and what makes you special.",
+            "Hello! I'm here to help you explore your unique personality traits and strengths.",
+            "Welcome! I'm delighted to assist you in discovering what makes you unique.",
+            "It's a pleasure to meet you. Let's begin exploring your personality together.",
+            "I'm glad you're here! Let's uncover your strengths and unique qualities."
+        ]
+        arabic_templates = [
+            "يسعدني جدًا لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة وما يجعلك مميزًا.",
+            "مرحبًا! أنا هنا لمساعدتك في استكشاف سماتك الشخصية وقدراتك الفريدة.",
+            "أهلًا وسهلًا! يسعدني أن أساعدك في اكتشاف ما يميزك.",
+            "يشرفني لقاؤك. دعنا نبدأ معًا في استكشاف شخصيتك.",
+            "سعيد بوجودك هنا! لنكتشف معًا نقاط قوتك وسماتك الفريدة."
+        ]
 
-MISSION: Detect greetings, casual conversation, and off-topic content. Generate FRIENDLY conversational responses.
-
-DETECT THESE PATTERNS:
-- Greetings: "hi", "hello", "good morning", "مرحبا", "أهلا", "صباح الخير"
-- Casual conversation: "how are you", "what's up", "كيف حالك", "شلونك"
-- Name introductions: "I am John", "My name is Sarah", "انا احمد", "اسمي فاطمة"
-- Title/profession introductions: "I am Dr. Smith", "انا المهندس احمد", "انا الدكتور محمد", "I am Engineer Sarah"
-- Off-topic content: weather, news, random topics not related to personality analysis
-- Friendly small talk: "nice to meet you", "تشرفنا", compliments, general conversation
-
-RESPONSE RULES:
-1. If greeting/off-topic detected: Generate a WARM, FRIENDLY response that:
-   - Acknowledges their greeting/comment warmly
-   - **USE THEIR NAME and TITLE if they introduced themselves** (very important!)
-   - Show respect for their profession/title when mentioned
-   - Expresses enthusiasm for helping with personality analysis
-   - Uses encouraging, welcoming language
-   - ABSOLUTELY NO question marks (? or ؟)
-   - NO rhetorical questions like "isn't it?" or "right?"
-   - NO direct questions like "How can I help?" or "كيف يمكنني مساعدتك؟"
-   - Ends with positive statements only
-
-2. If NOT greeting/off-topic: Return "none"
-
-3. Response should be natural and friendly, like talking to a friend
-
-EXAMPLES:
-Input: "Hello" → "Hello there! It's wonderful to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
-
-Input: "Hi, I'm John" → "Hello John! It's wonderful to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
-
-Input: "مرحبا! انا احمد كيف حالك" → "مرحبًا أحمد! أهلًا وسهلًا! يسعدني جدًا لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة وما يجعلك مميزًا."
-
-Input: "مرحبا! انا المهندس احمد كيف حالك" → "مرحبًا المهندس أحمد! أهلًا وسهلًا! يشرفني لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة وما يجعلك مميزًا."
-
-Input: "Hi, I'm Dr. Sarah" → "Hello Dr. Sarah! It's an honor to meet you! I'm excited to help you discover your unique personality traits and what makes you special."
-
-Input: "اسمي الدكتور محمد، كيف حالك" → "أهلًا الدكتور محمد! مرحبًا بك! يشرفني جدًا لقاؤك. أنا متحمس لمساعدتك في اكتشاف سماتك الشخصية الفريدة."
-
-Input: "Nice weather today" → "That sounds lovely! I hope you're having a wonderful day. I'd love to help you discover the wonderful and unique aspects of your personality!"
-
-Input: "I am introverted" → "none" (this is personality-related, not greeting/off-topic)
-
-CRITICAL RULES:
-- **ALWAYS use the person's title AND name if they introduce themselves with both**
-- Show respect for professional titles (Dr., Engineer, Professor, etc.)
-- NEVER use question marks (? or ؟) in responses
-- NEVER ask any questions, even rhetorical ones
-- Only make positive, welcoming statements
-- The system handles all questions separately
-
-IMPORTANT: Only detect actual greetings and off-topic content, NOT personality descriptions."""
-
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Analyze this input: '{user_input}'"}
-                ],
-                max_tokens=200,
-                temperature=0.7
-            )
-            
-            result = response.choices[0].message.content.strip()
-            
-            if result.lower() == "none":
-                return ""
-            else:
-                return result
-                
-        except Exception as e:
-            print(f"[LOG] Error in greeting/off-topic detection: {e}")
+        # Simple greeting/off-topic detection (pattern-based)
+        text_lower = user_input.lower().strip()
+        if language.lower() in ["ar", "arabic"]:
+            greetings = ["مرحبا", "اهلا", "السلام عليكم", "صباح الخير", "مساء الخير", "هلا", "اهلين", "حياك", "كيف حالك", "كيفك", "شلونك", "يسعد صباحك", "يسعد مساءك", "تسلم", "نهارك سعيد"]
+            for greeting in greetings:
+                if greeting in text_lower:
+                    response = arabic_templates[0]
+                    return PersonalityAnalyzer.remove_questions(response)
+            # If not a greeting, return empty string
+            return ""
+        else:
+            greetings = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "how are you", "how do you do", "nice to meet you", "pleased to meet you", "greetings", "howdy", "what's up", "how's it going"]
+            for greeting in greetings:
+                if greeting in text_lower:
+                    response = english_templates[0]
+                    return PersonalityAnalyzer.remove_questions(response)
+            # If not a greeting, return empty string
             return ""
     
     @staticmethod

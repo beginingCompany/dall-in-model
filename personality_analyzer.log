@@ -3066,3 +3066,77 @@
 ```
 2025-09-02 14:32:05,725 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 106, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أفهم طلبك، ولكن هذا خارج مجال خبرتي. دعني أساعدك في تحليل الشخصية بدلاً من ذلك.', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل يمكنك أن تخبرني المزيد عن نفسك؟'], 'input_tokens': 7, 'output_tokens': 15, 'total_tokens': 22}
 2025-09-02 14:32:05,725 INFO Step: Duration: 3.559s
+[LOG INIT] personality_analyzer log file created.
+2025-09-03 13:58:02,887 INFO Log file initialized at: C:\Programming\Programs\Python projects\dall-in-model\personality_analyzer.log
+2025-09-03 13:58:10,213 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 13:58:10,213 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 13:58:10,214 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 13:58:10,214 INFO Step: Language detected as ar
+2025-09-03 13:58:10,214 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 13:58:13,347 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 13:58:14,383 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 13:58:16,116 INFO OpenAI response content: [
+    "هل تميل إلى التفكير العميق والتحليل الذهني في معظم الأوقات؟"
+]
+2025-09-03 13:58:16,117 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يمكنني مساعدتك في تحليل شخصيتك. كيف يمكنني مساعدتك اليوم؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تميل إلى التفكير العميق والتحليل الذهني في معظم الأوقات؟'], 'input_tokens': 5, 'output_tokens': 11, 'total_tokens': 16}
+2025-09-03 13:58:16,117 INFO Step: Duration: 5.905s
+2025-09-03 14:00:05,507 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 14:00:05,507 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 14:00:05,507 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 14:00:05,508 INFO Step: Language detected as ar
+2025-09-03 14:00:05,508 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 14:00:06,938 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 14:00:08,845 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 14:00:10,769 INFO OpenAI response content: [
+    "هل تجد نفسك تميل إلى التفكير العميق وحل المشكلات المعقدة؟"
+]
+2025-09-03 14:00:10,770 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يمكنني مساعدتك في تحليل شخصيتك. كيف يمكنني مساعدتك اليوم؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تجد نفسك تميل إلى التفكير العميق وحل المشكلات المعقدة؟'], 'input_tokens': 5, 'output_tokens': 11, 'total_tokens': 16}
+2025-09-03 14:00:10,770 INFO Step: Duration: 5.264s
+2025-09-03 14:01:57,948 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 14:01:57,948 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 14:01:57,949 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 14:01:57,949 INFO Step: Language detected as ar
+2025-09-03 14:01:57,949 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 14:01:58,590 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 14:02:00,328 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 14:02:01,574 INFO OpenAI response content: [
+    "هل تميل إلى التفكير بشكل عميق ومنطقي في العديد من المواضيع؟"
+]
+2025-09-03 14:02:01,575 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يبدو أنك مهتم بالتطبيقات، لكنني متخصص في تحليل الشخصية. كيف يمكنني مساعدتك اليوم؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تميل إلى التفكير بشكل عميق ومنطقي في العديد من المواضيع؟'], 'input_tokens': 5, 'output_tokens': 15, 'total_tokens': 20}
+2025-09-03 14:02:01,575 INFO Step: Duration: 3.627s
+2025-09-03 14:03:31,556 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 14:03:31,557 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 14:03:31,557 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 14:03:31,557 INFO Step: Language detected as ar
+2025-09-03 14:03:31,558 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 14:03:33,545 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 14:03:34,556 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 14:03:35,424 INFO OpenAI response content: [
+    "هل تميل إلى التفكير العميق والتحليل الشامل في المواضيع؟"
+]
+2025-09-03 14:03:35,426 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يُمكنني مساعدتك في تحليل شخصيتك. فهل ترغب في البدء؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تميل إلى التفكير العميق والتحليل الشامل في المواضيع؟'], 'input_tokens': 5, 'output_tokens': 11, 'total_tokens': 16}
+2025-09-03 14:03:35,427 INFO Step: Duration: 3.869s
+2025-09-03 14:04:25,164 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 14:04:25,164 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 14:04:25,164 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 14:04:25,165 INFO Step: Language detected as ar
+2025-09-03 14:04:25,165 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 14:04:25,737 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 14:04:26,785 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 14:04:27,627 INFO OpenAI response content: [
+    "هل تجد الشخص متعاطفًا ويستمتع بالتفاعل مع الآخرين؟"
+]
+2025-09-03 14:04:27,628 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يُسعدني تواجدك هنا. دعني أساعدك في تحليل شخصيتك.', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تجد الشخص متعاطفًا ويستمتع بالتفاعل مع الآخرين؟'], 'input_tokens': 5, 'output_tokens': 10, 'total_tokens': 15}
+2025-09-03 14:04:27,629 INFO Step: Duration: 2.463s
+2025-09-03 14:11:29,206 INFO [ENTRY] analyze(id=225985882206, user_input=مرحبا انا احمد مهنددس تطبيقات, new_input=[], languages=ar)
+2025-09-03 14:11:29,206 INFO Step: Initializing analysis for user 225985882206
+2025-09-03 14:11:29,207 INFO Step: Raw user_input after strip: مرحبا انا احمد مهنددس تطبيقات
+2025-09-03 14:11:29,207 INFO Step: Language detected as ar
+2025-09-03 14:11:29,207 INFO Step: Cleaning user_input to extract only personality content
+2025-09-03 14:11:30,039 INFO Step: No personality content found in user_input after cleaning - treating as off-topic
+2025-09-03 14:11:31,972 INFO generate_clarification_questions_gpt: missing_traits=['emotional', 'social', 'cognitive', 'behavioral'], language=ar
+2025-09-03 14:11:32,890 INFO OpenAI response content: [
+    "هل تجد نفسك تميل إلى التفكير العميق والتحليل الشامل في معظم الأمور؟"
+]
+2025-09-03 14:11:32,890 INFO [EXIT] analyze (user_input off-topic - no personality content): {'id': 225985882206, 'status': 'incomplete', 'personal_greeting_and_off_topic': 'أهلاً أحمد، يمكنني مساعدتك في تحليل شخصيتك. كيف يمكنني مساعدتك اليوم؟', 'description_english': '', 'description_arabic': '', 'description_identity': None, 'missing_traits': ['emotional', 'social', 'cognitive', 'behavioral'], 'clarification_questions': ['هل تجد نفسك تميل إلى التفكير العميق والتحليل الشامل في معظم الأمور؟'], 'input_tokens': 5, 'output_tokens': 11, 'total_tokens': 16}
+2025-09-03 14:11:32,891 INFO Step: Duration: 3.685s
